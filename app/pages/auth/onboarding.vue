@@ -140,7 +140,7 @@ onMounted(() => {
     class="bg-transparent -mt-5 md:-mt-10 w-full"
     :ui="{
       title: 'font-newsreader capitalize text-2xl md:text-3xl lg:text-4xl italics',
-      description: ' -mt-0.5',
+      description: '-mt-0.5',
     }"
   >
     <template #headline>

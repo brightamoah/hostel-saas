@@ -1,8 +1,8 @@
--- ALTER SEQUENCE public.user_id_seq INCREMENT BY 1 MINVALUE 10000000 MAXVALUE 99999999 START WITH 10000000 CYCLE RESTART WITH 10000000;
+ALTER SEQUENCE public.user_id_seq INCREMENT BY 1 MINVALUE 10000000 MAXVALUE 99999999 START WITH 10000000 CYCLE RESTART WITH 10000000;
 
--- ALTER SEQUENCE public.student_id_seq INCREMENT BY 1 MINVALUE 10000000 MAXVALUE 99999999 START WITH 10000000 CYCLE RESTART WITH 10000000;
+ALTER SEQUENCE public.student_id_seq INCREMENT BY 1 MINVALUE 10000000 MAXVALUE 99999999 START WITH 10000000 CYCLE RESTART WITH 10000000;
 
--- ALTER SEQUENCE public.admin_id_seq INCREMENT BY 1 MINVALUE 10000000 MAXVALUE 99999999 START WITH 10000000 CYCLE RESTART WITH 10000000;
+ALTER SEQUENCE public.admin_id_seq INCREMENT BY 1 MINVALUE 10000000 MAXVALUE 99999999 START WITH 10000000 CYCLE RESTART WITH 10000000;
 
 -- INSERT INTO room (
 --   room_number,
@@ -40,23 +40,23 @@
 -- ('C103','Crimson',2,2,'double',0,ARRAY['AC','Mini-fridge','Desk'],'2000.00','vacant'),
 -- ('C104','Crimson',3,1,'single',0,ARRAY['AC','Mini-fridge','Balcony','Wardrobe'],'2600.00','vacant');
 
-INSERT INTO
-    hostel (
-        name,
-        address,
-        contact_number,
-        email,
-        status
-    )
-SELECT DISTINCT
-    ON (r.building) -- Ensures only one entry per building
-    r.building || ' Hostel' AS name,
-    r.building || ' - University Campus Hostel' AS address,
-    '0549684848' AS contact_number,
-    'kingshostelmgt' || ROW_NUMBER() OVER (
-        ORDER BY r.building
-    ) || '@gmail.com' AS email,
-    'active' AS status
-FROM room r
-ON CONFLICT (email) DO NOTHING;
+-- INSERT INTO
+--     hostel (
+--         name,
+--         address,
+--         contact_number,
+--         email,
+--         status
+--     )
+-- SELECT DISTINCT
+--     ON (r.building) -- Ensures only one entry per building
+--     r.building || ' Hostel' AS name,
+--     r.building || ' - University Campus Hostel' AS address,
+--     '0549684848' AS contact_number,
+--     'kingshostelmgt' || ROW_NUMBER() OVER (
+--         ORDER BY r.building
+--     ) || '@gmail.com' AS email,
+--     'active' AS status
+-- FROM room r
+-- ON CONFLICT (email) DO NOTHING;
 -- Prevents errors if an email already exists

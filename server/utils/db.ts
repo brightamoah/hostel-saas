@@ -5,9 +5,14 @@ import * as schema from "../db/schema/index";
 export function useDB() {
   const runtimeConfig = useRuntimeConfig();
 
-  const db = drizzle(runtimeConfig.databaseUrl, {
+  const databaseUrl = runtimeConfig.databaseUrl;
+
+  if (!databaseUrl) throw new Error("Missing runtimeConfig.databaseUrl");
+
+  const db = drizzle(databaseUrl, {
     schema,
     casing: "snake_case",
+    logger: import.meta.dev,
   });
 
   if (!db) throw new Error("Database not initialized");

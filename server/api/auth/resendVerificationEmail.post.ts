@@ -7,6 +7,9 @@ import { randomUUID } from "uncrypto";
 
 import { getEmailTemplate } from "~/utils/emailTemplate";
 
+const TOKEN_TTL_MS = 10 * 60 * 1000;
+const COOL_DOWN_MS = 2 * 60 * 1000;
+
 export default defineEventHandler(async (event) => {
   try {
     const { db } = useDB();
@@ -35,20 +38,31 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    if (existingUser.verificationTokenExpiresAt) {
+      const expiresAt = new Date(existingUser.verificationTokenExpiresAt);
+      const tokenCreatedAt = new Date(expiresAt.getTime() - TOKEN_TTL_MS);
 
-    if (existingUser.verificationTokenExpiresAt
-      && existingUser.verificationTokenExpiresAt > twoMinutesAgo) {
-      const timeLeft = Math.ceil((existingUser.verificationTokenExpiresAt.getTime() - twoMinutesAgo.getTime()) / 1000 / 60);
-      throw createError({
-        statusCode: 429,
-        message: `Please wait ${timeLeft} minutes before requesting another verification email.`,
-      });
+      const now = Date.now();
+      const elapsedSinceTokenCreated = now - tokenCreatedAt.getTime();
+
+      if (elapsedSinceTokenCreated < COOL_DOWN_MS) {
+        const remainingMs = COOL_DOWN_MS - elapsedSinceTokenCreated;
+        const remainingSec = Math.ceil(remainingMs / 1000);
+
+        const message = remainingSec < 60
+          ? `Please wait ${remainingSec} seconds before requesting another verification email.`
+          : `Please wait ${Math.ceil(remainingSec / 60)} minutes before requesting another verification email.`;
+
+        throw createError({
+          statusCode: 429,
+          message,
+        });
+      }
     }
 
     const verificationToken = randomUUID();
     const hashedVerificationToken = await hash(verificationToken);
-    const tokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const tokenExpiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
     // Update user with new token
     await db.update(user).set({
@@ -56,7 +70,12 @@ export default defineEventHandler(async (event) => {
       verificationTokenExpiresAt: tokenExpiresAt,
     }).where(eq(user.id, existingUser.id));
 
-    const verificationUrl = `${event.headers.get("origin")}/auth/verifyEmail?token=${verificationToken}&id=${existingUser.id}`;
+    let siteUrl: string;
+
+    if (import.meta.dev) siteUrl = getRequestURL(event).origin;
+    else siteUrl = runtimeConfig.public.siteUrl;
+
+    const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${existingUser.id}`;
 
     const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, existingUser);
 

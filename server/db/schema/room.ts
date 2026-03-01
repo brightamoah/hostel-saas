@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import { check, pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
 
 import { billing } from "./billing";
+import { company } from "./company";
 import { complaint } from "./complaint";
 import { maintenanceRequest } from "./maintenance";
 import { admin, genderEnum, student } from "./user";
@@ -48,7 +49,15 @@ export const hostel = pgTable("hostel", t => ({
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
   status: hostelStatusEnum().default("active").notNull(),
-}));
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  slug: t.varchar({ length: 80 }).notNull(),
+  logoUrl: t.text(),
+  primaryColor: t.varchar({ length: 32 }),
+  supportEmail: t.varchar({ length: 255 }),
+  supportPhone: t.varchar({ length: 30 }),
+}), table => [
+  unique("unique_hostel_slug").on(table.slug),
+]);
 
 export const room = pgTable("room", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -63,6 +72,12 @@ export const room = pgTable("room", t => ({
   amountPerYear: t.numeric({ precision: 10, scale: 2, mode: "number" }).notNull(),
   status: roomStatusEnum().default("vacant").notNull(),
   allowedGender: genderEnum().default("male").notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
 }), table => [
   // unique("unique_room").on(table.roomNumber, table.building, table.hostelId),
   unique("unique_room_number").on(table.roomNumber, table.hostelId),
@@ -78,17 +93,27 @@ export const allocation = pgTable("allocation", t => ({
   academicPeriod: academicPeriodEnum().default("first semester").notNull(),
   endDate: t.date(),
   status: allocationStatusEnum().default("pending").notNull(),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
 }), table => [
   unique("unique_active_allocation").on(table.studentId, table.status),
   check("chk_dates", sql`end_date IS NULL OR end_date >= allocation_date`),
 ]);
 
-export const hostelRelations = relations(hostel, ({ many }) => ({
+export const hostelRelations = relations(hostel, ({ one, many }) => ({
   rooms: many(room),
   admins: many(admin),
   billings: many(billing),
   complaints: many(complaint),
   maintenanceRequests: many(maintenanceRequest),
+  company: one(company, {
+    fields: [hostel.companyId],
+    references: [company.id],
+  }),
 }));
 
 export const roomRelations = relations(room, ({ one, many }) => ({
@@ -99,6 +124,10 @@ export const roomRelations = relations(room, ({ one, many }) => ({
   allocations: many(allocation),
   complaints: many(complaint),
   maintenanceRequests: many(maintenanceRequest),
+  company: one(company, {
+    fields: [room.companyId],
+    references: [company.id],
+  }),
 }));
 
 export const allocationRelations = relations(allocation, ({ one, many }) => ({
@@ -110,5 +139,9 @@ export const allocationRelations = relations(allocation, ({ one, many }) => ({
     fields: [allocation.roomId],
     references: [room.id],
   }),
-  billings: many(billing), // An allocation can have multiple bills
+  billings: many(billing),
+  company: one(company, {
+    fields: [allocation.companyId],
+    references: [company.id],
+  }),
 }));

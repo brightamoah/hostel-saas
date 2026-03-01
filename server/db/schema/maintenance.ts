@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
+import { company } from "./company";
 import { hostel, room } from "./room";
 import { student, user } from "./user";
 
@@ -43,6 +44,7 @@ export const maintenanceRequest = pgTable("maintenance_request", t => ({
   status: maintenanceStatusEnum().default("pending").notNull(),
   assignedTo: t.integer(),
   resolutionDate: t.timestamp(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()
@@ -56,6 +58,7 @@ export const maintenanceResponse = pgTable("maintenance_response", t => ({
   responderId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
   responseText: t.text().notNull(),
   responseDate: t.timestamp().defaultNow().notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()
@@ -79,6 +82,10 @@ export const maintenanceRequestRelations = relations(maintenanceRequest, ({ one,
     references: [hostel.id],
   }),
   responses: many(maintenanceResponse),
+  company: one(company, {
+    fields: [maintenanceRequest.companyId],
+    references: [company.id],
+  }),
 }));
 
 export const maintenanceResponseRelations = relations(maintenanceResponse, ({ one }) => ({
@@ -89,5 +96,9 @@ export const maintenanceResponseRelations = relations(maintenanceResponse, ({ on
   responder: one(user, { // The user (admin/staff) who responded
     fields: [maintenanceResponse.responderId],
     references: [user.id],
+  }),
+  company: one(company, {
+    fields: [maintenanceResponse.companyId],
+    references: [company.id],
   }),
 }));

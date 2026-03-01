@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
+import { company } from "./company";
 import { allocation, hostel } from "./room";
 import { student } from "./user";
 
@@ -56,6 +57,7 @@ export const billing = pgTable("billing", t => ({
   status: billingStatus().default("unpaid").notNull(),
   lateFee: t.numeric({ precision: 10, scale: 2 }).default("0.00"),
   paidAmount: t.numeric({ precision: 10, scale: 2 }).default("0.00"),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()
@@ -74,6 +76,12 @@ export const payment = pgTable("payment", t => ({
   transactionReference: t.text().notNull().unique(),
   paymentMethod: paymentMethod().notNull(),
   status: paymentStatus().default("pending").notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
 }));
 
 export const billingRelations = relations(billing, ({ one, many }) => ({
@@ -90,6 +98,10 @@ export const billingRelations = relations(billing, ({ one, many }) => ({
     references: [hostel.id],
   }),
   payments: many(payment),
+  company: one(company, {
+    fields: [billing.companyId],
+    references: [company.id],
+  }),
 }));
 
 export const paymentRelations = relations(payment, ({ one }) => ({
@@ -100,5 +112,9 @@ export const paymentRelations = relations(payment, ({ one }) => ({
   billing: one(billing, {
     fields: [payment.billingId],
     references: [billing.id],
+  }),
+  company: one(company, {
+    fields: [payment.companyId],
+    references: [company.id],
   }),
 }));

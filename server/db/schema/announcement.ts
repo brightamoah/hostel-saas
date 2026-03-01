@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 import { pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
 
+import { company } from "./company";
 import { hostel, room } from "./room";
 import { admin, user } from "./user";
 
@@ -31,6 +32,7 @@ export const announcement = pgTable("announcement", t => ({
   targetHostelId: t.integer().references(() => hostel.id, { onDelete: "cascade" }),
   targetRoomId: t.integer().references(() => room.id, { onDelete: "cascade" }),
   targetUserId: t.integer().references(() => user.id, { onDelete: "cascade" }),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   updatedAt: t.timestamp()
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
@@ -42,6 +44,9 @@ export const announcementReads = pgTable("announcement_reads", t => ({
   announcementId: t.integer().notNull().references(() => announcement.id, { onDelete: "cascade" }),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
   readDate: t.timestamp().defaultNow().notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp(),
 }), table => [
   unique("unique_announcement_student").on(table.announcementId, table.userId),
 ]);
@@ -64,6 +69,10 @@ export const announcementRelations = relations(announcement, ({ one, many }) => 
     references: [user.id],
   }),
   reads: many(announcementReads),
+  company: one(company, {
+    fields: [announcement.companyId],
+    references: [company.id],
+  }),
 }));
 
 export const announcementReadsRelations = relations(announcementReads, ({ one }) => ({
@@ -74,5 +83,9 @@ export const announcementReadsRelations = relations(announcementReads, ({ one })
   user: one(user, {
     fields: [announcementReads.userId],
     references: [user.id],
+  }),
+  company: one(company, {
+    fields: [announcementReads.companyId],
+    references: [company.id],
   }),
 }));

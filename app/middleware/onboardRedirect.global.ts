@@ -18,6 +18,7 @@ export default defineNuxtRouteMiddleware((to) => {
     "contact",
     "faq",
     "auth-verifyEmail",
+    "auth-registerCompany",
   ];
 
   if (authRoutes.includes(to.name)) return;

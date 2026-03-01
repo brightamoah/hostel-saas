@@ -45,8 +45,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // const passwordHash = await hashPassword(password);
-    const passwordHash = await hashPasswordWorker(password);
+    const passwordHash = await hash(password);
+    // const passwordHash = await hashPasswordWorker(password);
 
     const verificationToken = randomUUID();
 
@@ -69,7 +69,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const siteUrl = runtimeConfig.public.siteUrl || getRequestURL(event).origin;
+    let siteUrl: string;
+
+    if (import.meta.dev) siteUrl = getRequestURL(event).origin;
+    else siteUrl = runtimeConfig.public.siteUrl;
+
     const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${newUser.id}`;
 
     const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newUser);

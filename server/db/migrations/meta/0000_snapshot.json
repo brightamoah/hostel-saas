@@ -1,5 +1,5 @@
 {
-  "id": "292de529-3f26-41e3-9c79-96d5cb4b04f9",
+  "id": "bfc37966-d18f-4f5d-9133-2e82d6b102f6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -66,12 +66,36 @@
           "notNull": true,
           "default": "'all'"
         },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
+        "target_hostel_id": {
+          "name": "target_hostel_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_room_id": {
+          "name": "target_room_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_user_id": {
+          "name": "target_user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -87,6 +111,58 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "announcement_target_hostel_id_hostel_id_fk": {
+          "name": "announcement_target_hostel_id_hostel_id_fk",
+          "tableFrom": "announcement",
+          "tableTo": "hostel",
+          "columnsFrom": [
+            "target_hostel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "announcement_target_room_id_room_id_fk": {
+          "name": "announcement_target_room_id_room_id_fk",
+          "tableFrom": "announcement",
+          "tableTo": "room",
+          "columnsFrom": [
+            "target_room_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "announcement_target_user_id_user_id_fk": {
+          "name": "announcement_target_user_id_user_id_fk",
+          "tableFrom": "announcement",
+          "tableTo": "user",
+          "columnsFrom": [
+            "target_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "announcement_company_id_company_id_fk": {
+          "name": "announcement_company_id_company_id_fk",
+          "tableFrom": "announcement",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -135,6 +211,25 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -163,6 +258,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "announcement_reads_company_id_company_id_fk": {
+          "name": "announcement_reads_company_id_company_id_fk",
+          "tableFrom": "announcement_reads",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -226,6 +334,22 @@
           "primaryKey": false,
           "notNull": true
         },
+        "type": {
+          "name": "type",
+          "type": "billing_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'hostel fee'"
+        },
+        "academic_period": {
+          "name": "academic_period",
+          "type": "academic_period",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'first semester'"
+        },
         "description": {
           "name": "description",
           "type": "text",
@@ -266,6 +390,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'0.00'"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -321,6 +451,19 @@
             "id"
           ],
           "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "billing_company_id_company_id_fk": {
+          "name": "billing_company_id_company_id_fk",
+          "tableFrom": "billing",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -401,6 +544,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -430,6 +593,19 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "payment_company_id_company_id_fk": {
+          "name": "payment_company_id_company_id_fk",
+          "tableFrom": "payment",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -442,6 +618,222 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.company": {
+      "name": "company",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "company_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "company_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "company_slug_unique": {
+          "name": "company_slug_unique",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "company_name_unique": {
+          "name": "company_name_unique",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.company_member": {
+      "name": "company_member",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "company_member_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "company_member_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'staff'"
+        },
+        "status": {
+          "name": "status",
+          "type": "company_member_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "company_member_company_user_unique": {
+          "name": "company_member_company_user_unique",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "company_member_company_id_company_id_fk": {
+          "name": "company_member_company_id_company_id_fk",
+          "tableFrom": "company_member",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "company_member_user_id_user_id_fk": {
+          "name": "company_member_user_id_user_id_fk",
+          "tableFrom": "company_member",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -477,7 +869,7 @@
           "name": "room_id",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "hostel_id": {
           "name": "hostel_id",
@@ -533,6 +925,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
@@ -580,6 +978,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "complaint_company_id_company_id_fk": {
+          "name": "complaint_company_id_company_id_fk",
+          "tableFrom": "complaint",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -641,6 +1052,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -669,6 +1100,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "complaint_response_company_id_company_id_fk": {
+          "name": "complaint_response_company_id_company_id_fk",
+          "tableFrom": "complaint_response",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -765,6 +1209,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -814,6 +1264,19 @@
           "tableTo": "hostel",
           "columnsFrom": [
             "hostel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "maintenance_request_company_id_company_id_fk": {
+          "name": "maintenance_request_company_id_company_id_fk",
+          "tableFrom": "maintenance_request",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
           ],
           "columnsTo": [
             "id"
@@ -874,6 +1337,12 @@
           "notNull": true,
           "default": "now()"
         },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -915,6 +1384,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "maintenance_response_company_id_company_id_fk": {
+          "name": "maintenance_response_company_id_company_id_fk",
+          "tableFrom": "maintenance_response",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -968,6 +1450,14 @@
           "primaryKey": false,
           "notNull": true
         },
+        "academic_period": {
+          "name": "academic_period",
+          "type": "academic_period",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'first semester'"
+        },
         "end_date": {
           "name": "end_date",
           "type": "date",
@@ -981,6 +1471,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -1009,6 +1519,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "allocation_company_id_company_id_fk": {
+          "name": "allocation_company_id_company_id_fk",
+          "tableFrom": "allocation",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -1059,12 +1582,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "code": {
-          "name": "code",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
         "address": {
           "name": "address",
           "type": "text",
@@ -1104,17 +1621,67 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'active'"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "primary_color": {
+          "name": "primary_color",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "support_email": {
+          "name": "support_email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "support_phone": {
+          "name": "support_phone",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "hostel_company_id_company_id_fk": {
+          "name": "hostel_company_id_company_id_fk",
+          "tableFrom": "hostel",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "hostel_code_unique": {
-          "name": "hostel_code_unique",
+        "hostel_name_unique": {
+          "name": "hostel_name_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "code"
+            "name"
           ]
         },
         "hostel_email_unique": {
@@ -1122,6 +1689,13 @@
           "nullsNotDistinct": false,
           "columns": [
             "email"
+          ]
+        },
+        "unique_hostel_slug": {
+          "name": "unique_hostel_slug",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
           ]
         }
       },
@@ -1156,9 +1730,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "building": {
-          "name": "building",
-          "type": "varchar(100)",
+        "hostel_id": {
+          "name": "hostel_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -1208,10 +1782,65 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'vacant'"
+        },
+        "allowed_gender": {
+          "name": "allowed_gender",
+          "type": "gender",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'male'"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "room_hostel_id_hostel_id_fk": {
+          "name": "room_hostel_id_hostel_id_fk",
+          "tableFrom": "room",
+          "tableTo": "hostel",
+          "columnsFrom": [
+            "hostel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "room_company_id_company_id_fk": {
+          "name": "room_company_id_company_id_fk",
+          "tableFrom": "room",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "room_roomNumber_unique": {
@@ -1221,12 +1850,12 @@
             "room_number"
           ]
         },
-        "unique_room": {
-          "name": "unique_room",
+        "unique_room_number": {
+          "name": "unique_room_number",
           "nullsNotDistinct": false,
           "columns": [
             "room_number",
-            "building"
+            "hostel_id"
           ]
         }
       },
@@ -1289,6 +1918,40 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'regular'"
+        },
+        "hostel_id": {
+          "name": "hostel_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "admin_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
@@ -1296,6 +1959,105 @@
         "admin_user_id_user_id_fk": {
           "name": "admin_user_id_user_id_fk",
           "tableFrom": "admin",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "admin_hostel_id_hostel_id_fk": {
+          "name": "admin_hostel_id_hostel_id_fk",
+          "tableFrom": "admin",
+          "tableTo": "hostel",
+          "columnsFrom": [
+            "hostel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "admin_company_id_company_id_fk": {
+          "name": "admin_company_id_company_id_fk",
+          "tableFrom": "admin",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_hostel_for_regular_support": {
+          "name": "chk_hostel_for_regular_support",
+          "value": "\n    (access_level IN ('regular', 'support') AND hostel_id IS NOT NULL)\n    OR (access_level = 'super' AND hostel_id IS NULL)\n  "
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.login_attempts": {
+      "name": "login_attempts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "type": "always",
+            "name": "login_attempts_id_seq",
+            "schema": "public",
+            "increment": "1",
+            "startWith": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "cache": "1",
+            "cycle": false
+          }
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "success": {
+          "name": "success",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "login_attempts_user_id_user_id_fk": {
+          "name": "login_attempts_user_id_user_id_fk",
+          "tableFrom": "login_attempts",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -1377,6 +2139,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "emergency_contact_email": {
+          "name": "emergency_contact_email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "health_conditions": {
           "name": "health_conditions",
           "type": "text",
@@ -1396,6 +2164,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'inactive'"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1411,6 +2199,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "student_company_id_company_id_fk": {
+          "name": "student_company_id_company_id_fk",
+          "tableFrom": "student",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -1568,6 +2369,18 @@
           "primaryKey": false,
           "notNull": true
         },
+        "hostel_id": {
+          "name": "hostel_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "admin_id": {
+          "name": "admin_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -1604,17 +2417,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "check_in_time": {
-          "name": "check_in_time",
-          "type": "timestamp",
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
-        },
-        "check_out_time": {
-          "name": "check_out_time",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1653,12 +2460,56 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "visitor_hostel_id_hostel_id_fk": {
+          "name": "visitor_hostel_id_hostel_id_fk",
+          "tableFrom": "visitor",
+          "tableTo": "hostel",
+          "columnsFrom": [
+            "hostel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "visitor_admin_id_admin_id_fk": {
+          "name": "visitor_admin_id_admin_id_fk",
+          "tableFrom": "visitor",
+          "tableTo": "admin",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "visitor_company_id_company_id_fk": {
+          "name": "visitor_company_id_company_id_fk",
+          "tableFrom": "visitor",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "chk_visit_date": {
+          "name": "chk_visit_date",
+          "value": "\"visit_date\" >= CURRENT_DATE"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.visitor_logs": {
@@ -1688,17 +2539,31 @@
           "primaryKey": false,
           "notNull": true
         },
-        "check_in_time": {
-          "name": "check_in_time",
-          "type": "timestamp",
+        "admin_id": {
+          "name": "admin_id",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "check_out_time": {
-          "name": "check_out_time",
+        "action": {
+          "name": "action",
+          "type": "visitor_log_action",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "now()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
@@ -1711,8 +2576,7 @@
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false
         }
       },
       "indexes": {},
@@ -1728,6 +2592,32 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "visitor_logs_admin_id_admin_id_fk": {
+          "name": "visitor_logs_admin_id_admin_id_fk",
+          "tableFrom": "visitor_logs",
+          "tableTo": "admin",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "visitor_logs_company_id_company_id_fk": {
+          "name": "visitor_logs_company_id_company_id_fk",
+          "tableFrom": "visitor_logs",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
           "onUpdate": "no action"
         }
       },
@@ -1756,7 +2646,9 @@
         "all",
         "students",
         "admins",
-        "specific"
+        "hostel",
+        "room",
+        "user"
       ]
     },
     "public.billing_status": {
@@ -1768,6 +2660,18 @@
         "partially paid",
         "overdue",
         "cancelled"
+      ]
+    },
+    "public.billing_type": {
+      "name": "billing_type",
+      "schema": "public",
+      "values": [
+        "hostel fee",
+        "security deposit",
+        "utility fee",
+        "maintenance fee",
+        "late payment penalty",
+        "other"
       ]
     },
     "public.payment_method": {
@@ -1788,6 +2692,34 @@
         "failed",
         "pending",
         "refunded"
+      ]
+    },
+    "public.company_member_role": {
+      "name": "company_member_role",
+      "schema": "public",
+      "values": [
+        "owner",
+        "admin",
+        "finance",
+        "support",
+        "staff"
+      ]
+    },
+    "public.company_member_status": {
+      "name": "company_member_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "invited",
+        "disabled"
+      ]
+    },
+    "public.company_status": {
+      "name": "company_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "inactive"
       ]
     },
     "public.complaint_action_taken": {
@@ -1869,6 +2801,16 @@
         "rejected"
       ]
     },
+    "public.academic_period": {
+      "name": "academic_period",
+      "schema": "public",
+      "values": [
+        "first semester",
+        "second semester",
+        "entire year",
+        "vacation period"
+      ]
+    },
     "public.allocation_status": {
       "name": "allocation_status",
       "schema": "public",
@@ -1918,6 +2860,14 @@
         "support"
       ]
     },
+    "public.admin_status": {
+      "name": "admin_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "inactive"
+      ]
+    },
     "public.gender": {
       "name": "gender",
       "schema": "public",
@@ -1943,6 +2893,14 @@
       "values": [
         "student",
         "admin"
+      ]
+    },
+    "public.visitor_log_action": {
+      "name": "visitor_log_action",
+      "schema": "public",
+      "values": [
+        "check_in",
+        "check_out"
       ]
     },
     "public.visitor_status": {

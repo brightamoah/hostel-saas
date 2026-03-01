@@ -27,7 +27,7 @@ const { requestPasswordReset } = altAuthStore;
       icon: 'i-lucide-lock-keyhole-open',
       loading: isLoading,
       disabled: !canResend,
-      class: 'cursor-pointer',
+      class: 'cursor-pointer max-w-sm',
     }"
     @submit="requestPasswordReset!"
   >

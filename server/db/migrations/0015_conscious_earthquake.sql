@@ -1,1 +1,0 @@
-ALTER TABLE "room" ADD COLUMN "allowed_gender" "gender" DEFAULT 'male' NOT NULL;

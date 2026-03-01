@@ -7,6 +7,7 @@ import {
 
 import { announcement, announcementReads } from "./announcement";
 import { billing, payment } from "./billing";
+import { company } from "./company";
 import { complaint, complaintResponse } from "./complaint";
 import { maintenanceRequest, maintenanceResponse } from "./maintenance";
 import { allocation, hostel } from "./room";
@@ -74,6 +75,12 @@ export const student = pgTable("student", t => ({
   healthConditions: t.text(),
   enrollmentDate: t.date(),
   residencyStatus: residencyStatusEnum().default("inactive").notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
 }));
 
 export const admin = pgTable("admin", t => ({
@@ -84,6 +91,12 @@ export const admin = pgTable("admin", t => ({
   accessLevel: accessLevelEnum().default("regular").notNull(),
   hostelId: t.integer().references(() => hostel.id, { onDelete: "set null" }),
   status: adminStatusEnum().default("active").notNull(),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
 }), () => [
   check("chk_hostel_for_regular_support", sql`
     (access_level IN ('regular', 'support') AND hostel_id IS NOT NULL)
@@ -111,6 +124,9 @@ export const userRelations = relations(user, ({ one, many }) => ({
   announcementReads: many(announcementReads),
   complaintResponses: many(complaintResponse),
   maintenanceResponses: many(maintenanceResponse),
+  billings: many(billing),
+  payments: many(payment),
+  visitors: many(visitor),
 }));
 
 export const studentRelations = relations(student, ({ one, many }) => ({
@@ -127,6 +143,10 @@ export const studentRelations = relations(student, ({ one, many }) => ({
   complaints: many(complaint),
   maintenanceRequests: many(maintenanceRequest),
   visitors: many(visitor),
+  company: one(company, {
+    fields: [student.companyId],
+    references: [company.id],
+  }),
 }));
 
 export const adminRelations = relations(admin, ({ one, many }) => ({
@@ -138,7 +158,11 @@ export const adminRelations = relations(admin, ({ one, many }) => ({
     fields: [admin.hostelId],
     references: [hostel.id],
   }),
-  announcementsPosted: many(announcement), // Admin as poster
+  announcementsPosted: many(announcement),
+  company: one(company, {
+    fields: [admin.companyId],
+    references: [company.id],
+  }),
 }));
 
 export type UserWithRelations = typeof user & {

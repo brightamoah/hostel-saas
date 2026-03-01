@@ -377,6 +377,7 @@ export async function userQueries() {
     department?: string;
     accessLevel?: "regular" | "super" | "support";
     hostelId?: number | null;
+    companyId?: number | null;
   }) => {
     return await db.transaction(async (tx) => {
       const existingAdmin = await tx.query.admin.findFirst({
@@ -408,6 +409,7 @@ export async function userQueries() {
           department: payload.department!,
           accessLevel: payload.accessLevel!,
           hostelId: payload.hostelId,
+          companyId: payload.companyId!,
           status: "active",
         })
         .returning();

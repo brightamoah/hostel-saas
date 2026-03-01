@@ -32,7 +32,7 @@ const nameSchema = z
   .trim()
   .nonempty("Name is required")
   .min(5, "Name must be at least 5 characters long")
-  .max(50, "Name must be at most 50 characters long")
+  .max(60, "Name must be at most 60 characters long")
   .refine(
     val => /^[a-z\s]+$/i.test(val),
     "Name can only contain letters and spaces",
@@ -670,12 +670,89 @@ const verifyPaymentSchema = z.object({
 
 export type VerifyPaymentSchema = z.output<typeof verifyPaymentSchema>;
 
+export const slugSchema = z.string()
+  .trim()
+  .toLowerCase()
+  .min(3, "Slug must be at least 3 characters")
+  .max(50, "Slug must be at most 20 characters")
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be letters, numbers, hyphens and kebab-case (e.g., my-company)");
+
+export const inviteCompanyMemberSchema = z.object({
+  companyId: z.number().int().positive(),
+  userId: z.number().int().positive(),
+  role: z.enum(["owner", "admin", "finance", "support", "staff"]),
+});
+
+export type InviteCompanyMemberSchema = z.output<typeof inviteCompanyMemberSchema>;
+
+const ownerSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
+  phoneNumber: phoneNumberSchema,
+  password: passwordSchema,
+  confirmPassword: confirmPasswordSchema,
+}).refine(data => data.password === data.confirmPassword, {
+  error: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+const companySchema = z.object({
+  companyName: z.string().trim().min(3, "Company name is required").max(120),
+  companySlug: slugSchema,
+  createHostelNow: z.boolean().default(true),
+
+  hostelName: z.string().trim().min(2, "Hostel name is required").optional(),
+  hostelSlug: slugSchema.optional(),
+  supportEmail: emailSchema.optional(),
+  supportPhone: phoneNumberSchema.optional(),
+  hostelAddress: addressSchema.optional(),
+}).superRefine((data, ctx) => {
+  if (data.createHostelNow) {
+    if (!data.hostelName || data.hostelName.trim().length < 2) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Hostel name is required",
+        path: ["hostelName"],
+      });
+    }
+
+    if (!data.hostelSlug || data.hostelSlug.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        message: "Hostel slug is required",
+        path: ["hostelSlug"],
+      });
+    }
+
+    if (!data.supportEmail || data.supportEmail.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        message: "Support email is required",
+        path: ["supportEmail"],
+      });
+    }
+
+    if (!data.supportPhone || data.supportPhone.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        message: "Support phone number is required",
+        path: ["supportPhone"],
+      });
+    }
+  }
+});
+
+const registerCompanySchema = ownerSchema.and(companySchema);
+
+export type RegisterCompanySchema = z.output<typeof registerCompanySchema>;
+
 export {
   addAdminSchema,
   approveDenySchema,
   baseSignupSchema,
   billingStatusSchema,
   bookRoomSchema,
+  companySchema,
   complaintStatusResponseSchema,
   confirmPasswordSchema,
   createBillingSchema,
@@ -695,12 +772,14 @@ export {
   loginSchema,
   maintenanceStatusResponseSchema,
   nameSchema,
+  ownerSchema,
   passwordResetSchema,
   passwordSchema,
   paymentSchema,
   personalDetailsSchema,
   promoteDemoteSchema,
   readStatusSchema,
+  registerCompanySchema,
   registerVisitorSchema,
   rememberMeSchema,
   resetPasswordSchema,

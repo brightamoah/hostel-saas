@@ -6,13 +6,13 @@ await refreshSession();
 
 <template>
   <div>
+    <SvgsLine1 class="-z-10 absolute inset-0 opacity-10 w-full h-full pointer-events-none" />
+
     <div class="top-8 right-8 z-10 absolute">
       <AppThemeToggle />
     </div>
 
     <slot />
-
-    <AppStarsEffect />
   </div>
 </template>
 

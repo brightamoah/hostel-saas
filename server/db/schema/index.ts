@@ -1,5 +1,6 @@
 export * from "./announcement";
 export * from "./billing";
+export * from "./company";
 export * from "./complaint";
 export * from "./maintenance";
 export * from "./room";

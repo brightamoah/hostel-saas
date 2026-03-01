@@ -1,8 +1,12 @@
 CREATE TYPE "public"."announcement_priority" AS ENUM('low', 'medium', 'high', 'emergency');--> statement-breakpoint
-CREATE TYPE "public"."target_audience" AS ENUM('all', 'students', 'admins', 'specific');--> statement-breakpoint
+CREATE TYPE "public"."target_audience" AS ENUM('all', 'students', 'admins', 'hostel', 'room', 'user');--> statement-breakpoint
 CREATE TYPE "public"."billing_status" AS ENUM('unpaid', 'fully paid', 'partially paid', 'overdue', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."billing_type" AS ENUM('hostel fee', 'security deposit', 'utility fee', 'maintenance fee', 'late payment penalty', 'other');--> statement-breakpoint
 CREATE TYPE "public"."payment_method" AS ENUM('card', 'mobile money', 'bank transfer', 'cash');--> statement-breakpoint
 CREATE TYPE "public"."payment_status" AS ENUM('completed', 'failed', 'pending', 'refunded');--> statement-breakpoint
+CREATE TYPE "public"."company_member_role" AS ENUM('owner', 'admin', 'finance', 'support', 'staff');--> statement-breakpoint
+CREATE TYPE "public"."company_member_status" AS ENUM('active', 'invited', 'disabled');--> statement-breakpoint
+CREATE TYPE "public"."company_status" AS ENUM('active', 'inactive');--> statement-breakpoint
 CREATE TYPE "public"."complaint_action_taken" AS ENUM('assigned', 'updated', 'resolved', 'rejected');--> statement-breakpoint
 CREATE TYPE "public"."complaint_priority" AS ENUM('low', 'medium', 'high', 'emergency');--> statement-breakpoint
 CREATE TYPE "public"."complaint_status" AS ENUM('pending', 'in-progress', 'resolved', 'rejected');--> statement-breakpoint
@@ -10,14 +14,17 @@ CREATE TYPE "public"."complaint_type" AS ENUM('room condition', 'staff behavior'
 CREATE TYPE "public"."maintenance_issue_type" AS ENUM('plumbing', 'electrical', 'furniture', 'cleaning', 'appliance', 'structural', 'pest control', 'internet/Wi-Fi', 'other');--> statement-breakpoint
 CREATE TYPE "public"."maintenance_priority" AS ENUM('low', 'medium', 'high', 'emergency');--> statement-breakpoint
 CREATE TYPE "public"."maintenance_status" AS ENUM('pending', 'assigned', 'in-progress', 'completed', 'rejected');--> statement-breakpoint
+CREATE TYPE "public"."academic_period" AS ENUM('first semester', 'second semester', 'entire year', 'vacation period');--> statement-breakpoint
 CREATE TYPE "public"."allocation_status" AS ENUM('active', 'expired', 'pending', 'cancelled');--> statement-breakpoint
 CREATE TYPE "public"."hostel_status" AS ENUM('active', 'inactive', 'under renovation');--> statement-breakpoint
 CREATE TYPE "public"."room_status" AS ENUM('vacant', 'fully occupied', 'partially occupied', 'under maintenance', 'reserved');--> statement-breakpoint
 CREATE TYPE "public"."room_type" AS ENUM('single', 'double', 'triple', 'quad');--> statement-breakpoint
 CREATE TYPE "public"."access_level" AS ENUM('regular', 'super', 'support');--> statement-breakpoint
+CREATE TYPE "public"."admin_status" AS ENUM('active', 'inactive');--> statement-breakpoint
 CREATE TYPE "public"."gender" AS ENUM('male', 'female');--> statement-breakpoint
 CREATE TYPE "public"."residency_status" AS ENUM('active', 'inactive', 'suspended', 'graduated', 'withdrawn');--> statement-breakpoint
 CREATE TYPE "public"."roles" AS ENUM('student', 'admin');--> statement-breakpoint
+CREATE TYPE "public"."visitor_log_action" AS ENUM('check_in', 'check_out');--> statement-breakpoint
 CREATE TYPE "public"."visitor_status" AS ENUM('checked-in', 'checked-out', 'pending', 'cancelled', 'denied', 'approved');--> statement-breakpoint
 CREATE TABLE "announcement" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "announcement_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
@@ -27,7 +34,11 @@ CREATE TABLE "announcement" (
 	"posted_at" timestamp DEFAULT now() NOT NULL,
 	"priority" "announcement_priority" DEFAULT 'medium' NOT NULL,
 	"target_audience" "target_audience" DEFAULT 'all' NOT NULL,
-	"is_read" boolean DEFAULT false NOT NULL
+	"target_hostel_id" integer,
+	"target_room_id" integer,
+	"target_user_id" integer,
+	"company_id" integer NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "announcement_reads" (
@@ -35,6 +46,9 @@ CREATE TABLE "announcement_reads" (
 	"announcement_id" integer NOT NULL,
 	"user_id" integer NOT NULL,
 	"read_date" timestamp DEFAULT now() NOT NULL,
+	"company_id" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp,
 	CONSTRAINT "unique_announcement_student" UNIQUE("announcement_id","user_id")
 );
 --> statement-breakpoint
@@ -44,12 +58,15 @@ CREATE TABLE "billing" (
 	"allocation_id" integer NOT NULL,
 	"hostel_id" integer NOT NULL,
 	"amount" numeric(10, 2) NOT NULL,
+	"type" "billing_type" DEFAULT 'hostel fee' NOT NULL,
+	"academic_period" "academic_period" DEFAULT 'first semester' NOT NULL,
 	"description" text NOT NULL,
 	"date_issued" timestamp DEFAULT now() NOT NULL,
 	"due_date" date NOT NULL,
 	"status" "billing_status" DEFAULT 'unpaid' NOT NULL,
 	"late_fee" numeric(10, 2) DEFAULT '0.00',
 	"paid_amount" numeric(10, 2) DEFAULT '0.00',
+	"company_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "chk_paid_amount" CHECK (paid_amount >= 0 AND paid_amount <= amount)
@@ -64,13 +81,35 @@ CREATE TABLE "payment" (
 	"transaction_reference" text NOT NULL,
 	"payment_method" "payment_method" NOT NULL,
 	"status" "payment_status" DEFAULT 'pending' NOT NULL,
+	"company_id" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "payment_transactionReference_unique" UNIQUE("transaction_reference")
+);
+--> statement-breakpoint
+CREATE TABLE "company" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "company_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"name" text NOT NULL,
+	"slug" varchar(80) NOT NULL,
+	"status" "company_status" DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "company_member" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "company_member_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"company_id" integer NOT NULL,
+	"user_id" integer NOT NULL,
+	"role" "company_member_role" DEFAULT 'staff' NOT NULL,
+	"status" "company_member_status" DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "complaint" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "complaint_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"student_id" integer NOT NULL,
-	"room_id" integer NOT NULL,
+	"room_id" integer,
 	"hostel_id" integer NOT NULL,
 	"description" text NOT NULL,
 	"type" "complaint_type" NOT NULL,
@@ -79,6 +118,7 @@ CREATE TABLE "complaint" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"resolved_at" timestamp,
 	"resolved_by" integer,
+	"company_id" integer NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -88,7 +128,10 @@ CREATE TABLE "complaint_response" (
 	"responder_id" integer NOT NULL,
 	"response" text NOT NULL,
 	"action_taken" "complaint_action_taken" NOT NULL,
-	"response_date" timestamp DEFAULT now() NOT NULL
+	"response_date" timestamp DEFAULT now() NOT NULL,
+	"company_id" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "maintenance_request" (
@@ -103,6 +146,7 @@ CREATE TABLE "maintenance_request" (
 	"status" "maintenance_status" DEFAULT 'pending' NOT NULL,
 	"assigned_to" integer,
 	"resolution_date" timestamp,
+	"company_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -113,6 +157,7 @@ CREATE TABLE "maintenance_response" (
 	"responder_id" integer NOT NULL,
 	"response_text" text NOT NULL,
 	"response_date" timestamp DEFAULT now() NOT NULL,
+	"company_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "chk_response_text" CHECK (char_length(response_text) > 0)
@@ -123,8 +168,12 @@ CREATE TABLE "allocation" (
 	"student_id" integer NOT NULL,
 	"room_id" integer NOT NULL,
 	"allocation_date" date NOT NULL,
+	"academic_period" "academic_period" DEFAULT 'first semester' NOT NULL,
 	"end_date" date,
 	"status" "allocation_status" DEFAULT 'pending' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"company_id" integer NOT NULL,
 	CONSTRAINT "unique_active_allocation" UNIQUE("student_id","status"),
 	CONSTRAINT "chk_dates" CHECK (end_date IS NULL OR end_date >= allocation_date)
 );
@@ -132,21 +181,27 @@ CREATE TABLE "allocation" (
 CREATE TABLE "hostel" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "hostel_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"name" text NOT NULL,
-	"code" varchar(50) NOT NULL,
 	"address" text NOT NULL,
 	"contact_number" varchar(20) NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"status" "hostel_status" DEFAULT 'active' NOT NULL,
-	CONSTRAINT "hostel_code_unique" UNIQUE("code"),
-	CONSTRAINT "hostel_email_unique" UNIQUE("email")
+	"company_id" integer NOT NULL,
+	"slug" varchar(80) NOT NULL,
+	"logo_url" text,
+	"primary_color" varchar(32),
+	"support_email" varchar(255),
+	"support_phone" varchar(30),
+	CONSTRAINT "hostel_name_unique" UNIQUE("name"),
+	CONSTRAINT "hostel_email_unique" UNIQUE("email"),
+	CONSTRAINT "unique_hostel_slug" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "room" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "room_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"room_number" varchar(10) NOT NULL,
-	"building" varchar(100) NOT NULL,
+	"hostel_id" integer NOT NULL,
 	"floor" integer NOT NULL,
 	"capacity" integer NOT NULL,
 	"room_type" "room_type" NOT NULL,
@@ -154,8 +209,12 @@ CREATE TABLE "room" (
 	"features" text[] DEFAULT ARRAY[]::text[],
 	"amount_per_year" numeric(10, 2) NOT NULL,
 	"status" "room_status" DEFAULT 'vacant' NOT NULL,
+	"allowed_gender" "gender" DEFAULT 'male' NOT NULL,
+	"company_id" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "room_roomNumber_unique" UNIQUE("room_number"),
-	CONSTRAINT "unique_room" UNIQUE("room_number","building"),
+	CONSTRAINT "unique_room_number" UNIQUE("room_number","hostel_id"),
 	CONSTRAINT "chk_capacity" CHECK (capacity > 0),
 	CONSTRAINT "chk_occupancy" CHECK (current_occupancy >= 0 AND current_occupancy <= capacity)
 );
@@ -165,7 +224,24 @@ CREATE TABLE "admin" (
 	"user_id" integer NOT NULL,
 	"phone_number" varchar(20) NOT NULL,
 	"department" text NOT NULL,
-	"access_level" "access_level" DEFAULT 'regular' NOT NULL
+	"access_level" "access_level" DEFAULT 'regular' NOT NULL,
+	"hostel_id" integer,
+	"status" "admin_status" DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"company_id" integer NOT NULL,
+	CONSTRAINT "chk_hostel_for_regular_support" CHECK (
+    (access_level IN ('regular', 'support') AND hostel_id IS NOT NULL)
+    OR (access_level = 'super' AND hostel_id IS NULL)
+  )
+);
+--> statement-breakpoint
+CREATE TABLE "login_attempts" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "login_attempts_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_id" integer,
+	"ip" text NOT NULL,
+	"timestamp" timestamp NOT NULL,
+	"success" boolean NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "student" (
@@ -177,9 +253,13 @@ CREATE TABLE "student" (
 	"address" text NOT NULL,
 	"emergency_contact_name" text NOT NULL,
 	"emergency_contact_phone_number" varchar(20) NOT NULL,
+	"emergency_contact_email" varchar(255),
 	"health_conditions" text,
 	"enrollment_date" date,
-	"residency_status" "residency_status" DEFAULT 'inactive' NOT NULL
+	"residency_status" "residency_status" DEFAULT 'inactive' NOT NULL,
+	"company_id" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user" (
@@ -203,49 +283,82 @@ CREATE TABLE "user" (
 CREATE TABLE "visitor" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "visitor_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"student_id" integer NOT NULL,
+	"hostel_id" integer NOT NULL,
+	"admin_id" integer,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
 	"phone_number" text NOT NULL,
 	"visit_date" date NOT NULL,
 	"relationship" text NOT NULL,
 	"purpose" text NOT NULL,
-	"check_in_time" timestamp,
-	"check_out_time" timestamp,
+	"company_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"status" "visitor_status" DEFAULT 'pending' NOT NULL
+	"status" "visitor_status" DEFAULT 'pending' NOT NULL,
+	CONSTRAINT "chk_visit_date" CHECK ("visit_date" >= CURRENT_DATE)
 );
 --> statement-breakpoint
 CREATE TABLE "visitor_logs" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "visitor_logs_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"visitor_id" integer NOT NULL,
-	"check_in_time" timestamp NOT NULL,
-	"check_out_time" timestamp,
+	"admin_id" integer NOT NULL,
+	"action" "visitor_log_action" NOT NULL,
+	"timestamp" timestamp DEFAULT now() NOT NULL,
+	"company_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"updated_at" timestamp
 );
 --> statement-breakpoint
 ALTER TABLE "announcement" ADD CONSTRAINT "announcement_posted_by_admin_id_fk" FOREIGN KEY ("posted_by") REFERENCES "public"."admin"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcement" ADD CONSTRAINT "announcement_target_hostel_id_hostel_id_fk" FOREIGN KEY ("target_hostel_id") REFERENCES "public"."hostel"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcement" ADD CONSTRAINT "announcement_target_room_id_room_id_fk" FOREIGN KEY ("target_room_id") REFERENCES "public"."room"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcement" ADD CONSTRAINT "announcement_target_user_id_user_id_fk" FOREIGN KEY ("target_user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcement" ADD CONSTRAINT "announcement_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "announcement_reads" ADD CONSTRAINT "announcement_reads_announcement_id_announcement_id_fk" FOREIGN KEY ("announcement_id") REFERENCES "public"."announcement"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "announcement_reads" ADD CONSTRAINT "announcement_reads_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "announcement_reads" ADD CONSTRAINT "announcement_reads_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing" ADD CONSTRAINT "billing_student_id_student_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing" ADD CONSTRAINT "billing_allocation_id_allocation_id_fk" FOREIGN KEY ("allocation_id") REFERENCES "public"."allocation"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing" ADD CONSTRAINT "billing_hostel_id_hostel_id_fk" FOREIGN KEY ("hostel_id") REFERENCES "public"."hostel"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "billing" ADD CONSTRAINT "billing_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payment" ADD CONSTRAINT "payment_student_id_student_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "payment" ADD CONSTRAINT "payment_billing_id_billing_id_fk" FOREIGN KEY ("billing_id") REFERENCES "public"."billing"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment" ADD CONSTRAINT "payment_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_member" ADD CONSTRAINT "company_member_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "company_member" ADD CONSTRAINT "company_member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "complaint" ADD CONSTRAINT "complaint_student_id_student_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "complaint" ADD CONSTRAINT "complaint_room_id_room_id_fk" FOREIGN KEY ("room_id") REFERENCES "public"."room"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "complaint" ADD CONSTRAINT "complaint_hostel_id_hostel_id_fk" FOREIGN KEY ("hostel_id") REFERENCES "public"."hostel"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "complaint" ADD CONSTRAINT "complaint_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "complaint_response" ADD CONSTRAINT "complaint_response_complaint_id_complaint_id_fk" FOREIGN KEY ("complaint_id") REFERENCES "public"."complaint"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "complaint_response" ADD CONSTRAINT "complaint_response_responder_id_user_id_fk" FOREIGN KEY ("responder_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "complaint_response" ADD CONSTRAINT "complaint_response_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "maintenance_request" ADD CONSTRAINT "maintenance_request_student_id_student_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "maintenance_request" ADD CONSTRAINT "maintenance_request_room_id_room_id_fk" FOREIGN KEY ("room_id") REFERENCES "public"."room"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "maintenance_request" ADD CONSTRAINT "maintenance_request_hostel_id_hostel_id_fk" FOREIGN KEY ("hostel_id") REFERENCES "public"."hostel"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_request" ADD CONSTRAINT "maintenance_request_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "maintenance_response" ADD CONSTRAINT "maintenance_response_maintenance_request_id_maintenance_request_id_fk" FOREIGN KEY ("maintenance_request_id") REFERENCES "public"."maintenance_request"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "maintenance_response" ADD CONSTRAINT "maintenance_response_responder_id_user_id_fk" FOREIGN KEY ("responder_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "maintenance_response" ADD CONSTRAINT "maintenance_response_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "allocation" ADD CONSTRAINT "allocation_student_id_student_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "allocation" ADD CONSTRAINT "allocation_room_id_room_id_fk" FOREIGN KEY ("room_id") REFERENCES "public"."room"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "allocation" ADD CONSTRAINT "allocation_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "hostel" ADD CONSTRAINT "hostel_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room" ADD CONSTRAINT "room_hostel_id_hostel_id_fk" FOREIGN KEY ("hostel_id") REFERENCES "public"."hostel"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "room" ADD CONSTRAINT "room_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin" ADD CONSTRAINT "admin_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin" ADD CONSTRAINT "admin_hostel_id_hostel_id_fk" FOREIGN KEY ("hostel_id") REFERENCES "public"."hostel"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admin" ADD CONSTRAINT "admin_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "login_attempts" ADD CONSTRAINT "login_attempts_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "student" ADD CONSTRAINT "student_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "student" ADD CONSTRAINT "student_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "visitor" ADD CONSTRAINT "visitor_student_id_student_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "visitor_logs" ADD CONSTRAINT "visitor_logs_visitor_id_visitor_id_fk" FOREIGN KEY ("visitor_id") REFERENCES "public"."visitor"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "visitor" ADD CONSTRAINT "visitor_hostel_id_hostel_id_fk" FOREIGN KEY ("hostel_id") REFERENCES "public"."hostel"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "visitor" ADD CONSTRAINT "visitor_admin_id_admin_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."admin"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "visitor" ADD CONSTRAINT "visitor_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "visitor_logs" ADD CONSTRAINT "visitor_logs_visitor_id_visitor_id_fk" FOREIGN KEY ("visitor_id") REFERENCES "public"."visitor"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "visitor_logs" ADD CONSTRAINT "visitor_logs_admin_id_admin_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."admin"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "visitor_logs" ADD CONSTRAINT "visitor_logs_company_id_company_id_fk" FOREIGN KEY ("company_id") REFERENCES "public"."company"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "company_slug_unique" ON "company" USING btree ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "company_name_unique" ON "company" USING btree ("name");--> statement-breakpoint
+CREATE UNIQUE INDEX "company_member_company_user_unique" ON "company_member" USING btree ("company_id","user_id");

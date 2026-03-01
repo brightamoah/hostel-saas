@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const newHashedPassword = await hashPasswordWorker(newPassword);
+    const newHashedPassword = await hash(newPassword);
     // const newHashedPassword = await hash(newPassword);
 
     await db.update(user).set({
