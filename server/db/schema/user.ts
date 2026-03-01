@@ -96,11 +96,20 @@ export const admin = pgTable("admin", t => ({
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  companyId: t.integer().references(() => company.id, { onDelete: "restrict" }),
 }), () => [
-  check("chk_hostel_for_regular_support", sql`
-    (access_level IN ('regular', 'support') AND hostel_id IS NOT NULL)
-    OR (access_level = 'super' AND hostel_id IS NULL)
+  check("chk_admin_scope", sql`
+    (
+      access_level = 'super'
+      AND hostel_id IS NULL
+      AND company_id IS NULL
+    )
+    OR
+    (
+      access_level IN ('regular', 'support')
+      AND hostel_id IS NOT NULL
+      AND company_id IS NOT NULL
+    )
   `),
 ]);
 

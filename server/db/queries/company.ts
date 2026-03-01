@@ -173,7 +173,22 @@ export async function companyQueries() {
     });
   };
 
+  const getUserMembershipByUserId = async (userId: number) => {
+    const membership = await db.query.companyMember.findFirst({
+      where: (membership, { eq }) => eq(membership.userId, userId),
+      columns: {
+        id: true,
+        companyId: true,
+        role: true,
+        status: true,
+      },
+    });
+
+    return membership;
+  };
+
   return {
     registerCompanyOwner,
+    getUserMembershipByUserId,
   };
 }

@@ -272,13 +272,13 @@ export type StudentRoom = DashboardStudent["student"]["allocation"]["room"];
 
 export type StudentVisitor = DashboardStudent["student"]["visitors"][number];
 
-export type Admin = {
-  id: number;
-  phoneNumber: string;
-  department: string;
-  accessLevel: "regular" | "super" | "support";
-  hostelId: number | null;
-  status: "active" | "inactive";
+export type Admin = Omit<typeof admin.$inferSelect, "createdAt" | "updatedAt">;
+
+export type AdminScope = {
+  adminData: Admin;
+  isPlatformAdmin: boolean;
+  companyId: number | null;
+  companyRole: "owner" | "admin" | "finance" | "support" | "staff" | null;
 };
 
 // export type UserType = {
@@ -502,3 +502,46 @@ export interface Visitors {
   active: number;
   pending: number;
 }
+
+export type CardStatsScope = {
+  companyId: number | null;
+  hostelId: number | null;
+  isPlatformAdmin: boolean;
+  companyRole: AdminScope["companyRole"] | null;
+};
+
+export type OverviewAdminScope = {
+  accessLevel: Admin["accessLevel"];
+  hostelId: number | null;
+  companyId: number | null;
+  isPlatformAdmin: boolean;
+  companyRole: AdminScope["companyRole"] | null;
+};
+
+export type NotificationDTO = {
+  id: string;
+  title: string;
+  message: string;
+  type: "maintenance" | "complaint" | "visitor";
+  sender: {
+    id: number;
+    name: string;
+    email: string;
+    image: string | null;
+  };
+  isRead: boolean; // will become real when we add notification_read table
+  link: { name: string; query: Record<string, any> };
+  createdAt: Date;
+};
+
+export type AuthLoginCode
+  = | "LOGIN_SUCCESS"
+    | "ADMIN_LOGIN" // redirect to admin handoff
+    | "WRONG_PORTAL";
+
+export type AuthLoginResponse = {
+  success: boolean;
+  code: AuthLoginCode;
+  message: string;
+  nextUrl: string;
+};

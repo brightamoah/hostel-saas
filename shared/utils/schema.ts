@@ -6,6 +6,13 @@ const linkSchema = z.object({
   isOpen: z.boolean().default(false),
 });
 
+export const slugSchema = z.string()
+  .trim()
+  .toLowerCase()
+  .min(3, "Slug must be at least 3 characters")
+  .max(50, "Slug must be at most 20 characters")
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be letters, numbers, hyphens and kebab-case (e.g., my-company)");
+
 export type LinkSchema = z.output<typeof linkSchema>;
 
 export function createIdSchema(name: string) {
@@ -111,6 +118,7 @@ const personalDetailsSchema = z.object({
   emergencyContactPhoneNumber: phoneNumberSchema,
   emergencyContactEmail: emailSchema,
   healthConditions: z.string().optional(),
+  hostelSlug: slugSchema.optional(),
 });
 
 export type PersonalDetailsSchema = z.output<typeof personalDetailsSchema>;
@@ -669,13 +677,6 @@ const verifyPaymentSchema = z.object({
 });
 
 export type VerifyPaymentSchema = z.output<typeof verifyPaymentSchema>;
-
-export const slugSchema = z.string()
-  .trim()
-  .toLowerCase()
-  .min(3, "Slug must be at least 3 characters")
-  .max(50, "Slug must be at most 20 characters")
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be letters, numbers, hyphens and kebab-case (e.g., my-company)");
 
 export const inviteCompanyMemberSchema = z.object({
   companyId: z.number().int().positive(),

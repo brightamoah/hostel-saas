@@ -4,6 +4,7 @@ import tryParseEnv from "./tryParseEnv";
 
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("development"),
+  NUXT_PLATFORM_SEED_SECRET: z.string(),
   NUXT_SESSION_PASSWORD: z.string(),
   NUXT_SESSION_NAME: z.string(),
   NUXT_DATABASE_URL: z.string(),
@@ -13,8 +14,6 @@ const EnvSchema = z.object({
   NUXT_NODEMAILER_AUTH_USER: z.string(),
   NUXT_NODEMAILER_AUTH_PASS: z.string(),
   NUXT_HUB_PROJECT_KEY: z.string(),
-  NUXT_HUB_USER_TOKEN: z.string(),
-  NUXT_HUB_CLOUDFLARE_ACCOUNT_ID: z.string(),
   NUXT_EMAIL_FROM_NAME: z.string(),
   NUXT_EMAIL_FROM_EMAIL: z.email(),
   NUXT_PUBLIC_SITE_URL: z.url(),
@@ -23,6 +22,8 @@ const EnvSchema = z.object({
   NUXT_PAYSTACK_SECRET_KEY: z.string(),
   NUXT_PAYSTACK_PUBLIC_KEY: z.string(),
   NUXT_PAYSTACK_BASE_URL: z.url(),
+  NUXT_PUBLIC_ADMIN_BASE_URL: z.url(),
+  NUXT_PUBLIC_SITE_BASE_URL: z.url(),
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;

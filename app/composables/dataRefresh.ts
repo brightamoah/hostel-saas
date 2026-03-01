@@ -44,8 +44,8 @@ export function useDataRefresh(
     });
   }
 
-  async function handleRefresh(options: { force?: boolean } = {}): Promise<boolean> {
-    const { force = false } = options;
+  async function handleRefresh(refreshOptions: { force?: boolean } = {}): Promise<boolean> {
+    const { force = false } = refreshOptions;
 
     if (!canResend.value) return false;
 

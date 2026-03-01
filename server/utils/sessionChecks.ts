@@ -1,9 +1,16 @@
 import type { H3Event } from "h3";
 
+import { eq } from "drizzle-orm";
+
+import { companyMember } from "../db/schema";
+
 export async function adminSessionCheck(event: H3Event): Promise<{
   isActiveAdmin: true;
-  adminData: Admin;
+  adminData: AdminScope["adminData"];
   userId: number;
+  isPlatformAdmin: AdminScope["isPlatformAdmin"];
+  companyId: AdminScope["companyId"];
+  companyRole: AdminScope["companyRole"];
 }> {
   const session = await requireUserSession(event);
 
@@ -18,10 +25,45 @@ export async function adminSessionCheck(event: H3Event): Promise<{
     });
   }
 
+  const adminData = session.user.adminData;
+  const isPlatformAdmin = adminData.accessLevel === "super";
+
+  if (isPlatformAdmin) {
+    return {
+      isActiveAdmin: true,
+      adminData,
+      userId: session.user.id,
+      isPlatformAdmin: true,
+      companyId: null,
+      companyRole: null,
+    };
+  }
+
+  const { db } = useDB();
+
+  const membership = await db.query.companyMember.findFirst({
+    where: eq(companyMember.userId, session.user.id),
+    columns: {
+      companyId: true,
+      role: true,
+      status: true,
+    },
+  });
+
+  if (!membership || membership.status !== "active") {
+    throw createError({
+      statusCode: 403,
+      message: "Access denied: Admin is not assigned to an active company.",
+    });
+  }
+
   return {
     isActiveAdmin: true,
-    adminData: session.user.adminData,
+    adminData,
     userId: session.user.id,
+    isPlatformAdmin: false,
+    companyId: membership.companyId,
+    companyRole: membership.role,
   };
 }
 
@@ -29,6 +71,7 @@ export async function studentSessionCheck(event: H3Event): Promise<{
   isActiveStudent: true;
   userId: number;
   studentId: number;
+  companyId?: number;
 }> {
   const session = await requireUserSession(event);
   const studentId = session.user?.studentId;

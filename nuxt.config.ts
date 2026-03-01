@@ -133,12 +133,14 @@ export default defineNuxtConfig({
       siteUrl: env.NUXT_PUBLIC_SITE_URL,
       paystackPublicKey: env.NUXT_PAYSTACK_PUBLIC_KEY,
       paystackBaseUrl: env.NUXT_PAYSTACK_BASE_URL,
+      adminBaseUrl: env.NUXT_PUBLIC_ADMIN_BASE_URL,
+      siteBaseUrl: env.NUXT_PUBLIC_SITE_BASE_URL,
     },
     session: {
       password: env.NUXT_SESSION_PASSWORD,
       name: env.NUXT_SESSION_NAME,
       cookie: {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 1, // 1 day in seconds
       },
     },
     databaseUrl: env.NUXT_DATABASE_URL,
@@ -151,6 +153,8 @@ export default defineNuxtConfig({
     emailFromEmail: env.NUXT_EMAIL_FROM_EMAIL,
     nodeEnv: env.NODE_ENV,
     paystackSecretKey: env.NUXT_PAYSTACK_SECRET_KEY,
+    platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
+
   },
 
   experimental: {

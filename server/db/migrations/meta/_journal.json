@@ -15,6 +15,20 @@
       "when": 1771990001101,
       "tag": "0001_trigger_cron_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772351385893,
+      "tag": "0002_tidy_leopardon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772402815170,
+      "tag": "0003_quiet_turbo",
+      "breakpoints": true
     }
   ]
 }

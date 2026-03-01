@@ -12,7 +12,7 @@ export function useDB() {
   const db = drizzle(databaseUrl, {
     schema,
     casing: "snake_case",
-    logger: import.meta.dev,
+    // logger: import.meta.dev,
   });
 
   if (!db) throw new Error("Database not initialized");

@@ -11,6 +11,8 @@ declare module "#auth-utils" {
     lastLogin?: Date | null;
     adminData?: Admin;
     studentId?: number;
+    companyId?: number;
+    companyRole?: AdminScope["companyRole"];
   };
 
   /**

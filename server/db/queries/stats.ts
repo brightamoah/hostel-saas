@@ -1,4 +1,4 @@
-import type { Admin } from "~~/shared/types";
+import type { CardStatsScope, OverviewAdminScope } from "~~/shared/types";
 
 import { and, count, eq, gte, sql } from "drizzle-orm";
 
@@ -16,9 +16,38 @@ import {
 export async function statsQueries() {
   const { db } = useDB();
 
-  const getCardStats = async (hostelId?: number | null) => {
-    const roomCondition = hostelId ? eq(room.hostelId, hostelId) : undefined;
-    const paymentHostelCondition = hostelId ? eq(billing.hostelId, hostelId) : undefined;
+  const getCardStats = async (scope: CardStatsScope) => {
+    const scopeMode = scope.isPlatformAdmin
+      ? "none"
+      : scope.companyRole === "owner"
+        ? "company"
+        : "hostel";
+
+    if (scopeMode === "company" && !scope.companyId) {
+      throw createError({
+        statusCode: 400,
+        message: "Missing companyId for company-scoped card stats.",
+      });
+    }
+
+    if (scopeMode === "hostel" && !scope.hostelId) {
+      throw createError({
+        statusCode: 400,
+        message: "Missing hostelId for hostel-scoped card stats.",
+      });
+    }
+
+    const roomCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(room.companyId, scope.companyId!)
+        : eq(room.hostelId, scope.hostelId!);
+
+    const billingCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(billing.companyId, scope.companyId!)
+        : eq(billing.hostelId, scope.hostelId!);
 
     // 1. Revenue (Current Month vs Last Month)
     const [revenue] = await db.select({
@@ -27,7 +56,7 @@ export async function statsQueries() {
     })
       .from(payment)
       .leftJoin(billing, eq(payment.billingId, billing.id))
-      .where(and(eq(payment.status, "completed"), paymentHostelCondition));
+      .where(and(eq(payment.status, "completed"), billingCondition));
 
     // 2. Capacity & Rooms (Current State)
     const [capacity] = await db.select({
@@ -52,14 +81,19 @@ export async function statsQueries() {
       return Number((((curr - prev) / prev) * 100).toFixed(1));
     };
 
-    const currentResidents = capacity?.currentOccupied;
-    const previousResidents = allocations?.lastMonthActive;
+    const currentResidents = capacity?.currentOccupied || 0;
+    const previousResidents = allocations?.lastMonthActive || 0;
 
-    const currentAvailable = (capacity?.totalCapacity || 0) - (capacity?.currentOccupied || 0);
-    const previousAvailable = (capacity?.totalCapacity || 0) - (previousResidents || 0);
+    const currentAvailable = (capacity?.totalCapacity || 0) - currentResidents;
+    const previousAvailable = (capacity?.totalCapacity || 0) - previousResidents;
 
-    const currentOccupancyRate = capacity?.totalCapacity ? (capacity?.currentOccupied / capacity?.totalCapacity) * 100 : 0;
-    const previousOccupancyRate = capacity?.totalCapacity ? ((previousResidents || 0) / capacity?.totalCapacity) * 100 : 0;
+    const currentOccupancyRate = capacity?.totalCapacity
+      ? (currentResidents / capacity.totalCapacity) * 100
+      : 0;
+
+    const previousOccupancyRate = capacity?.totalCapacity
+      ? (previousResidents / capacity.totalCapacity) * 100
+      : 0;
 
     return {
       totalResidents: {
@@ -84,13 +118,50 @@ export async function statsQueries() {
     };
   };
 
-  const getDashboardOverview = async (admin: Admin) => {
-    const isScoped = admin.accessLevel !== "super";
-    const hostelCondition = isScoped ? eq(room.hostelId, admin.hostelId!) : undefined;
-    const billingHostelCondition = isScoped ? eq(billing.hostelId, admin.hostelId!) : undefined;
-    const complaintHostelCondition = isScoped ? eq(complaint.hostelId, admin.hostelId!) : undefined;
-    const maintenanceHostelCondition = isScoped ? eq(maintenanceRequest.hostelId, admin.hostelId!) : undefined;
-    const visitorHostelCondition = isScoped ? eq(visitor.hostelId, admin.hostelId!) : undefined;
+  const getDashboardOverview = async (admin: OverviewAdminScope) => {
+    const scopeMode = admin.isPlatformAdmin
+      ? "none"
+      : admin.companyRole === "owner"
+        ? "company"
+        : "hostel";
+
+    if (scopeMode === "company" && !admin.companyId) {
+      throw createError({ statusCode: 400, message: "Missing companyId for company-scoped overview stats." });
+    }
+
+    if (scopeMode === "hostel" && !admin.hostelId) {
+      throw createError({ statusCode: 400, message: "Missing hostelId for hostel-scoped overview stats." });
+    }
+
+    const roomCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(room.companyId, admin.companyId!)
+        : eq(room.hostelId, admin.hostelId!);
+
+    const billingCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(billing.companyId, admin.companyId!)
+        : eq(billing.hostelId, admin.hostelId!);
+
+    const complaintCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(complaint.companyId, admin.companyId!)
+        : eq(complaint.hostelId, admin.hostelId!);
+
+    const maintenanceCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(maintenanceRequest.companyId, admin.companyId!)
+        : eq(maintenanceRequest.hostelId, admin.hostelId!);
+
+    const visitorCondition = scopeMode === "none"
+      ? undefined
+      : scopeMode === "company"
+        ? eq(visitor.companyId, admin.companyId!)
+        : eq(visitor.hostelId, admin.hostelId!);
 
     // Occupancy Stats
     const occupancyQuery = db.select({
@@ -102,35 +173,42 @@ export async function statsQueries() {
       currentOccupancy: sql<number>`COALESCE(SUM(${room.currentOccupancy}), 0)::int`,
     })
       .from(room)
-      .where(hostelCondition);
+      .where(roomCondition);
 
     // Student Demographics
-    const studentQuery = isScoped
+    const studentQuery = scopeMode === "none"
       ? db.select({
           total: count(student.id),
           active: count(sql`CASE WHEN ${student.residencyStatus} = 'active' THEN 1 END`),
           males: count(sql`CASE WHEN ${student.gender} = 'male' AND ${student.residencyStatus} = 'active' THEN 1 END`),
           females: count(sql`CASE WHEN ${student.gender} = 'female' AND ${student.residencyStatus} = 'active' THEN 1 END`),
-        })
-          .from(student)
-          .innerJoin(allocation, eq(student.id, allocation.studentId))
-          .innerJoin(room, eq(allocation.roomId, room.id))
-          .where(and(eq(room.hostelId, admin.hostelId!), eq(allocation.status, "active")))
-      : db.select({
-          total: count(student.id),
-          active: count(sql`CASE WHEN ${student.residencyStatus} = 'active' THEN 1 END`),
-          males: count(sql`CASE WHEN ${student.gender} = 'male' AND ${student.residencyStatus} = 'active' THEN 1 END`),
-          females: count(sql`CASE WHEN ${student.gender} = 'female' AND ${student.residencyStatus} = 'active' THEN 1 END`),
-        })
-          .from(student);
+        }).from(student)
+      : scopeMode === "company"
+        ? db.select({
+            total: count(student.id),
+            active: count(sql`CASE WHEN ${student.residencyStatus} = 'active' THEN 1 END`),
+            males: count(sql`CASE WHEN ${student.gender} = 'male' AND ${student.residencyStatus} = 'active' THEN 1 END`),
+            females: count(sql`CASE WHEN ${student.gender} = 'female' AND ${student.residencyStatus} = 'active' THEN 1 END`),
+          })
+            .from(student)
+            .where(eq(student.companyId, admin.companyId!))
+        : db.select({
+            total: count(student.id),
+            active: count(sql`CASE WHEN ${student.residencyStatus} = 'active' THEN 1 END`),
+            males: count(sql`CASE WHEN ${student.gender} = 'male' AND ${student.residencyStatus} = 'active' THEN 1 END`),
+            females: count(sql`CASE WHEN ${student.gender} = 'female' AND ${student.residencyStatus} = 'active' THEN 1 END`),
+          })
+            .from(student)
+            .innerJoin(allocation, eq(student.id, allocation.studentId))
+            .innerJoin(room, eq(allocation.roomId, room.id))
+            .where(and(eq(room.hostelId, admin.hostelId!), eq(allocation.status, "active")));
 
-    // Financial Stats
     const financialQuery = db.select({
       totalRevenue: sql<number>`COALESCE(SUM(${payment.amount}), 0)::float`,
     })
       .from(payment)
       .leftJoin(billing, eq(payment.billingId, billing.id))
-      .where(and(eq(payment.status, "completed"), billingHostelCondition));
+      .where(and(eq(payment.status, "completed"), billingCondition));
 
     const outstandingQuery = db.select({
       totalExpected: sql<number>`COALESCE(SUM(${billing.amount}), 0)::float`,
@@ -139,15 +217,14 @@ export async function statsQueries() {
       overdueAmount: sql<number>`COALESCE(SUM(CASE WHEN ${billing.status} = 'overdue' THEN (${billing.amount} - ${billing.paidAmount} + COALESCE(${billing.lateFee}, 0)) ELSE 0 END), 0)::float`,
     })
       .from(billing)
-      .where(billingHostelCondition);
+      .where(billingCondition);
 
-    // Maintenance & Complaints
     const complaintsQuery = db.select({
       pending: sql<number>`SUM(CASE WHEN ${complaint.status} = 'pending' THEN 1 ELSE 0 END)::int`,
       inProgress: sql<number>`SUM(CASE WHEN ${complaint.status} = 'in-progress' THEN 1 ELSE 0 END)::int`,
     })
       .from(complaint)
-      .where(complaintHostelCondition);
+      .where(complaintCondition);
 
     const maintenanceQuery = db.select({
       pending: sql<number>`SUM(CASE WHEN ${maintenanceRequest.status} = 'pending' THEN 1 ELSE 0 END)::int`,
@@ -155,19 +232,18 @@ export async function statsQueries() {
       critical: sql<number>`SUM(CASE WHEN ${maintenanceRequest.priority} = 'emergency' AND ${maintenanceRequest.status} != 'completed' THEN 1 ELSE 0 END)::int`,
     })
       .from(maintenanceRequest)
-      .where(maintenanceHostelCondition);
+      .where(maintenanceCondition);
 
-    // Visitors
     const visitorsQuery = db.select({
       active: sql<number>`SUM(CASE WHEN ${visitor.status} = 'checked-in' THEN 1 ELSE 0 END)::int`,
       pending: sql<number>`SUM(CASE WHEN ${visitor.status} = 'pending' THEN 1 ELSE 0 END)::int`,
     })
       .from(visitor)
-      .where(visitorHostelCondition);
+      .where(visitorCondition);
 
-    // 6. Revenue Trend (Last 6 Months)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
     const revenueTrendQuery = db.select({
       month: sql<string>`TO_CHAR(DATE_TRUNC('month', ${payment.paymentDate}), 'Mon YYYY')`,
       amount: sql<number>`COALESCE(SUM(${payment.amount}), 0)::float`,
@@ -177,7 +253,7 @@ export async function statsQueries() {
       .where(and(
         eq(payment.status, "completed"),
         gte(payment.paymentDate, sixMonthsAgo),
-        billingHostelCondition,
+        billingCondition,
       ))
       .groupBy(sql`DATE_TRUNC('month', ${payment.paymentDate})`)
       .orderBy(sql`DATE_TRUNC('month', ${payment.paymentDate})`);
@@ -202,13 +278,26 @@ export async function statsQueries() {
       revenueTrendQuery,
     ]);
 
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const filledRevenueTrend = Array.from({ length: 6 }).map((_, index) => {
-      // Create a timeline from 5 months ago up to the current month (6 months total)
-      const d = new Date();
-      d.setMonth(d.getMonth() - (5 - index));
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
 
-      const monthStr = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+    const filledRevenueTrend = Array.from({ length: 6 }).map((_, index) => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - (5 - index));
+
+      const monthStr = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
       // Match with the database result, or default to 0
       const found = (revenueTrend || []).find(t => t.month === monthStr);

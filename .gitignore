@@ -25,3 +25,4 @@ logs
 .env.*
 .dev.vars*
 !.env.example
+seed.sh

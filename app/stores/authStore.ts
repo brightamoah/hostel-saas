@@ -126,7 +126,25 @@ export const useAuthStore = defineStore("authStore", () => {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      const { message } = await $apiFetch("/api/auth/login", { method: "POST", body: { email, password, rememberMe } });
+      const response = await $apiFetch("/api/auth/login", { method: "POST", body: { email, password, rememberMe } });
+
+      if (response.success === false && response.code === "WRONG_PORTAL" && response.nextUrl) {
+        toast.add({
+          title: "Login Failed",
+          description: response.message || "You are trying to log in to the wrong portal. Redirecting...",
+          color: "error",
+          icon: "i-lucide-circle-alert",
+          duration: 8000,
+        });
+
+        window.location.assign(response.nextUrl);
+        return;
+      }
+
+      if (response.success && response.code === "ADMIN_LOGIN" && response.nextUrl) {
+        window.location.assign(response.nextUrl);
+        return;
+      }
 
       await refreshSession();
 
@@ -142,7 +160,7 @@ export const useAuthStore = defineStore("authStore", () => {
 
       toast.add({
         title: "Login Successful",
-        description: message || "Welcome back! Redirecting to your dashboard.",
+        description: response.message || "Welcome back! Redirecting to your dashboard.",
         color: "success",
         icon: "i-lucide-circle-check-big",
       });
