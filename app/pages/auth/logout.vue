@@ -3,9 +3,18 @@ definePageMeta({
   layout: "auth",
 });
 
-const authStore = useAuthStore();
+const { clear: clearUserSession } = useUserSession();
 
-onMounted(async () => await authStore.signout());
+onMounted(async () => {
+  try {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await clearUserSession();
+    clearNuxtData();
+  }
+  finally {
+    await navigateTo({ name: "auth-login" }, { replace: true });
+  }
+});
 </script>
 
 <template>

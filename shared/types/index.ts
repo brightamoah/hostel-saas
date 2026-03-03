@@ -536,7 +536,7 @@ export type NotificationDTO = {
 
 export type AuthLoginCode
   = | "LOGIN_SUCCESS"
-    | "ADMIN_LOGIN" // redirect to admin handoff
+    | "ADMIN_LOGIN"
     | "WRONG_PORTAL";
 
 export type AuthLoginResponse = {
@@ -544,4 +544,11 @@ export type AuthLoginResponse = {
   code: AuthLoginCode;
   message: string;
   nextUrl: string;
+};
+
+export type StudentStatusResponse = {
+  success: boolean;
+  hasProfile: boolean;
+  hasActiveBooking: boolean;
+  studentId?: number;
 };

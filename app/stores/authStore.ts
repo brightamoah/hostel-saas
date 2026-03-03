@@ -1,11 +1,11 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
-import type { RouteLocationRaw } from "vue-router";
+// import type { RouteLocationRaw } from "vue-router";
 
 import { acceptHMRUpdate, defineStore } from "pinia";
 
 export const useAuthStore = defineStore("authStore", () => {
   const toast = useToast();
-  const route = useRoute();
+  // const route = useRoute();
 
   const { $apiFetch } = useNuxtApp();
 
@@ -15,7 +15,7 @@ export const useAuthStore = defineStore("authStore", () => {
   const errorMessage = ref<string | null>(null);
   const isOnboarded = computed(() => !!exists.value);
 
-  const { user, loggedIn: isLoggedIn, session, fetch: refreshSession, clear: clearUserSession } = useUserSession();
+  const { user, loggedIn: isLoggedIn, session, fetch: refreshSession } = useUserSession();
 
   const refreshSessionWithFreshData = async () => {
     try {
@@ -126,9 +126,21 @@ export const useAuthStore = defineStore("authStore", () => {
     isLoading.value = true;
     errorMessage.value = null;
     try {
-      const response = await $apiFetch("/api/auth/login", { method: "POST", body: { email, password, rememberMe } });
+      const response = await $apiFetch("/api/auth/login", {
+        method: "POST",
+        body: {
+          email,
+          password,
+          rememberMe,
+        },
+      });
 
-      if (response.success === false && response.code === "WRONG_PORTAL" && response.nextUrl) {
+      if (response.code === "ADMIN_LOGIN") {
+        goto(response.nextUrl);
+        return;
+      }
+
+      if (response.code === "WRONG_PORTAL") {
         toast.add({
           title: "Login Failed",
           description: response.message || "You are trying to log in to the wrong portal. Redirecting...",
@@ -137,46 +149,18 @@ export const useAuthStore = defineStore("authStore", () => {
           duration: 8000,
         });
 
-        window.location.assign(response.nextUrl);
+        goto(response.nextUrl);
         return;
-      }
-
-      if (response.success && response.code === "ADMIN_LOGIN" && response.nextUrl) {
-        window.location.assign(response.nextUrl);
-        return;
-      }
-
-      await refreshSession();
-
-      if (user.value!.role === "student") {
-        const studentDetails = await $apiFetch("/api/auth/checkStudentDetails", {
-          method: "GET",
-        });
-        if (!studentDetails.exists) {
-          await navigateTo({ name: "auth-onboarding" });
-          return;
-        }
       }
 
       toast.add({
         title: "Login Successful",
-        description: response.message || "Welcome back! Redirecting to your dashboard.",
+        description: response.message || "Login successful. Redirecting ...",
         color: "success",
         icon: "i-lucide-circle-check-big",
       });
 
-      let role = user.value?.role;
-
-      if (!role) role = "student";
-
-      const dashboard = { name: role === "admin" ? "admin-dashboard" : "student-dashboard" } as RouteLocationRaw;
-      const redirectPath = route.query.redirect as string | undefined;
-
-      const target = redirectPath && !(redirectPath.startsWith("/admin") && role !== "admin")
-        ? redirectPath
-        : dashboard;
-
-      await navigateTo(target);
+      await navigateTo(response.nextUrl || { name: "auth-postLogin" });
     }
     catch (error: any) {
       const message = error?.data?.message || "Login failed. Please check your credentials.";
@@ -199,18 +183,7 @@ export const useAuthStore = defineStore("authStore", () => {
 
   const signout = async () => {
     await navigateTo({ name: "auth-logout" });
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await clearUserSession();
-      clearStateAndErrors();
-      clearNuxtData();
-      await navigateTo({ name: "auth-login" });
-    }
-    catch (error) {
-      console.error("Failed to complete signout:", error);
-      await navigateTo({ name: "auth-login" });
-    }
+    clearStateAndErrors();
   };
 
   return {

@@ -181,13 +181,13 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     await updateUserLastLogin(currentUser.id);
 
-    const userRole = currentUser.role;
-    const isAdmin = userRole === "admin";
+    // const userRole = currentUser.role;
+    // const isAdmin = userRole === "admin";
 
     return {
       success: true,
-      message: `Login successful. Redirecting to your ${isAdmin ? "admin" : "student"} dashboard`,
-      nextUrl: isAdmin ? adminBase : siteBase,
+      message: `Login successful. Redirecting....`,
+      nextUrl: "/postLogin",
       code: "LOGIN_SUCCESS",
     };
   }
