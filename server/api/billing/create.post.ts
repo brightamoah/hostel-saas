@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     const { studentId, amount, academicPeriod, description, dueDate, type, sendNotification } = body.data;
 
     const { createBilling } = await billingQueries();
-    const { getAllcoationByStudentId } = await roomQueries();
+    const { getAllocationByStudentId } = await roomQueries();
 
     const now = today(getLocalTimeZone());
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const studentAllocation = await getAllcoationByStudentId(studentId);
+    const studentAllocation = await getAllocationByStudentId(studentId);
 
     if (!studentAllocation) {
       throw createError({

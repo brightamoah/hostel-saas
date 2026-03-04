@@ -136,7 +136,7 @@ export const useAuthStore = defineStore("authStore", () => {
       });
 
       if (response.code === "ADMIN_LOGIN") {
-        goto(response.nextUrl);
+        await goto(response.nextUrl);
         return;
       }
 
@@ -149,18 +149,27 @@ export const useAuthStore = defineStore("authStore", () => {
           duration: 8000,
         });
 
-        goto(response.nextUrl);
+        await goto(response.nextUrl);
         return;
       }
 
       toast.add({
         title: "Login Successful",
-        description: response.message || "Login successful. Redirecting ...",
+        description: response.message || "Redirecting ...",
         color: "success",
         icon: "i-lucide-circle-check-big",
       });
 
-      await navigateTo(response.nextUrl || { name: "auth-postLogin" });
+      await $apiFetch("/api/auth/refreshSession", {
+        method: "POST",
+      });
+      await refreshSession();
+
+      const postLoginResponse = await $apiFetch<PostLoginResponse>("/api/auth/postLogin", {
+        method: "GET",
+      });
+
+      await goto(postLoginResponse.nextUrl);
     }
     catch (error: any) {
       const message = error?.data?.message || "Login failed. Please check your credentials.";
@@ -173,7 +182,9 @@ export const useAuthStore = defineStore("authStore", () => {
         duration: 8000,
       });
     }
-    finally { isLoading.value = false; }
+    finally {
+      isLoading.value = false;
+    }
   };
 
   const clearStateAndErrors = () => {

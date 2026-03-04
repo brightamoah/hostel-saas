@@ -187,7 +187,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
     return {
       success: true,
       message: `Login successful. Redirecting....`,
-      nextUrl: "/postLogin",
+      nextUrl: "/auth/login",
       code: "LOGIN_SUCCESS",
     };
   }

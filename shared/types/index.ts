@@ -552,3 +552,9 @@ export type StudentStatusResponse = {
   hasActiveBooking: boolean;
   studentId?: number;
 };
+
+export type PostLoginResponse
+  = | { success: true; nextUrl: "/admin/dashboard" }
+    | { success: true; nextUrl: "/auth/onboarding" }
+    | { success: true; nextUrl: "/hostels/hub" }
+    | { success: true; nextUrl: "/student/dashboard" };

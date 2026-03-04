@@ -1,14 +1,15 @@
 import type { RouteLocationRaw } from "vue-router";
 
-export default defineNuxtRouteMiddleware(() => {
+export default defineNuxtRouteMiddleware(async () => {
   const { loggedIn, user } = useUserSession();
+  const { $apiFetch } = useNuxtApp();
 
   if (loggedIn.value && user.value) {
-    // Determine dashboard route based on user role
-    const dashboardRoute: RouteLocationRaw = user.value.role === "admin"
-      ? { name: "admin-dashboard" }
-      : { name: "student-dashboard" };
+    const post = await $apiFetch<PostLoginResponse>("/api/auth/postLogin", {
+      method: "GET",
+    });
 
-    return navigateTo(dashboardRoute);
+    const target: RouteLocationRaw = post.nextUrl;
+    return navigateTo(target);
   }
 });
