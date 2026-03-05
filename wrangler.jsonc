@@ -31,29 +31,43 @@
       "head_sampling_rate": 1
     }
   },
+  "r2_buckets": [
+    {
+      "binding": "IMAGES",
+      "bucket_name": "kayanest-hostel-images",
+      "preview_bucket_name": "kayanest-preview-hostel-images"
+    }
+  ],
   "kv_namespaces": [
     {
       "binding": "STORAGE",
-      "id": "62f75e869d5145199c7530bca0767b8a",
-      "preview_id": "fcde2b26d7fd4718ba6e68ec5d596f56"
+      "id": "cf9244eada494b2f9452dcfff5662bf7",
+      "preview_id": "59d1dbc3ea744cd1af2afdacc13c59d3"
     },
     {
       "binding": "CACHE",
-      "id": "62f75e869d5145199c7530bca0767b8a",
-      "preview_id": "fcde2b26d7fd4718ba6e68ec5d596f56"
+      "id": "cf9244eada494b2f9452dcfff5662bf7",
+      "preview_id": "59d1dbc3ea744cd1af2afdacc13c59d3"
     }
   ],
   "vars": {},
   "env": {
     "preview": {
+      "r2_buckets": [
+        {
+          "binding": "IMAGES",
+          "bucket_name": "kayanest-hostel-images",
+          "preview_bucket_name": "kayanest-preview-hostel-images"
+        }
+      ],
       "kv_namespaces": [
         {
           "binding": "STORAGE",
-          "id": "fcde2b26d7fd4718ba6e68ec5d596f56"
+          "id": "59d1dbc3ea744cd1af2afdacc13c59d3"
         },
         {
           "binding": "CACHE",
-          "id": "fcde2b26d7fd4718ba6e68ec5d596f56"
+          "id": "59d1dbc3ea744cd1af2afdacc13c59d3"
         }
       ],
       "vars": {},

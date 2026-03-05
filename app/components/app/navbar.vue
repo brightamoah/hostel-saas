@@ -86,7 +86,7 @@ watch(y, (newY) => {
         <AppLogo class="size-6 md:size-8" />
 
         <h2 class="hidden md:block font-newsreader font-semibold text-2xl">
-          Kings Hostel
+          KayaNest
         </h2>
       </NuxtLink>
     </section>

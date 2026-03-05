@@ -44,7 +44,7 @@ export const visitor = pgTable("visitor", t => ({
 export const visitorLogs = pgTable("visitor_logs", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   visitorId: t.integer().notNull().references(() => visitor.id, { onDelete: "cascade" }),
-  adminId: t.integer().notNull().references(() => admin.id, { onDelete: "set null" }),
+  adminId: t.integer().references(() => admin.id, { onDelete: "set null" }),
   action: visitorLogActionEnum().notNull(),
   timestamp: t.timestamp().defaultNow().notNull(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),

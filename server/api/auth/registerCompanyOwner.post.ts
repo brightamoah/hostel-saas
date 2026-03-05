@@ -32,12 +32,20 @@ export default defineEventHandler(async (event) => {
       confirmPassword,
       phoneNumber,
       hostelAddress,
+      hostelLogoUrl,
     } = body.data;
 
     if (password !== confirmPassword) {
       throw createError({
         statusCode: 400,
         message: "Password and confirm password do not match",
+      });
+    }
+
+    if (!hostelLogoUrl) {
+      throw createError({
+        statusCode: 400,
+        message: "Hostel logo is required",
       });
     }
 
@@ -70,6 +78,7 @@ export default defineEventHandler(async (event) => {
       supportPhone,
       verificationToken: hashedVerificationToken,
       verificationTokenExpiresAt,
+      hostelLogoUrl,
     });
 
     if (!newCompanyOwner) {

@@ -748,6 +748,8 @@ const companySchema = z.object({
   supportPhone: phoneNumberSchema.optional(),
   hostelAddress: addressSchema.optional(),
   hostelLogo: imageFileSchema.optional(),
+  hostelLogoUrl: z.url("Invalid URL").optional(),
+  hostelLogoKey: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.createHostelNow) {
     if (!data.hostelName || data.hostelName.trim().length < 2) {

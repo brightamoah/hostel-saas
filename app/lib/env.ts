@@ -24,6 +24,8 @@ const EnvSchema = z.object({
   NUXT_PAYSTACK_BASE_URL: z.url(),
   NUXT_PUBLIC_ADMIN_BASE_URL: z.url(),
   NUXT_PUBLIC_SITE_BASE_URL: z.url(),
+  NUXT_R2_BUCKET_NAME: z.string(),
+  NUXT_R2_PREVIEW_BUCKET_NAME: z.string(),
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;

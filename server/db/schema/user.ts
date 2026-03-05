@@ -75,7 +75,8 @@ export const student = pgTable("student", t => ({
   healthConditions: t.text(),
   enrollmentDate: t.date(),
   residencyStatus: residencyStatusEnum().default("inactive").notNull(),
-  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  companyId: t.integer().references(() => company.id, { onDelete: "restrict" }),
+  hostelId: t.integer().references(() => hostel.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()

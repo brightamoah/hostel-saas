@@ -1,28 +1,68 @@
+import type { RouteLocationRaw } from "vue-router";
+
 export function useStudentData() {
   const { data, error, refresh, status } = useFetch("/api/auth/checkStudentDetails", {
     method: "GET",
-    key: "student-data",
+    key: "studentStatusData",
+    default: () => ({
+      hasProfile: false,
+      hasActiveBooking: false,
+      studentId: null,
+      student: null,
+    }),
+    getCachedData: (key, nuxtApp, ctx) => {
+      if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
+      return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
+    },
   });
 
-  const exists = computed(() => !!data.value?.exists);
+  const hasProfile = computed(() => data.value?.hasProfile ?? false);
 
-  const studentData = computed(() => data.value?.student || null);
+  const hasActiveBooking = computed(() => data.value?.hasActiveBooking ?? false);
 
-  const handledError = computed(() => {
-    if (error.value) {
-      console.error("Failed to fetch student data:", error.value);
-      return "Unable to load student data. Please try again.";
-    }
-    return null;
+  const studentId = computed(() => data.value?.studentId);
+
+  const studentData = computed(() => data.value?.student);
+
+  const expectedRoute = computed<RouteLocationRaw>(() => {
+    if (!hasProfile.value) return "/auth/onboarding";
+    if (!hasActiveBooking.value) return "/auth/hostelHub";
+    return "/student/dashboard";
   });
 
-  const pending = computed(() => status.value === "pending");
+  const needsOnboarding = computed(() => !hasProfile.value);
+
+  const needsHostelSelection = computed(() => hasProfile.value && !hasActiveBooking.value);
+
+  const isFullyOnboarded = computed(() => hasProfile.value && hasActiveBooking.value);
+
+  const {
+    canResend,
+    coolDownTime,
+    isLoading,
+    handleRefresh: handleStudentStatusDataRefresh,
+  } = useDataRefresh(
+    "studentDataCoolDown",
+    "useStudentData",
+    refresh,
+  );
 
   return {
-    exists,
+    data,
+    error,
+    status,
+    hasProfile,
+    hasActiveBooking,
+    studentId,
     studentData,
-    error: handledError,
-    pending,
+    coolDownTime,
+    isLoading,
+    canResend,
+    expectedRoute,
+    needsOnboarding,
+    needsHostelSelection,
+    isFullyOnboarded,
     refresh,
+    handleStudentStatusDataRefresh,
   };
 }

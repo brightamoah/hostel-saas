@@ -29,6 +29,27 @@
       "when": 1772402815170,
       "tag": "0003_quiet_turbo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772627214084,
+      "tag": "0004_yellow_praxagora",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1772632090857,
+      "tag": "0005_wandering_maximus",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1772728727113,
+      "tag": "0006_previous_mephisto",
+      "breakpoints": true
     }
   ]
 }

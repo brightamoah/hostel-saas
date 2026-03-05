@@ -5,6 +5,13 @@
  * @param path - The path or URL to navigate to.
  */
 export async function goto(path: string) {
-  if (/^https?:\/\//.test(path)) window.location.replace(path);
-  else await navigateTo(path);
+  if (/^https?:\/\//.test(path)) {
+    window.location.replace(path);
+  }
+  else {
+    await navigateTo(path, {
+      replace: true,
+      // external: true,
+    });
+  };
 }

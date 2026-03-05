@@ -1,4 +1,4 @@
-import { hostel, student } from "~~/server/db/schema";
+import { student } from "~~/server/db/schema";
 import { handleError } from "~~/server/utils/errorHandler";
 import { eq } from "drizzle-orm";
 
@@ -42,15 +42,7 @@ export default defineEventHandler(async (event) => {
       emergencyContactPhoneNumber,
       emergencyContactEmail,
       healthConditions,
-      hostelSlug,
     } = parsed.data;
-
-    if (!hostelSlug) {
-      throw createError({
-        statusCode: 400,
-        message: "hostelSlug is required.",
-      });
-    }
 
     const existingStudent = await db.query.student.findFirst({
       where: eq(student.userId, session.user.id),
@@ -61,21 +53,6 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 409,
         message: "Student details already exist",
-      });
-    }
-
-    const targetHostel = await db.query.hostel.findFirst({
-      where: eq(hostel.slug, hostelSlug),
-      columns: {
-        id: true,
-        companyId: true,
-      },
-    });
-
-    if (!targetHostel) {
-      throw createError({
-        statusCode: 404,
-        message: "Hostel not found",
       });
     }
 
@@ -91,7 +68,6 @@ export default defineEventHandler(async (event) => {
       .values({
         userId: session.user.id,
         address,
-        companyId: targetHostel.companyId,
         dateOfBirth: dateOfBirth.toDateString(),
         emergencyContactEmail,
         emergencyContactName,

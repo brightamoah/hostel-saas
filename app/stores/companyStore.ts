@@ -8,6 +8,8 @@ export const useCompanyStore = defineStore("companyStore", () => {
   const { $apiFetch } = useNuxtApp();
 
   const isLoading = ref(false);
+  const isUploading = ref(false);
+  const uploadProgress = ref(0);
 
   const createCompanyState = reactive<RegisterCompanySchema>({
     name: "",
@@ -24,7 +26,10 @@ export const useCompanyStore = defineStore("companyStore", () => {
     hostelSlug: undefined,
     supportEmail: undefined,
     supportPhone: undefined,
+    hostelAddress: undefined,
     hostelLogo: undefined,
+    hostelLogoKey: undefined,
+    hostelLogoUrl: undefined,
   });
 
   const setupAutoSlug = (
@@ -72,21 +77,111 @@ export const useCompanyStore = defineStore("companyStore", () => {
           hostelSlug: undefined,
           supportEmail: undefined,
           supportPhone: undefined,
+          hostelLogo: undefined,
+          hostelLogoUrl: undefined,
+          hostelLogoKey: undefined,
+          hostelAddress: undefined,
         });
       }
     },
   );
 
+  async function uploadImage(file: File): Promise<{ url: string; key: string } | null> {
+    isUploading.value = true;
+    uploadProgress.value = 0;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "hostels");
+
+      const progressInterval = setInterval(() => {
+        if (uploadProgress.value < 90) {
+          uploadProgress.value += 10;
+        }
+      }, 100);
+
+      const response = await $apiFetch("/api/upload/image", {
+        method: "POST",
+        body: formData,
+      });
+
+      clearInterval(progressInterval);
+
+      if (response.success && response.url) {
+        uploadProgress.value = 100;
+
+        toast.add({
+          title: "Upload Successful",
+          description: "Image uploaded successfully.",
+          color: "success",
+          icon: "i-lucide-circle-check-big",
+          duration: 5000,
+        });
+
+        return {
+          url: response.url,
+          key: response.key,
+        };
+      }
+
+      return null;
+    }
+    catch (error: any) {
+      const message = error?.data?.message || "Failed to upload logo. Please try again.";
+      toast.add({
+        title: "Upload Failed",
+        description: message,
+        color: "error",
+        icon: "i-lucide-circle-alert",
+        duration: 5000,
+      });
+      return null;
+    }
+    finally {
+      isUploading.value = false;
+
+      setTimeout(() => {
+        uploadProgress.value = 0;
+      }, 500);
+    }
+  };
+
   const submitRegistration = async (payload: FormSubmitEvent<RegisterCompanySchema>) => {
     isLoading.value = true;
     try {
+      if (createCompanyState.hostelLogo && !createCompanyState.hostelLogoUrl) {
+        const result = await uploadImage(createCompanyState.hostelLogo);
+
+        if (result) {
+          createCompanyState.hostelLogoUrl = result.url;
+          createCompanyState.hostelLogoKey = result.key;
+        }
+      }
+
+      const registrationData = {
+        name: payload.data.name,
+        email: payload.data.email,
+        phoneNumber: payload.data.phoneNumber,
+        password: payload.data.password,
+        confirmPassword: payload.data.confirmPassword,
+        companyName: payload.data.companyName,
+        companySlug: payload.data.companySlug,
+        createHostelNow: payload.data.createHostelNow,
+        hostelName: payload.data.hostelName,
+        hostelSlug: payload.data.hostelSlug,
+        hostelAddress: payload.data.hostelAddress,
+        supportEmail: payload.data.supportEmail,
+        supportPhone: payload.data.supportPhone,
+        hostelLogoUrl: createCompanyState.hostelLogoUrl,
+      };
+
       const response = await $apiFetch("/api/auth/registerCompanyOwner", {
         method: "POST",
-        body: payload.data,
+        body: registrationData,
       });
 
       toast.add({
-        title: "Signup Successful",
+        title: "Registration Successful",
         description: response.message || "Please check your email for a verification link to complete registration.",
         color: "success",
         icon: "i-lucide-circle-check-big",
@@ -103,16 +198,60 @@ export const useCompanyStore = defineStore("companyStore", () => {
         icon: "i-lucide-circle-alert",
         duration: 8000,
       });
+
+      if (createCompanyState.hostelLogoKey) {
+        try {
+          await $apiFetch("/api/upload/image", {
+            method: "DELETE",
+            body: { key: createCompanyState.hostelLogoKey },
+          });
+        }
+        catch { }
+        createCompanyState.hostelLogoKey = undefined;
+        createCompanyState.hostelLogoUrl = undefined;
+      }
     }
     finally {
       isLoading.value = false;
     }
   };
+  // Remove uploaded logo
+  const removeHostelLogo = async () => {
+    if (createCompanyState.hostelLogoKey) {
+      try {
+        await $apiFetch("/api/upload/image", {
+          method: "DELETE",
+          body: { key: createCompanyState.hostelLogoKey },
+        });
+      }
+      catch {
+        // Ignore errors
+      }
+    }
+
+    createCompanyState.hostelLogo = undefined;
+    createCompanyState.hostelLogoUrl = undefined;
+    createCompanyState.hostelLogoKey = undefined;
+  };
+
+  const hasLogo = computed(() => !!createCompanyState.hostelLogo || !!createCompanyState.hostelLogoUrl);
+
+  const logoPreviewUrl = computed(() => {
+    if (createCompanyState.hostelLogoUrl) return createCompanyState.hostelLogoUrl;
+    if (createCompanyState.hostelLogo) return URL.createObjectURL(createCompanyState.hostelLogo);
+    return null;
+  });
 
   return {
     createCompanyState,
     isLoading,
+    isUploading,
+    uploadProgress,
+    logoPreviewUrl,
+    hasLogo,
+    uploadImage,
     submitRegistration,
+    removeHostelLogo,
   };
 });
 

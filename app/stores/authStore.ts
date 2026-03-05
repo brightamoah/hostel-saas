@@ -9,11 +9,11 @@ export const useAuthStore = defineStore("authStore", () => {
 
   const { $apiFetch } = useNuxtApp();
 
-  const { exists, studentData } = useStudentData();
+  const { hasProfile, studentData } = useStudentData();
 
   const isLoading = ref<boolean>(false);
   const errorMessage = ref<string | null>(null);
-  const isOnboarded = computed(() => !!exists.value);
+  const isOnboarded = computed(() => !!hasProfile.value);
 
   const { user, loggedIn: isLoggedIn, session, fetch: refreshSession } = useUserSession();
 
@@ -136,6 +136,13 @@ export const useAuthStore = defineStore("authStore", () => {
       });
 
       if (response.code === "ADMIN_LOGIN") {
+        toast.add({
+          title: "Admin Detected",
+          description: "Transferring you to the admin portal...",
+          color: "info",
+          icon: "i-lucide-shield-check",
+          duration: 5000,
+        });
         await goto(response.nextUrl);
         return;
       }
@@ -144,7 +151,7 @@ export const useAuthStore = defineStore("authStore", () => {
         toast.add({
           title: "Login Failed",
           description: response.message || "You are trying to log in to the wrong portal. Redirecting...",
-          color: "error",
+          color: "warning",
           icon: "i-lucide-circle-alert",
           duration: 8000,
         });
@@ -153,17 +160,24 @@ export const useAuthStore = defineStore("authStore", () => {
         return;
       }
 
+      await $apiFetch("/api/auth/refreshSession", {
+        method: "POST",
+      });
+      await refreshSession();
+
       toast.add({
         title: "Login Successful",
         description: response.message || "Redirecting ...",
         color: "success",
         icon: "i-lucide-circle-check-big",
+        duration: 8000,
       });
 
-      await $apiFetch("/api/auth/refreshSession", {
-        method: "POST",
-      });
-      await refreshSession();
+      if (user.value?.role === "student") {
+        const studentStatus = useStudentStatus();
+        studentStatus.invalidate();
+        await studentStatus.fetchStatus(true);
+      }
 
       const postLoginResponse = await $apiFetch<PostLoginResponse>("/api/auth/postLogin", {
         method: "GET",

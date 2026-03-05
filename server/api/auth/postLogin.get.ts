@@ -38,7 +38,7 @@ export default defineEventHandler(async (event): Promise<PostLoginResponse> => {
 
     return {
       success: true,
-      nextUrl: "/hostels/hub" as const,
+      nextUrl: "/auth/hostelHub" as const,
     };
   }
   catch (error) {

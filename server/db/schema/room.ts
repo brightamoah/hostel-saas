@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { check, pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
+import { check, index, pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
 
 import { billing } from "./billing";
 import { company } from "./company";
@@ -55,6 +55,7 @@ export const hostel = pgTable("hostel", t => ({
   primaryColor: t.varchar({ length: 32 }),
   supportEmail: t.varchar({ length: 255 }),
   supportPhone: t.varchar({ length: 30 }),
+  joinCode: t.varchar({ length: 20 }).unique(),
 }), table => [
   unique("unique_hostel_slug").on(table.slug),
 ]);
@@ -100,8 +101,8 @@ export const allocation = pgTable("allocation", t => ({
     .notNull(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
 }), table => [
-  unique("unique_active_allocation").on(table.studentId, table.status),
   check("chk_dates", sql`end_date IS NULL OR end_date >= allocation_date`),
+  index("idx_allocation_student_status").on(table.studentId, table.status),
 ]);
 
 export const hostelRelations = relations(hostel, ({ one, many }) => ({

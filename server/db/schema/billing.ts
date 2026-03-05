@@ -46,8 +46,8 @@ const academicPeriodEnum = pgEnum("academic_period", [
 export const billing = pgTable("billing", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
-  allocationId: t.integer().notNull().references(() => allocation.id, { onDelete: "set null" }),
-  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "set null" }),
+  allocationId: t.integer().notNull().references(() => allocation.id, { onDelete: "restrict" }),
+  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "restrict" }),
   amount: t.numeric({ precision: 10, scale: 2 }).notNull(),
   type: billingType().default("hostel fee").notNull(),
   academicPeriod: academicPeriodEnum().default("first semester").notNull(),

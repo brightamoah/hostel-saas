@@ -30,7 +30,7 @@ export const complaint = pgTable("complaint", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   roomId: t.integer().references(() => room.id, { onDelete: "cascade" }),
-  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
+  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "restrict" }),
   description: t.text().notNull(),
   type: complaintTypeEnum().notNull(),
   priority: complaintPriorityEnum().default("medium").notNull(),

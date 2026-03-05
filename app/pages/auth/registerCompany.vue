@@ -38,7 +38,13 @@ const companyStore = useCompanyStore();
 const {
   createCompanyState,
   isLoading,
+  isUploading,
 } = storeToRefs(companyStore);
+
+const {
+  removeHostelLogo,
+  submitRegistration,
+} = companyStore;
 
 const canGoNext = computed(() => ownerSchema.safeParse(createCompanyState.value).success);
 
@@ -87,7 +93,7 @@ async function nextTab() {
         :schema="registerCompanySchema"
         :state="createCompanyState"
         class="bg-transparent shadow-md backdrop-blur-xl p-2 md:p-4 border border-muted rounded-lg w-full max-w-4xl"
-        @submit.prevent="companyStore.submitRegistration"
+        @submit.prevent="submitRegistration"
         @error="useHandleFormError"
       >
         <UTabs
@@ -281,103 +287,113 @@ async function nextTab() {
                   </div>
                 </template>
 
-                <div v-auto-animate>
+                <div
+                  v-auto-animate
+                  class="w-full"
+                >
                   <div
                     v-if="createCompanyState.createHostelNow"
-                    class="w-full"
+                    class="gap-5 grid grid-cols-1 md:grid-cols-2"
                   >
-                    <div class="gap-5 grid grid-cols-1 md:grid-cols-2">
-                      <UFormField
-                        label="Hostel Name"
-                        name="hostelName"
+                    <UFormField
+                      label="Hostel Name"
+                      name="hostelName"
+                      class="w-full"
+                    >
+                      <UInput
+                        v-model="createCompanyState.hostelName"
+                        placeholder="e.g. Kings Hostel - Accra"
+                        icon="i-lucide-home"
                         class="w-full"
-                      >
-                        <UInput
-                          v-model="createCompanyState.hostelName"
-                          placeholder="e.g. Kings Hostel - Accra"
-                          icon="i-lucide-home"
-                          class="w-full"
-                          :size="isMobile ? 'lg' : 'xl'"
-                        />
-                      </UFormField>
+                        :size="isMobile ? 'lg' : 'xl'"
+                      />
+                    </UFormField>
 
-                      <UFormField
-                        label="Hostel Slug"
-                        name="hostelSlug"
+                    <UFormField
+                      label="Hostel Slug"
+                      name="hostelSlug"
+                      class="w-full"
+                    >
+                      <UInput
+                        v-model="createCompanyState.hostelSlug"
+                        placeholder="e.g. kings-hostel-accra"
+                        icon="i-lucide-hash"
                         class="w-full"
-                      >
-                        <UInput
-                          v-model="createCompanyState.hostelSlug"
-                          placeholder="e.g. kings-hostel-accra"
-                          icon="i-lucide-hash"
-                          class="w-full"
-                          :size="isMobile ? 'lg' : 'xl'"
-                        />
+                        :size="isMobile ? 'lg' : 'xl'"
+                      />
 
-                        <template #help>
-                          <span class="text-muted text-xs">
-                            Portal: <span class="font-mono">/h/{{ createCompanyState.hostelSlug || "your-hostel" }}</span>
-                          </span>
-                        </template>
-                      </UFormField>
+                      <template #help>
+                        <span class="text-muted text-xs">
+                          Portal: <span class="font-mono">/h/{{ createCompanyState.hostelSlug || "your-hostel" }}</span>
+                        </span>
+                      </template>
+                    </UFormField>
 
-                      <UFormField
-                        label="Hostel Support Email"
-                        name="supportEmail"
+                    <UFormField
+                      label="Hostel Support Email"
+                      name="supportEmail"
+                      class="w-full"
+                    >
+                      <UInput
+                        v-model="createCompanyState.supportEmail"
+                        placeholder="e.g. support@kingshostel.com"
+                        icon="i-lucide-mail"
                         class="w-full"
-                      >
-                        <UInput
-                          v-model="createCompanyState.supportEmail"
-                          placeholder="e.g. support@kingshostel.com"
-                          icon="i-lucide-mail"
-                          class="w-full"
-                          :size="isMobile ? 'lg' : 'xl'"
-                        />
-                      </UFormField>
+                        :size="isMobile ? 'lg' : 'xl'"
+                      />
+                    </UFormField>
 
-                      <UFormField
-                        label="Hostel Support Phone Number"
-                        name="supportPhone"
+                    <UFormField
+                      label="Hostel Support Phone Number"
+                      name="supportPhone"
+                      class="w-full"
+                    >
+                      <UInput
+                        v-model="createCompanyState.supportPhone"
+                        placeholder="e.g. +233 55 000 0000"
+                        icon="i-lucide-phone"
                         class="w-full"
-                      >
-                        <UInput
-                          v-model="createCompanyState.supportPhone"
-                          placeholder="e.g. +233 55 000 0000"
-                          icon="i-lucide-phone"
-                          class="w-full"
-                          type="tel"
-                          :size="isMobile ? 'lg' : 'xl'"
-                        />
-                      </UFormField>
+                        type="tel"
+                        :size="isMobile ? 'lg' : 'xl'"
+                      />
+                    </UFormField>
 
-                      <UFormField
-                        label="Hostel Address"
-                        name="hostelAddress"
+                    <UFormField
+                      label="Hostel Address"
+                      name="hostelAddress"
+                      class="w-full"
+                    >
+                      <UTextarea
+                        v-model="createCompanyState.hostelAddress"
+                        placeholder="e.g. 123 Main St, Accra"
+                        icon="i-lucide-map-pin"
                         class="w-full"
-                      >
-                        <UInput
-                          v-model="createCompanyState.hostelAddress"
-                          placeholder="e.g. 123 Main St, Accra"
-                          icon="i-lucide-map-pin"
-                          class="w-full"
-                          :size="isMobile ? 'lg' : 'xl'"
-                        />
-                      </UFormField>
-                    </div>
+                        :size="isMobile ? 'lg' : 'xl'"
+                        :rows="7"
+                      />
+                    </UFormField>
 
                     <UFormField
                       label="Hostel Logo / Image"
                       name="hostelLogo"
-                      class="mt-4 w-full"
+                      class="w-full"
                     >
                       <UFileUpload
                         v-model="createCompanyState.hostelLogo"
                         icon="i-lucide-image"
-                        label="Company Logo or image"
+                        label="Drop your hostel Logo or image"
                         description="SVG, PNG, JPG or GIF (max. 2MB)"
-                        class="w-full min-h-48"
-                        :interactive="false"
+                        class="w-full min-h-43"
                         accept="image/png, image/jpeg, image/webp, image/jpg"
+                        :interactive="false"
+                        :disabled="isUploading || isLoading"
+                        :file-delete="{
+                          class: 'cursor-pointer hover:bg-error hover:text-white rounded size-5 hover:border-error text-center font-bold',
+                          onClick: removeHostelLogo,
+                        }"
+                        :ui="{
+                          base: 'border-3 border-muted rounded-md p-4 cursor-pointer',
+                        }"
                       >
                         <template #actions="{ open }">
                           <UButton
@@ -386,6 +402,7 @@ async function nextTab() {
                             color="neutral"
                             variant="outline"
                             class="cursor-pointer"
+                            :disabled="isUploading || isLoading"
                             @click="open()"
                           />
                         </template>

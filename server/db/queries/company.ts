@@ -75,12 +75,13 @@ export async function companyQueries() {
           supportEmail,
           supportPhone,
           hostelAddress,
+          hostelLogoUrl,
         } = data;
 
-        if (!hostelName || !hostelSlug) {
+        if (!hostelName || !hostelSlug || !hostelLogoUrl) {
           throw createError({
             statusCode: 400,
-            message: "Hostel name and slug are required to create a hostel.",
+            message: "Hostel name, slug and logoUrl are required to create a hostel.",
           });
         }
 
@@ -120,6 +121,7 @@ export async function companyQueries() {
           status: "active",
           supportEmail,
           supportPhone,
+          logoUrl: hostelLogoUrl,
         }).returning();
 
         createdHostel = newHostel ?? null;

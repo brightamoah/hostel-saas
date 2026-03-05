@@ -1,4 +1,19 @@
 <script setup lang="ts">
+const { loggedIn, user } = useUserSession();
+
+const dashboardRoute = computed(() => {
+  if (!loggedIn.value || !user.value) return { name: "auth-login" };
+
+  switch (user.value.role) {
+    case "admin":
+      return { name: "admin-dashboard" };
+    case "student":
+      return { name: "auth-hostelHub" };
+    default:
+      return { name: "auth-login" };
+  }
+});
+
 const features = ref([
   {
     icon: "i-lucide-bed",
@@ -63,13 +78,25 @@ const features = ref([
 
       <template #links>
         <UButton
+          v-if="loggedIn && user"
           label="Get Started"
           icon="i-lucide-rocket"
           variant="solid"
           color="primary"
           size="xl"
           class="cursor-pointer"
-          @click="$router.push({ name: 'auth-signup' })"
+          @click="$router.push(dashboardRoute)"
+        />
+
+        <UButton
+          v-else
+          label="Get Started"
+          icon="i-lucide-rocket"
+          variant="solid"
+          color="primary"
+          size="xl"
+          class="cursor-pointer"
+          @click="$router.push({ name: 'auth-login' })"
         />
       </template>
 

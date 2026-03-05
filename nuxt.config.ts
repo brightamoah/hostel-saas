@@ -93,6 +93,13 @@ export default defineNuxtConfig({
             preview_id: env.NUXT_KV_PREVIEW_NAMESPACE_ID,
           },
         ],
+        r2_buckets: [
+          {
+            binding: "IMAGES",
+            bucket_name: env.NUXT_R2_BUCKET_NAME,
+            preview_bucket_name: env.NUXT_R2_PREVIEW_BUCKET_NAME,
+          },
+        ],
       },
     },
     rollupConfig: {
@@ -117,12 +124,22 @@ export default defineNuxtConfig({
         driver: "fs-lite",
         base: "./.data/kv",
       },
+      images: {
+        driver: "fs-lite",
+        base: "./.data/images",
+      },
     },
     storage: {
       kv: {
         driver: "cloudflare-kv-binding",
         options: {
           binding: "KV",
+        },
+      },
+      images: {
+        driver: "cloudflare-r2-binding",
+        options: {
+          binding: "IMAGES",
         },
       },
     },
@@ -197,6 +214,7 @@ export default defineNuxtConfig({
     headers: {
       contentSecurityPolicy: {
         "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+        "worker-src": ["'self'", "blob:"],
         "script-src": [
           "'self'",
           "'unsafe-inline'",

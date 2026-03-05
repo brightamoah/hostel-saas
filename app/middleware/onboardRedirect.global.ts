@@ -1,10 +1,19 @@
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
-export default defineNuxtRouteMiddleware((to) => {
-  const { loggedIn, user, session } = useUserSession();
-  // const roleRoutes = useRoleBasedRoute();
+export default defineNuxtRouteMiddleware(async (to) => {
+  const { loggedIn, user, fetch: fetchUserSession } = useUserSession();
 
-  // Avoid redirecting if already on auth routes
+  const { $apiFetch, runWithContext } = useNuxtApp();
+
+  await fetchUserSession();
+
+  const publicRoutes: (keyof RouteNamedMap)[] = [
+    "index",
+    "about",
+    "contact",
+    "faq",
+  ];
+
   const authRoutes: (keyof RouteNamedMap)[] = [
     "auth-login",
     "auth-verifyEmail",
@@ -12,17 +21,47 @@ export default defineNuxtRouteMiddleware((to) => {
     "auth-forgotPassword",
     "auth-resetPassword",
     "auth-resendVerification",
-    "auth-logout",
-    "index",
-    "about",
-    "contact",
-    "faq",
     "auth-verifyEmail",
     "auth-registerCompany",
+  ];
+
+  const hostelSelectionRoutes: (keyof RouteNamedMap)[] = [
+    "auth-hostelHub",
+  ];
+
+  const studentProtectedRoutes: (keyof RouteNamedMap)[] = [
+    "student-dashboard",
+    "student-rooms",
+    "student-visitors",
+    "student-maintenance",
+    "student-complaints",
+    "student-billing",
+    "student-announcements",
+    "student-profile",
+    "student-settings",
+  ];
+
+  const selfHandledRoutes: (keyof RouteNamedMap)[] = [
+    "auth-logout",
     "auth-handoff",
   ];
 
-  if (authRoutes.includes(to.name)) return;
+  const routeName = to.name as keyof RouteNamedMap;
+
+  if (selfHandledRoutes.includes(routeName)) return;
+
+  if (publicRoutes.includes(routeName)) return;
+
+  if (authRoutes.includes(routeName)) {
+    if (loggedIn.value && user.value) {
+      const post = await $apiFetch<PostLoginResponse>("/api/auth/postLogin", {
+        method: "GET",
+      });
+
+      return navigateTo(post.nextUrl);
+    }
+    return;
+  }
 
   if (!loggedIn.value || !user.value) {
     return navigateTo({
@@ -31,18 +70,54 @@ export default defineNuxtRouteMiddleware((to) => {
     });
   }
 
-  if (session.value?.onboarded && to.name === "auth-onboarding") {
-    const dashboard = user.value.role === "admin" ? "admin-dashboard" : "student-dashboard";
-    return navigateTo({ name: dashboard });
+  if (!user.value.emailVerified) return navigateTo({ name: "auth-resendVerification" });
+
+  if (user.value.role === "admin") return;
+
+  if (!loggedIn.value || !user.value || user.value.role !== "student") return;
+
+  const studentStatus = useStudentStatus();
+
+  try {
+    await studentStatus.fetchStatus();
+  }
+  catch (error) {
+    console.warn("Failed to fetch student status in middleware:", error);
+    return;
   }
 
-  if (
-    user.value
-    && user.value.role === "student"
-    && session.value
-    && !session.value.onboarded
-    && to.name !== "auth-onboarding"
-  ) {
+  if (!loggedIn.value || !user.value) return;
+
+  if (studentStatus.needsOnboarding) {
+    if (routeName === "auth-onboarding") return;
+
     return navigateTo({ name: "auth-onboarding" });
+  }
+
+  if (studentStatus.needsHostelSelection) {
+    if (hostelSelectionRoutes.includes(routeName)) return;
+
+    if (studentProtectedRoutes.includes(routeName)) {
+      if (import.meta.client) {
+        runWithContext(() => {
+          const toast = useToast();
+
+          toast.add({
+            title: "Hostel Selection Required",
+            description: "Please choose a hostel and book a room to access this page.",
+            color: "warning",
+            icon: "i-lucide-building-2",
+            duration: 8000,
+          });
+        });
+      }
+    }
+    return navigateTo({ name: "auth-hostelHub" });
+  }
+
+  if (studentStatus.isFullyOnboarded) {
+    if (routeName === "auth-onboarding" || hostelSelectionRoutes.includes(routeName)) {
+      return navigateTo({ name: "student-dashboard" });
+    }
   }
 });

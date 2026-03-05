@@ -242,19 +242,7 @@ export type FilterOption = {
   value: string | number;
 };
 
-export type Student = {
-  id: number;
-  gender: "male" | "female";
-  dateOfBirth: Date;
-  phoneNumber: string;
-  address: string;
-  emergencyContactName: string;
-  emergencyContactPhoneNumber: string;
-  healthConditions: string;
-  enrollmentDate: Date;
-  roomNumber: string;
-  residencyStatus: "N/A" | "active" | "inactive" | "suspended" | "graduated" | "withdrawn";
-};
+export type Student = typeof student.$inferSelect;
 
 export type DashboardStudent = {
   student: StudentDashboard["studentRecord"];
@@ -551,10 +539,11 @@ export type StudentStatusResponse = {
   hasProfile: boolean;
   hasActiveBooking: boolean;
   studentId?: number;
+  student: Student | null;
 };
 
 export type PostLoginResponse
   = | { success: true; nextUrl: "/admin/dashboard" }
     | { success: true; nextUrl: "/auth/onboarding" }
-    | { success: true; nextUrl: "/hostels/hub" }
+    | { success: true; nextUrl: "/auth/hostelHub" }
     | { success: true; nextUrl: "/student/dashboard" };
