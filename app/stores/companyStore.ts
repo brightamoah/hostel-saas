@@ -24,6 +24,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
     hostelSlug: undefined,
     supportEmail: undefined,
     supportPhone: undefined,
+    hostelLogo: undefined,
   });
 
   const setupAutoSlug = (

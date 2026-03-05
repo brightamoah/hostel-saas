@@ -1,24 +1,24 @@
 /**
- * Creates a URL-friendly slug from the input string.
+ * Creates a URL-friendly slug from the given input string.
  *
  * @param input - The string to convert into a slug.
- * @param options - Optional configuration object.
- * @param options.maxWords - Maximum number of words to include in the slug (default: 6).
- * @param options.maxLength - Maximum length of the slug (default: 60).
- * @param options.removeStopWords - Whether to remove common stop words (default: true).
+ * @param slugOptions - Optional configuration for slug generation.
+ * @param slugOptions.maxWords - Maximum number of words to include in the slug (default: 3).
+ * @param slugOptions.maxLength - Maximum length of the slug (default: 50).
+ * @param slugOptions.removeStopWords - Whether to remove common stop words (default: true).
  * @returns The generated slug, or an empty string if input is invalid.
  */
 export function createSlug(
   input: string,
-  options?: {
+  slugOptions?: {
     maxWords?: number;
     maxLength?: number;
     removeStopWords?: boolean;
   },
 ) {
-  const maxWords = options?.maxWords ?? 3;
-  const maxLength = options?.maxLength ?? 50;
-  const removeStopWords = options?.removeStopWords ?? true;
+  const maxWords = slugOptions?.maxWords ?? 3;
+  const maxLength = slugOptions?.maxLength ?? 50;
+  const removeStopWords = slugOptions?.removeStopWords ?? true;
 
   const stopWords = new Set([
     "the",

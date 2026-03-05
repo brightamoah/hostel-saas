@@ -284,83 +284,112 @@ async function nextTab() {
                 <div v-auto-animate>
                   <div
                     v-if="createCompanyState.createHostelNow"
-                    class="gap-5 grid grid-cols-1 md:grid-cols-2"
+                    class="w-full"
                   >
-                    <UFormField
-                      label="Hostel Name"
-                      name="hostelName"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.hostelName"
-                        placeholder="e.g. Kings Hostel - Accra"
-                        icon="i-lucide-home"
+                    <div class="gap-5 grid grid-cols-1 md:grid-cols-2">
+                      <UFormField
+                        label="Hostel Name"
+                        name="hostelName"
                         class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-                    </UFormField>
+                      >
+                        <UInput
+                          v-model="createCompanyState.hostelName"
+                          placeholder="e.g. Kings Hostel - Accra"
+                          icon="i-lucide-home"
+                          class="w-full"
+                          :size="isMobile ? 'lg' : 'xl'"
+                        />
+                      </UFormField>
+
+                      <UFormField
+                        label="Hostel Slug"
+                        name="hostelSlug"
+                        class="w-full"
+                      >
+                        <UInput
+                          v-model="createCompanyState.hostelSlug"
+                          placeholder="e.g. kings-hostel-accra"
+                          icon="i-lucide-hash"
+                          class="w-full"
+                          :size="isMobile ? 'lg' : 'xl'"
+                        />
+
+                        <template #help>
+                          <span class="text-muted text-xs">
+                            Portal: <span class="font-mono">/h/{{ createCompanyState.hostelSlug || "your-hostel" }}</span>
+                          </span>
+                        </template>
+                      </UFormField>
+
+                      <UFormField
+                        label="Hostel Support Email"
+                        name="supportEmail"
+                        class="w-full"
+                      >
+                        <UInput
+                          v-model="createCompanyState.supportEmail"
+                          placeholder="e.g. support@kingshostel.com"
+                          icon="i-lucide-mail"
+                          class="w-full"
+                          :size="isMobile ? 'lg' : 'xl'"
+                        />
+                      </UFormField>
+
+                      <UFormField
+                        label="Hostel Support Phone Number"
+                        name="supportPhone"
+                        class="w-full"
+                      >
+                        <UInput
+                          v-model="createCompanyState.supportPhone"
+                          placeholder="e.g. +233 55 000 0000"
+                          icon="i-lucide-phone"
+                          class="w-full"
+                          type="tel"
+                          :size="isMobile ? 'lg' : 'xl'"
+                        />
+                      </UFormField>
+
+                      <UFormField
+                        label="Hostel Address"
+                        name="hostelAddress"
+                        class="w-full"
+                      >
+                        <UInput
+                          v-model="createCompanyState.hostelAddress"
+                          placeholder="e.g. 123 Main St, Accra"
+                          icon="i-lucide-map-pin"
+                          class="w-full"
+                          :size="isMobile ? 'lg' : 'xl'"
+                        />
+                      </UFormField>
+                    </div>
 
                     <UFormField
-                      label="Hostel Slug"
-                      name="hostelSlug"
-                      class="w-full"
+                      label="Hostel Logo / Image"
+                      name="hostelLogo"
+                      class="mt-4 w-full"
                     >
-                      <UInput
-                        v-model="createCompanyState.hostelSlug"
-                        placeholder="e.g. kings-hostel-accra"
-                        icon="i-lucide-hash"
-                        class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-
-                      <template #help>
-                        <span class="text-muted text-xs">
-                          Portal: <span class="font-mono">/h/{{ createCompanyState.hostelSlug || "your-hostel" }}</span>
-                        </span>
-                      </template>
-                    </UFormField>
-
-                    <UFormField
-                      label="Hostel Support Email"
-                      name="supportEmail"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.supportEmail"
-                        placeholder="e.g. support@kingshostel.com"
-                        icon="i-lucide-mail"
-                        class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-                    </UFormField>
-
-                    <UFormField
-                      label="Hostel Support Phone Number"
-                      name="supportPhone"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.supportPhone"
-                        placeholder="e.g. +233 55 000 0000"
-                        icon="i-lucide-phone"
-                        class="w-full"
-                        type="tel"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-                    </UFormField>
-
-                    <UFormField
-                      label="Hostel Address"
-                      name="hostelAddress"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.hostelAddress"
-                        placeholder="e.g. 123 Main St, Accra"
-                        icon="i-lucide-map-pin"
-                        class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
+                      <UFileUpload
+                        v-model="createCompanyState.hostelLogo"
+                        icon="i-lucide-image"
+                        label="Company Logo or image"
+                        description="SVG, PNG, JPG or GIF (max. 2MB)"
+                        class="w-full min-h-48"
+                        :interactive="false"
+                        accept="image/png, image/jpeg, image/webp, image/jpg"
+                      >
+                        <template #actions="{ open }">
+                          <UButton
+                            label="Select From Your Device"
+                            icon="i-lucide-upload"
+                            color="neutral"
+                            variant="outline"
+                            class="cursor-pointer"
+                            @click="open()"
+                          />
+                        </template>
+                      </UFileUpload>
                     </UFormField>
                   </div>
 

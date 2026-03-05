@@ -35,7 +35,7 @@ onMounted(() => {
       <template #description>
         Don't have an account?
         <ULink
-          :to="{ name: 'auth-signup' }"
+          :to="{ name: 'auth-registerCompany' }"
           class="font-medium text-primary"
         >
           Sign up.
