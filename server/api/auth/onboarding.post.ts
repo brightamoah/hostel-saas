@@ -94,6 +94,9 @@ export default defineEventHandler(async (event) => {
         studentId: newStudent.id,
       },
       onboarded: true,
+      hasActiveAllocation: false,
+      selectedHostelId: null,
+      selectedHostelSlug: null,
     });
 
     return {

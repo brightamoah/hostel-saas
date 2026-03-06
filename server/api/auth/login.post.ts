@@ -1,7 +1,7 @@
 import type { User } from "#auth-utils";
 import type { AuthLoginResponse } from "~~/shared/types";
 
-import { authHandoffQueries } from "~~/server/db/queries";
+import { authHandoffQueries, roomQueries } from "~~/server/db/queries";
 import { companyQueries } from "~~/server/db/queries/company";
 import { userQueries } from "~~/server/db/queries/user";
 import { handleError } from "~~/server/utils/errorHandler";
@@ -29,6 +29,8 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       getAdminByUserId,
       recordLoginAttempt,
     } = await userQueries();
+
+    const { checkActiveOrPendingAllocation } = await roomQueries();
 
     const { getUserMembershipByUserId } = await companyQueries();
 
@@ -108,6 +110,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     let isOnboarded = false;
     let studentId: number | undefined;
+    let hasActiveAllocation = false;
 
     if (currentUser.role === "admin") {
       adminData = await getAdminByUserId(currentUser.id, true);
@@ -136,8 +139,14 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
     else {
       const existingStudent = await getOnboardedStudent(currentUser.id);
 
-      isOnboarded = !!existingStudent;
-      studentId = existingStudent?.id;
+      if (existingStudent) {
+        studentId = existingStudent.id;
+        isOnboarded = true;
+
+        const allocation = await checkActiveOrPendingAllocation(existingStudent.id);
+
+        hasActiveAllocation = !!allocation;
+      }
     }
 
     await recordLoginAttempt(
@@ -169,6 +178,9 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       loggedInAt: now,
       expiresAt,
       onboarded: isOnboarded,
+      hasActiveAllocation,
+      selectedHostelId: null,
+      selectedHostelSlug: null,
     });
 
     if (rememberMe) {
@@ -180,9 +192,6 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
     }
 
     await updateUserLastLogin(currentUser.id);
-
-    // const userRole = currentUser.role;
-    // const isAdmin = userRole === "admin";
 
     return {
       success: true,

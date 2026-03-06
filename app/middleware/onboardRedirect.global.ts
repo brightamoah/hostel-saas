@@ -1,9 +1,14 @@
 import type { RouteNamedMap } from "vue-router/auto-routes";
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { loggedIn, user, fetch: fetchUserSession } = useUserSession();
+  const {
+    loggedIn,
+    user,
+    session,
+    fetch: fetchUserSession,
+  } = useUserSession();
 
-  const { $apiFetch, runWithContext } = useNuxtApp();
+  const { runWithContext } = useNuxtApp();
 
   await fetchUserSession();
 
@@ -21,7 +26,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     "auth-forgotPassword",
     "auth-resetPassword",
     "auth-resendVerification",
-    "auth-verifyEmail",
     "auth-registerCompany",
   ];
 
@@ -54,11 +58,19 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (authRoutes.includes(routeName)) {
     if (loggedIn.value && user.value) {
-      const post = await $apiFetch<PostLoginResponse>("/api/auth/postLogin", {
-        method: "GET",
-      });
+      if (user.value.role === "admin") {
+        return navigateTo("/admin/dashboard");
+      }
 
-      return navigateTo(post.nextUrl);
+      if (!session.value?.onboarded) {
+        return navigateTo({ name: "auth-onboarding" });
+      }
+
+      if (!session.value?.hasActiveBooking) {
+        return navigateTo({ name: "auth-hostelHub" });
+      }
+
+      return navigateTo({ name: "auth-hostelHub" });
     }
     return;
   }
@@ -66,7 +78,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!loggedIn.value || !user.value) {
     return navigateTo({
       name: "auth-login",
-      query: { redirect: to.fullPath }, // Save intended destination
+      query: { redirect: to.fullPath },
     });
   }
 
@@ -74,28 +86,20 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (user.value.role === "admin") return;
 
-  if (!loggedIn.value || !user.value || user.value.role !== "student") return;
+  const onboarded = session.value?.onboarded ?? false;
+  const hasActiveAllocation = session.value?.hasActiveAllocation ?? false;
 
-  const studentStatus = useStudentStatus();
-
-  try {
-    await studentStatus.fetchStatus();
-  }
-  catch (error) {
-    console.warn("Failed to fetch student status in middleware:", error);
-    return;
-  }
-
-  if (!loggedIn.value || !user.value) return;
-
-  if (studentStatus.needsOnboarding) {
+  if (!onboarded) {
     if (routeName === "auth-onboarding") return;
-
     return navigateTo({ name: "auth-onboarding" });
   }
 
-  if (studentStatus.needsHostelSelection) {
+  if (onboarded && !hasActiveAllocation) {
     if (hostelSelectionRoutes.includes(routeName)) return;
+
+    if (routeName === "auth-onboarding") {
+      return navigateTo({ name: "auth-hostelHub" });
+    }
 
     if (studentProtectedRoutes.includes(routeName)) {
       if (import.meta.client) {
@@ -104,10 +108,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
           toast.add({
             title: "Hostel Selection Required",
-            description: "Please choose a hostel and book a room to access this page.",
+            description: "Please select a hostel and book a room first.",
             color: "warning",
             icon: "i-lucide-building-2",
-            duration: 8000,
+            duration: 5000,
           });
         });
       }
@@ -115,7 +119,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo({ name: "auth-hostelHub" });
   }
 
-  if (studentStatus.isFullyOnboarded) {
+  if (onboarded && hasActiveAllocation) {
     if (routeName === "auth-onboarding" || hostelSelectionRoutes.includes(routeName)) {
       return navigateTo({ name: "student-dashboard" });
     }

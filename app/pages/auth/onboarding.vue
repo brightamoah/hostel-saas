@@ -111,7 +111,7 @@ async function submitForm(payload: FormSubmitEvent<typeof state.value>) {
       icon: "i-lucide-circle-check-big",
     });
     clearState();
-    return router.push({ name: "student-dashboard" });
+    return router.push({ name: "auth-hostelHub" });
   }
   catch (error: any) {
     console.error("Onboarding failed:", error);

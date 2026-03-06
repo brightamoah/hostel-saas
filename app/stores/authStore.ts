@@ -173,12 +173,6 @@ export const useAuthStore = defineStore("authStore", () => {
         duration: 8000,
       });
 
-      if (user.value?.role === "student") {
-        const studentStatus = useStudentStatus();
-        studentStatus.invalidate();
-        await studentStatus.fetchStatus(true);
-      }
-
       const postLoginResponse = await $apiFetch<PostLoginResponse>("/api/auth/postLogin", {
         method: "GET",
       });

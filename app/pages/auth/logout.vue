@@ -9,14 +9,6 @@ onMounted(async () => {
   try {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    try {
-      const studentStatus = useStudentStatus();
-      studentStatus.invalidate();
-    }
-    catch {
-      // Ignore errors during status invalidation
-    }
-
     await clearUserSession();
     clearNuxtData();
   }

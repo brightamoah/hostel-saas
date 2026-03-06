@@ -237,7 +237,13 @@ export const useCompanyStore = defineStore("companyStore", () => {
   const hasLogo = computed(() => !!createCompanyState.hostelLogo || !!createCompanyState.hostelLogoUrl);
 
   const logoPreviewUrl = computed(() => {
-    if (createCompanyState.hostelLogoUrl) return createCompanyState.hostelLogoUrl;
+    if (createCompanyState.hostelLogoUrl) {
+      const config = useRuntimeConfig();
+      const baseUrl = config.public.adminBaseUrl?.replace(/\/$/, "") || "";
+
+      return `${baseUrl}${createCompanyState.hostelLogoUrl}`;
+    }
+
     if (createCompanyState.hostelLogo) return URL.createObjectURL(createCompanyState.hostelLogo);
     return null;
   });

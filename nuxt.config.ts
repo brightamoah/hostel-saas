@@ -13,6 +13,8 @@ export default defineNuxtConfig({
     "nuxt-auth-utils",
     "@formkit/auto-animate",
     "nuxt-tiptap-editor",
+    "@pinia/colada-nuxt",
+    "pinia-plugin-persistedstate/nuxt",
   ],
 
   $development: {
@@ -213,7 +215,12 @@ export default defineNuxtConfig({
     },
     headers: {
       contentSecurityPolicy: {
-        "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com"],
+        "img-src": [
+          "'self'",
+          "data:",
+          "blob:",
+          "https:",
+        ],
         "worker-src": ["'self'", "blob:"],
         "script-src": [
           "'self'",

@@ -58,13 +58,10 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    const config = useRuntimeConfig();
-    const baseUrl = config.public.adminBaseUrl;
-
     return {
       success: true,
       message: "File uploaded successfully",
-      url: `${baseUrl}/api/images/${key}`,
+      url: `/api/images/${key}`,
       key,
       filename,
     };

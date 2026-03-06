@@ -1,6 +1,6 @@
 import type { User } from "#auth-utils";
 
-import { userQueries } from "~~/server/db/queries";
+import { roomQueries, userQueries } from "~~/server/db/queries";
 import { companyQueries } from "~~/server/db/queries/company";
 import { handleError } from "~~/server/utils/errorHandler";
 
@@ -9,8 +9,9 @@ export default defineEventHandler(async (event) => {
     const {
       user,
       expiresAt,
-      onboarded,
       loggedInAt,
+      selectedHostelId,
+      selectedHostelSlug,
     } = await requireUserSession(event, {
       message: "User not authenticated",
     });
@@ -24,6 +25,7 @@ export default defineEventHandler(async (event) => {
     } = await userQueries();
 
     const { getUserMembershipByUserId } = await companyQueries();
+    const { checkActiveOrPendingAllocation } = await roomQueries();
 
     const freshUser = await getUserById(userId);
 
@@ -38,6 +40,8 @@ export default defineEventHandler(async (event) => {
     let studentId: number | undefined;
     let companyId: number | null = null;
     let companyRole: User["companyRole"] = null;
+    let onboarded = false;
+    let hasActiveAllocation = false;
 
     if (freshUser.role === "admin") {
       adminData = await getAdminByUserId(freshUser.id, true);
@@ -61,7 +65,14 @@ export default defineEventHandler(async (event) => {
     else {
       const existingStudent = await getOnboardedStudent(freshUser.id);
 
-      studentId = existingStudent?.id;
+      if (existingStudent) {
+        studentId = existingStudent.id;
+        onboarded = true;
+
+        const allocation = await checkActiveOrPendingAllocation(existingStudent.id);
+
+        hasActiveAllocation = !!allocation;
+      }
     }
 
     await setUserSession(event, {
@@ -83,6 +94,9 @@ export default defineEventHandler(async (event) => {
       loggedInAt,
       expiresAt,
       onboarded,
+      hasActiveAllocation,
+      selectedHostelId: selectedHostelId ?? null,
+      selectedHostelSlug: selectedHostelSlug ?? null,
     });
 
     return { success: true, message: "Session refreshed" };
