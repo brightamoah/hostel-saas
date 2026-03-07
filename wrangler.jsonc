@@ -75,7 +75,7 @@
       "r2_buckets": [
         {
           "binding": "BUCKET",
-          "bucket_name": "kayanest-hostel-images",
+          "bucket_name": "kayanest-preview-hostel-images",
           "preview_bucket_name": "kayanest-preview-hostel-images"
         }
       ],
