@@ -165,14 +165,14 @@ export default defineNuxtConfig({
     databaseUrl: env.NUXT_DATABASE_URL,
     nodemailerFrom: env.NUXT_NODEMAILER_FROM,
     nodemailerHost: env.NUXT_NODEMAILER_HOST,
-    nodemailerPort: env.NUXT_NODEMAILER_PORT,
+    nodemailerPort: env.NUXT_NODEMAILER_PORT ? String(env.NUXT_NODEMAILER_PORT) : undefined,
     nodemailerAuthUser: env.NUXT_NODEMAILER_AUTH_USER,
     nodemailerAuthPass: env.NUXT_NODEMAILER_AUTH_PASS,
     emailFromName: env.NUXT_EMAIL_FROM_NAME,
     emailFromEmail: env.NUXT_EMAIL_FROM_EMAIL,
     nodeEnv: env.NODE_ENV,
     paystackSecretKey: env.NUXT_PAYSTACK_SECRET_KEY,
-    platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
+    // platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
 
   },
 
