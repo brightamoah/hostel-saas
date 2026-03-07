@@ -6,6 +6,16 @@
   "compatibility_flags": [
     "nodejs_compat_v2"
   ],
+  "routes": [
+    {
+      "pattern": "kayanest.app",
+      "custom_domain": true
+    },
+    {
+      "pattern": "admin.kayanest.app",
+      "custom_domain": true
+    }
+  ],
   "triggers": {
     "crons": [
       "*/15 * * * *"

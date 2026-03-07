@@ -31,6 +31,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const hostelSelectionRoutes: (keyof RouteNamedMap)[] = [
     "auth-hostelHub",
+    "hostels-hostelSlug",
   ];
 
   const studentProtectedRoutes: (keyof RouteNamedMap)[] = [

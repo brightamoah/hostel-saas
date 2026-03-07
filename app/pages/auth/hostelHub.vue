@@ -87,15 +87,6 @@ const filteredHostels = computed(() => {
     </div>
 
     <div class="flex sm:flex-row flex-col gap-3 mb-8">
-      <UInput
-        v-model="searchQuery"
-        placeholder="Search by city, country or name..."
-        icon="i-lucide-search"
-        size="lg"
-        class="flex-1"
-        :ui="{ base: 'rounded-xl' }"
-      />
-
       <USelect
         v-model="sortBy"
         :items="sortOptions"
@@ -106,6 +97,33 @@ const filteredHostels = computed(() => {
           item: 'cursor-pointer',
         }"
       />
+
+      <UInput
+        v-model="searchQuery"
+        placeholder="Search by city, country or name..."
+        icon="i-lucide-search"
+        size="lg"
+        class="flex-1"
+        :ui="{ base: 'rounded-xl' }"
+      />
+
+      <UFieldGroup size="lg">
+        <UInput
+          v-model="searchQuery"
+          placeholder="Enter hostel code..."
+          icon="i-lucide-key"
+          size="lg"
+          class="flex-1"
+          :ui="{ base: 'rounded-xl' }"
+        />
+
+        <UButton
+          color="primary"
+          class="rounded-xl cursor-pointer"
+          label="Use Code"
+          icon="i-lucide-arrow-right"
+        />
+      </UFieldGroup>
     </div>
 
     <div
@@ -140,7 +158,7 @@ const filteredHostels = computed(() => {
         :key="hostel.id"
         class="group hover:shadow-xl border border-default rounded-2xl overflow-hidden transition-all cursor-pointer"
         :ui="{ body: 'p-0' }"
-        @click="navigateTo(`/hostels/${hostel.id}`)"
+        @click="navigateTo({ name: 'hostels-hostelSlug', params: { hostelSlug: hostel.id } })"
       >
         <div class="relative h-52 overflow-hidden">
           <NuxtImg
@@ -174,7 +192,7 @@ const filteredHostels = computed(() => {
         </div>
 
         <div class="pt-3">
-          <div class="flex items-center gap-1 mb-1 text-muted text-xs">
+          <div class="flex justify-center items-center gap-1 mb-1 text-muted text-xs">
             <UIcon
               name="i-lucide-map-pin"
               class="size-3 shrink-0"
@@ -183,7 +201,7 @@ const filteredHostels = computed(() => {
             <span>{{ hostel.location }}</span>
           </div>
 
-          <h2 class="mb-3 font-bold text-highlighted group-hover:text-primary text-lg leading-tight transition-colors">
+          <h2 class="mb-3 font-bold text-highlighted group-hover:text-primary text-lg text-center leading-tight transition-colors">
             {{ hostel.name }}
           </h2>
 
@@ -191,11 +209,10 @@ const filteredHostels = computed(() => {
             <UButton
               color="primary"
               label="View details"
-              size="lg"
               class="flex justify-center items-center w-[70%] font-medium cursor-pointer"
               trailing-icon="i-lucide-arrow-right"
               :ui="{ base: 'rounded-lg' }"
-              @click.stop="navigateTo(`/hostels/${hostel.id}`)"
+              @click="navigateTo({ name: 'hostels-hostelSlug', params: { hostelSlug: hostel.id } })"
             />
           </div>
         </div>
