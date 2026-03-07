@@ -42,7 +42,7 @@
   },
   "r2_buckets": [
     {
-      "binding": "IMAGES",
+      "binding": "BUCKET",
       "bucket_name": "kayanest-hostel-images",
       "preview_bucket_name": "kayanest-preview-hostel-images"
     }
@@ -64,7 +64,7 @@
     "preview": {
       "r2_buckets": [
         {
-          "binding": "IMAGES",
+          "binding": "BUCKET",
           "bucket_name": "kayanest-hostel-images",
           "preview_bucket_name": "kayanest-preview-hostel-images"
         }
@@ -82,8 +82,7 @@
       "vars": {},
       "triggers": {
         "crons": [
-          "0 0 * * *",
-          "0 1 * * SUN"
+          "*/15 * * * *"
         ]
       }
     }

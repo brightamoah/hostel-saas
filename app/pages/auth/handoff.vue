@@ -62,96 +62,95 @@ function retryLogin() {
 </script>
 
 <template>
-  <div
-    v-auto-animate
-    class="flex flex-col justify-center items-center gap-6 mx-auto px-4 max-w-md"
-  >
-    <!-- Processing State -->
-    <template v-if="status === 'processing'">
-      <div class="flex flex-col items-center gap-4">
-        <div class="relative">
-          <UIcon
-            name="i-lucide-shield-check"
-            class="text-primary text-5xl"
+  <div>
+    <div
+      v-auto-animate
+      class="flex flex-col justify-center items-center gap-6 mx-auto px-4 max-w-md"
+    >
+      <template v-if="status === 'processing'">
+        <div class="flex flex-col items-center gap-4">
+          <div class="relative">
+            <UIcon
+              name="i-lucide-shield-check"
+              class="text-primary text-5xl"
+            />
+          </div>
+
+          <h1 class="font-semibold text-xl text-center">
+            Signing you in...
+          </h1>
+
+          <p class="text-muted text-sm text-center">
+            {{ statusMessage }}
+          </p>
+
+          <UProgress
+            animation="carousel"
+            class="w-48"
           />
         </div>
+      </template>
 
-        <h1 class="font-semibold text-xl text-center">
-          Signing you in...
-        </h1>
+      <template v-else-if="status === 'success'">
+        <div class="flex flex-col items-center gap-4">
+          <UIcon
+            name="i-lucide-check-circle"
+            class="text-success text-5xl"
+          />
 
-        <p class="text-muted text-sm text-center">
-          {{ statusMessage }}
-        </p>
+          <h1 class="font-semibold text-xl text-center">
+            Authentication Successful
+          </h1>
 
-        <UProgress
-          animation="carousel"
-          class="w-48"
-        />
-      </div>
-    </template>
-
-    <!-- Success State -->
-    <template v-else-if="status === 'success'">
-      <div class="flex flex-col items-center gap-4">
-        <UIcon
-          name="i-lucide-check-circle"
-          class="text-success text-5xl"
-        />
-
-        <h1 class="font-semibold text-xl text-center">
-          Authentication Successful
-        </h1>
-
-        <p class="text-muted text-sm text-center">
-          {{ statusMessage }}
-        </p>
-      </div>
-    </template>
-
-    <!-- Error State -->
-    <template v-else-if="status === 'error'">
-      <div class="flex flex-col items-center gap-4 w-full">
-        <UIcon
-          name="i-lucide-shield-x"
-          class="text-error text-5xl"
-        />
-
-        <h1 class="font-semibold text-xl text-center">
-          Authentication Failed
-        </h1>
-
-        <UAlert
-          color="error"
-          variant="subtle"
-          :title="error || 'An unexpected error occurred'"
-          class="w-full text-center"
-        />
-
-        <div class="flex gap-3">
-          <UButton
-            color="primary"
-            icon="i-lucide-log-in"
-            class="cursor-pointer"
-            @click="retryLogin"
-          >
-            Try Again
-          </UButton>
-
-          <UButton
-            variant="outline"
-            icon="i-lucide-home"
-            :to="{ name: 'index' }"
-            class="cursor-pointer"
-          >
-            Go Home
-          </UButton>
+          <p class="text-muted text-sm text-center">
+            {{ statusMessage }}
+          </p>
         </div>
+      </template>
 
-        <p class="text-muted text-xs text-center">
-          If this problem persists, please contact support.
-        </p>
-      </div>
-    </template>
+      <template v-else-if="status === 'error'">
+        <div class="flex flex-col items-center gap-4 w-full">
+          <UIcon
+            name="i-lucide-shield-x"
+            class="text-error text-5xl"
+          />
+
+          <h1 class="font-semibold text-xl text-center">
+            Authentication Failed
+          </h1>
+
+          <UAlert
+            color="error"
+            variant="subtle"
+            :title="error || 'An unexpected error occurred'"
+            class="w-full text-center"
+          />
+
+          <div class="flex gap-3">
+            <UButton
+              color="primary"
+              icon="i-lucide-log-in"
+              class="cursor-pointer"
+              @click="retryLogin"
+            >
+              Try Again
+            </UButton>
+
+            <UButton
+              variant="outline"
+              icon="i-lucide-home"
+              :to="{ name: 'index' }"
+              class="cursor-pointer"
+            >
+              Go Home
+            </UButton>
+          </div>
+
+          <p class="text-muted text-xs text-center">
+            If this problem persists, please contact support.
+          </p>
+        </div>
+      </template>
+    </div>
   </div>
 </template>

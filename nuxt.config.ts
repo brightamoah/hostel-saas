@@ -136,7 +136,7 @@ export default defineNuxtConfig({
       images: {
         driver: "cloudflare-r2-binding",
         options: {
-          binding: "IMAGES",
+          binding: "BUCKET",
         },
       },
     },
