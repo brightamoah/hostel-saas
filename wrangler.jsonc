@@ -62,6 +62,16 @@
   "vars": {},
   "env": {
     "preview": {
+      "routes": [
+        {
+          "pattern": "preview.kayanest.app",
+          "custom_domain": true
+        },
+        {
+          "pattern": "admin.preview.kayanest.app",
+          "custom_domain": true
+        }
+      ],
       "r2_buckets": [
         {
           "binding": "BUCKET",

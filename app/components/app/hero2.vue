@@ -2,15 +2,15 @@
 const { loggedIn, user } = useUserSession();
 
 const dashboardRoute = computed(() => {
-  if (!loggedIn.value || !user.value) return { name: "auth-login" };
+  if (!loggedIn.value || !user.value) return "auth-login";
 
   switch (user.value.role) {
     case "admin":
-      return { name: "admin-dashboard" };
+      return "admin-dashboard";
     case "student":
-      return { name: "auth-hostelHub" };
+      return "auth-hostelHub";
     default:
-      return { name: "auth-login" };
+      return "auth-login";
   }
 });
 
@@ -85,7 +85,7 @@ const features = ref([
           color="primary"
           size="xl"
           class="cursor-pointer"
-          @click="$router.push(dashboardRoute)"
+          @click="navigateTo({ name: dashboardRoute })"
         />
 
         <UButton

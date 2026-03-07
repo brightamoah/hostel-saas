@@ -1,9 +1,5 @@
 export default defineEventHandler(async (event) => {
   try {
-    // await requireUserSession(event, {
-    //   message: "Unauthorized, please log in to delete images.",
-    // });
-
     const body = await readBody(event);
     const { key } = body;
 
@@ -14,17 +10,37 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const storage = useStorage("images");
-    const fileExists = await storage.hasItem(key);
+    if (import.meta.dev) {
+      console.log("Deleting image with key:", key);
 
-    if (!fileExists) {
-      throw createError({
-        statusCode: 404,
-        message: "Image not found",
-      });
+      const storage = useStorage("images");
+
+      const fileExists = await storage.hasItem(key);
+
+      if (!fileExists) {
+        throw createError({
+          statusCode: 404,
+          message: "Image not found",
+        });
+      }
+
+      await storage.del(key);
     }
+    else {
+      console.log("Deleting image in prod", key);
 
-    await storage.removeItem(key);
+      const storage = event.context.cloudflare.env.R2;
+      const fileExists = await storage.get(key);
+
+      if (!fileExists) {
+        throw createError({
+          statusCode: 404,
+          message: "Image not found",
+        });
+      }
+
+      await storage.delete(key);
+    }
 
     return {
       success: true,

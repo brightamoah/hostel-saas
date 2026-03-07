@@ -241,7 +241,11 @@ export const useCompanyStore = defineStore("companyStore", () => {
       const config = useRuntimeConfig();
       const baseUrl = config.public.adminBaseUrl?.replace(/\/$/, "") || "";
 
-      return `${baseUrl}${createCompanyState.hostelLogoUrl}`;
+      const logoUrl = `${baseUrl}${createCompanyState.hostelLogoUrl}`;
+
+      console.log(logoUrl);
+
+      return logoUrl;
     }
 
     if (createCompanyState.hostelLogo) return URL.createObjectURL(createCompanyState.hostelLogo);
