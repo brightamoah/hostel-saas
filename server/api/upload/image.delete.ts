@@ -10,41 +10,45 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (import.meta.dev) {
-      console.log("Deleting image with key:", key);
+    console.log("Deleting image with key:", key);
 
-      const storage = useStorage("images");
+    const nitroStorage = useStorage("images");
 
-      const fileExists = await storage.hasItem(key);
+    const r2FormattedKey = key.replace(/\//g, ":");
 
-      if (!fileExists) {
-        throw createError({
-          statusCode: 404,
-          message: "Image not found",
-        });
+    const keysToTry = [key, r2FormattedKey];
+
+    let deleted = false;
+    let deletedKey = "";
+
+    for (const key of keysToTry) {
+      try {
+        const file = await nitroStorage.getItem(key);
+
+        if (file) {
+          await nitroStorage.removeItem(key);
+          deleted = true;
+          deletedKey = key;
+          console.log(`Deleted image with key: ${key}`);
+          break;
+        }
       }
-
-      await storage.del(key);
+      catch (error) {
+        console.log(`Failed to delete with key: ${key}`, error);
+      }
     }
-    else {
-      console.log("Deleting image in prod", key);
 
-      const storage = event.context.cloudflare.env.R2;
-      const fileExists = await storage.get(key);
-
-      if (!fileExists) {
-        throw createError({
-          statusCode: 404,
-          message: "Image not found",
-        });
-      }
-
-      await storage.delete(key);
+    if (!deleted) {
+      throw createError({
+        statusCode: 404,
+        message: "Image not found",
+      });
     }
 
     return {
       success: true,
-      message: "Image deleted successfully.",
+      message: `Image deleted successfully, key: ${key}`,
+      deletedKey,
     };
   }
   catch (error) {

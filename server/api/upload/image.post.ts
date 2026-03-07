@@ -49,6 +49,10 @@ export default defineEventHandler(async (event) => {
     const extension = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
     const filename = `hostel-${randomUUID()}.${extension}`;
     const key = `${folder}/${filename}`;
+    const r2Key = key.replace(/\//g, ":");
+
+    console.log("Uploading file with key:", key);
+    console.log("R2 will store as:", r2Key);
 
     const storage = useStorage("images");
 
@@ -63,6 +67,7 @@ export default defineEventHandler(async (event) => {
       message: "File uploaded successfully",
       url: `/api/images/${key}`,
       key,
+      r2Key,
       filename,
     };
   }

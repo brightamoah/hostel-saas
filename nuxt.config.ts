@@ -224,6 +224,7 @@ export default defineNuxtConfig({
           "https://*.paystack.com",
           "https://*.paystack.co",
           "https://api.iconify.design/",
+          "https://static.cloudflareinsights.com",
         ],
         "frame-src": [
           "'self'",
@@ -239,6 +240,7 @@ export default defineNuxtConfig({
           "https://*.paystack.com",
           "https://*.browser-intake-datadoghq.com",
           "https://api.iconify.design/",
+          "https://static.cloudflareinsights.com",
         ],
       },
     },
