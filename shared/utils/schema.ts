@@ -748,7 +748,7 @@ const companySchema = z.object({
   supportPhone: phoneNumberSchema.optional(),
   hostelAddress: addressSchema.optional(),
   hostelLogo: imageFileSchema.optional(),
-  hostelLogoUrl: z.url("Invalid URL").optional(),
+  hostelLogoUrl: z.string().optional(),
   hostelLogoKey: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.createHostelNow) {
