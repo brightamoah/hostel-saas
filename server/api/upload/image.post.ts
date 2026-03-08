@@ -48,27 +48,42 @@ export default defineEventHandler(async (event) => {
     }
 
     const extension = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-    const filename = `hostel-${randomUUID()}.${extension}`;
+    const filename = `${randomUUID()}.${extension}`;
     const key = `${folder}/${filename}`;
-    const r2Key = key.replace(/\//g, ":");
 
     console.log("Uploading file with key:", key);
-    console.log("R2 will store as:", r2Key);
 
-    const storage = useStorage("images");
+    if (import.meta.dev) {
+      const storage = useStorage("images");
 
-    await storage.setItemRaw(key, fileField.data, {
-      httpMetadata: {
-        contentType: mimeType,
-      },
-    });
+      await storage.setItemRaw(key, fileField.data, {
+        httpMetadata: {
+          contentType: mimeType,
+        },
+      });
+    }
+    else {
+      const r2Bucket = event.context.cloudflare?.env?.BUCKET;
+
+      if (!r2Bucket) {
+        throw createError({
+          statusCode: 500,
+          message: "R2 bucket not configured",
+        });
+      }
+
+      await r2Bucket.put(key, fileField.data, {
+        httpMetadata: {
+          contentType: mimeType,
+        },
+      });
+    }
 
     return {
       success: true,
       message: "File uploaded successfully",
       url: `/api/images/${key}`,
       key,
-      r2Key,
       filename,
     };
   }

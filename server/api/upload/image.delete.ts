@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
@@ -11,45 +10,45 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("Deleting image with key:", key);
+    if (import.meta.dev) {
+      const storage = useStorage("images");
 
-    const nitroStorage = useStorage("images");
+      const exists = await storage.hasItem(key);
 
-    const r2FormattedKey = key.replace(/\//g, ":");
-
-    const keysToTry = [key, r2FormattedKey];
-
-    let deleted = false;
-    let deletedKey = "";
-
-    for (const key of keysToTry) {
-      try {
-        const file = await nitroStorage.getItem(key);
-
-        if (file) {
-          await nitroStorage.removeItem(key);
-          deleted = true;
-          deletedKey = key;
-          console.log(`Deleted image with key: ${key}`);
-          break;
-        }
+      if (!exists) {
+        throw createError({
+          statusCode: 404,
+          message: "Image not found",
+        });
       }
-      catch (error) {
-        console.log(`Failed to delete with key: ${key}`, error);
-      }
+
+      await storage.removeItem(key);
     }
+    else {
+      const r2Bucket = event.context.cloudflare?.env?.BUCKET;
 
-    if (!deleted) {
-      throw createError({
-        statusCode: 404,
-        message: "Image not found",
-      });
+      if (!r2Bucket) {
+        throw createError({
+          statusCode: 500,
+          message: "R2 bucket not configured",
+        });
+      }
+
+      const image = await r2Bucket.get(key);
+
+      if (!image) {
+        throw createError({
+          statusCode: 404,
+          message: "Image not found",
+        });
+      }
+
+      await r2Bucket.delete(key);
     }
 
     return {
       success: true,
-      message: `Image deleted successfully, key: ${key}`,
-      deletedKey,
+      message: "Image deleted successfully.",
     };
   }
   catch (error) {

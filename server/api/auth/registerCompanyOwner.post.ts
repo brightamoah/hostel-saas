@@ -42,13 +42,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!hostelLogoUrl) {
-      throw createError({
-        statusCode: 400,
-        message: "Hostel logo is required",
-      });
-    }
-
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedSupportEmail = supportEmail?.trim().toLowerCase();
 

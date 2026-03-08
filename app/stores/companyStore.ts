@@ -110,14 +110,6 @@ export const useCompanyStore = defineStore("companyStore", () => {
       if (response.success && response.url) {
         uploadProgress.value = 100;
 
-        toast.add({
-          title: "Upload Successful",
-          description: "Image uploaded successfully.",
-          color: "success",
-          icon: "i-lucide-circle-check-big",
-          duration: 5000,
-        });
-
         return {
           url: response.url,
           key: response.key,
@@ -242,8 +234,6 @@ export const useCompanyStore = defineStore("companyStore", () => {
       const baseUrl = config.public.adminBaseUrl?.replace(/\/$/, "") || "";
 
       const logoUrl = `${baseUrl}${createCompanyState.hostelLogoUrl}`;
-
-      console.warn(logoUrl);
 
       return logoUrl;
     }
