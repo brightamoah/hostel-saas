@@ -40,11 +40,11 @@ export function useVisitorRowColumn(
     clearState,
   } = visitorStore;
 
-  const openApproveDenyModal = (visitor: VisitorType, status: "approved" | "denied") => {
+  const openApproveDenyModal = async (visitor: VisitorType, status: "approved" | "denied") => {
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       title: status === "approved" ? "Approve Visitor" : "Deny Visitor",
       description: `This action will change the status of the visitor to "${status}"`,
       confirmLabel: status === "approved" ? "Approve Visitor" : "Deny Visitor",
@@ -67,33 +67,33 @@ export function useVisitorRowColumn(
     });
   };
 
-  const openVisitorDetailsModal = (visitor: VisitorType) => {
+  const openVisitorDetailsModal = async (visitor: VisitorType) => {
     const modal = overlay.create(VisitorDetailsModal);
     const close = modal.close;
 
-    modal.open({
+    void modal.open({
       visitor,
       isAdmin,
-      approve: () => {
-        openApproveDenyModal(visitor, "approved");
+      approve: async () => {
+        await openApproveDenyModal(visitor, "approved");
         close();
       },
-      deny: () => {
-        openApproveDenyModal(visitor, "denied");
+      deny: async () => {
+        await openApproveDenyModal(visitor, "denied");
         close();
       },
 
     });
   };
 
-  const openCheckInCheckOutModal = (visitor: VisitorType, action: LogActionSchema["action"]) => {
+  const openCheckInCheckOutModal = async (visitor: VisitorType, action: LogActionSchema["action"]) => {
     const checksPassed = checkInCheckOutChecks(visitor, action);
     if (!checksPassed) return;
 
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       title: action === "check_in"
         ? "Check In Visitor"
         : "Check Out Visitor",
@@ -130,10 +130,10 @@ export function useVisitorRowColumn(
     });
   };
 
-  const openDeleteVisitorModal = (visitor: VisitorType) => {
+  const openDeleteVisitorModal = async (visitor: VisitorType) => {
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
-    modal.open({
+    await modal.open({
       title: `Delete Visitor`,
       confirmLabel: "Delete Visitor",
       isLoading,
@@ -165,13 +165,13 @@ export function useVisitorRowColumn(
     });
   };
 
-  const openEditVisitorModal = (visitor: VisitorType) => {
+  const openEditVisitorModal = async (visitor: VisitorType) => {
     initEditSession(visitor);
 
     const modal = overlay.create(EditVisitorModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       isLoading,
       editVisitorState: editVisitorState.value as EditVisitor["data"],
       handleFormError,

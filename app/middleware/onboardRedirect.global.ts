@@ -104,7 +104,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
     if (studentProtectedRoutes.includes(routeName)) {
       if (import.meta.client) {
-        runWithContext(() => {
+        await runWithContext(() => {
           const toast = useToast();
 
           toast.add({

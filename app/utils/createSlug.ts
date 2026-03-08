@@ -107,7 +107,7 @@ export function createSlug(
     if (!slug && words.length > 0) slug = (words[0] ?? "").slice(0, maxLength);
   }
 
-  slug = slug.replace(/-+/g, "-").replace(/(^-|-$)+/g, "");
+  slug = slug.replace(/-+/g, "-").replace(/(?:^-|-$)+/g, "");
 
   return slug;
 }

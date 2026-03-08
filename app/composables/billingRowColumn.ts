@@ -25,7 +25,7 @@ export function useBillingRowColumn(
   const openBillingDetails = (billing: Billing) => {
     const modal = overlay.create(BillingDetails);
 
-    modal.open({
+    void modal.open({
       isAdmin,
       billing,
     });
@@ -36,7 +36,7 @@ export function useBillingRowColumn(
 
     const modal = overlay.create(PaymentModal);
 
-    modal.open({
+    void modal.open({
       billing,
     });
   };

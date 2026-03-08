@@ -20,7 +20,7 @@ export function useUserRowColumn(
   const { isLoading } = storeToRefs(userStore);
 
   const openDetailsModal = (user: UserWithRelations) => {
-    overlay.create(UserDetailsModal).open({
+    void overlay.create(UserDetailsModal).open({
       user,
     });
   };
@@ -28,7 +28,7 @@ export function useUserRowColumn(
   const openDeleteUserModal = (userId: number, userName: string) => {
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
-    modal.open({
+    void modal.open({
       title: `Delete User`,
       confirmLabel: "Delete User",
       isLoading,
@@ -53,7 +53,7 @@ export function useUserRowColumn(
       const modal = overlay.create(ConfirmationModal);
       const close = modal.close;
 
-      modal.open({
+      void modal.open({
         title: "Demote User",
         description: `This action will demote ${user.name} from admin to student.`,
         confirmLabel: "Demote User",
@@ -79,7 +79,7 @@ export function useUserRowColumn(
       const modal = overlay.create(ConfirmationModal);
       const close = modal.close;
 
-      modal.open({
+      void modal.open({
         title: "Re-activate Admin Role",
         description: `Do you want to re-activate ${user.name}'s previous admin role? `,
         confirmLabel: "Re-activate",
@@ -100,7 +100,7 @@ export function useUserRowColumn(
       const modal = overlay.create(PromoteUserModal);
       const close = modal.close;
 
-      modal.open({
+      void modal.open({
         user,
         isLoading,
         onConfirm: async (payload: PromoteDemoteSchema) => {

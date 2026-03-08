@@ -20,7 +20,7 @@ export function useRoomRowColumn(
   const { isLoading } = storeToRefs(roomStore);
 
   const openDetailsModal = (room: Room) => {
-    overlay.create(RoomDetailsModal).open({
+    void overlay.create(RoomDetailsModal).open({
       room,
     });
   };
@@ -28,7 +28,7 @@ export function useRoomRowColumn(
   const openDeleteModal = (roomId: number, roomNumber: string) => {
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
-    modal.open({
+    void modal.open({
       title: `Delete Room ${roomNumber}`,
       confirmLabel: "Delete Room",
       isLoading,
@@ -51,7 +51,7 @@ export function useRoomRowColumn(
   const openEditModal = (roomData: RoomFormState, roomId: number) => {
     const modal = overlay.create(EditModal);
 
-    modal.open({
+    void modal.open({
       roomData,
       roomId,
       closeModal: () => modal.close(),
@@ -63,19 +63,6 @@ export function useRoomRowColumn(
       {
         type: "label",
         label: "Actions",
-      },
-      {
-        label: "Copy customer ID",
-        icon: "i-lucide-copy",
-        onSelect() {
-          navigator.clipboard.writeText(row.original.id.toString());
-          toast.add({
-            title: "Copied to clipboard",
-            color: "success",
-            icon: "i-lucide-circle-check-big",
-            description: "Customer ID copied to clipboard",
-          });
-        },
       },
       {
         label: "View Details",

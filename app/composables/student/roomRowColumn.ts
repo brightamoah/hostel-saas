@@ -22,7 +22,7 @@ export function useStudentRoomRowColumn(
 
   const openDetailsModal = (room: Room) => {
     const modal = overlay.create(RoomDetailsModal);
-    modal.open({
+    void modal.open({
       room,
     });
   };
@@ -31,7 +31,7 @@ export function useStudentRoomRowColumn(
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       title: `Book Room ${room.roomNumber} in ${room.hostel?.name} Hostel`,
       confirmLabel: "Book Room",
       description: `This action will reserve room ${room.roomNumber} for you.`,

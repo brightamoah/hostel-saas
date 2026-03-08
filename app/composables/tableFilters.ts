@@ -140,8 +140,8 @@ export function useTableFilters<T extends { id: number }>(
     });
   };
 
-  watch(() => [data.value?.[dataKey]?.length, totalItems.value], () => {
-    nextTick(() => {
+  watch(() => [data.value?.[dataKey]?.length, totalItems.value], async () => {
+    await nextTick(() => {
       const tableApi = safeTableApi();
       const pageSize = tableState.value?.pagination.pageSize || 10;
       if (tableApi) tableApi.setPageIndex(0);

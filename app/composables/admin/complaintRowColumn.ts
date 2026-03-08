@@ -45,43 +45,43 @@ export function useComplaintRowColumn(
   const openComplaintDetailModal = (complaint: Complaint) => {
     const modal = overlay.create(ComplaintDetailModal);
 
-    modal.open({
+    void modal.open({
       complaint,
     });
   };
 
-  const openStatusResponseModal = (complaint: Complaint, action: ComplaintAction) => {
+  const openStatusResponseModal = async (complaint: Complaint, action: ComplaintAction) => {
     const modal = overlay.create(ComplaintStatusResponseModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       complaint,
       action,
       isLoading,
       update: async () => {
         await complaintStore.updateStatusAndAddResponse({
           complaintId: complaint.id,
-          status: complaintStatusResponseState.value.status,
-          responseText: complaintStatusResponseState.value.responseText,
+          status: complaintStatusResponseState.value.status!,
+          responseText: complaintStatusResponseState.value.responseText!,
         });
         close();
       },
       addResponse: async () => {
         await complaintStore.addComplaintResponse({
           complaintId: complaint.id,
-          responseText: complaintStatusResponseState.value.responseText,
+          responseText: complaintStatusResponseState.value.responseText!,
         });
         close();
       },
     });
   };
 
-  const openEditComplaintModal = (complaint: Complaint) => {
+  const openEditComplaintModal = async (complaint: Complaint) => {
     initEditSession(complaint);
     const modal = overlay.create(EditComplaintModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       editComplaintState: editComplaintState.value,
       isLoading,
       handleFormError,
@@ -94,13 +94,13 @@ export function useComplaintRowColumn(
     });
   };
 
-  const openFollowUpModal = (complaint: Complaint) => {
+  const openFollowUpModal = async (complaint: Complaint) => {
     initFollowUpSession(complaint);
 
     const modal = overlay.create(FollowUpModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       followUpState: followUpState.value,
       isLoading,
       handleFormError,

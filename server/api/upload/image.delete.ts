@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);

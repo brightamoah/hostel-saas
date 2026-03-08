@@ -42,16 +42,16 @@ export function useMaintenanceRowColumn(
   const openMaintenanceDetailModal = (maintenance: MaintenanceType) => {
     const modal = overlay.create(MaintenanceDetailModal);
 
-    modal.open({
+    void modal.open({
       maintenance,
     });
   };
 
-  const openStatusResponseModal = (maintenance: MaintenanceType, action: MaintenanceAction) => {
+  const openStatusResponseModal = async (maintenance: MaintenanceType, action: MaintenanceAction) => {
     const modal = overlay.create(MaintenanceStatusResponseModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       maintenance,
       action,
       isLoading,
@@ -73,13 +73,13 @@ export function useMaintenanceRowColumn(
     });
   };
 
-  const openMaintenanceEditModal = (maintenance: MaintenanceType) => {
+  const openMaintenanceEditModal = async (maintenance: MaintenanceType) => {
     initEditSession(maintenance);
 
     const modal = overlay.create(MaintenanceEditModal);
     const close = modal.close;
 
-    modal.open({
+    await modal.open({
       isLoading,
       editMaintenanceState: editMaintenanceState.value,
       handleFormError,

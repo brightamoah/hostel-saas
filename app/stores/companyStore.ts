@@ -243,7 +243,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
 
       const logoUrl = `${baseUrl}${createCompanyState.hostelLogoUrl}`;
 
-      console.log(logoUrl);
+      console.warn(logoUrl);
 
       return logoUrl;
     }

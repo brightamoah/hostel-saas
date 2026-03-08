@@ -161,9 +161,9 @@ const items = computed<DropdownMenuItem[][]>(() => [
       label: "Log out",
       icon: "i-lucide-log-out",
       color: "error",
-      onSelect: () => {
-        // e.preventDefault();
-        authStore.signout();
+      onSelect: async (e: Event) => {
+        e.preventDefault();
+        await authStore.signout();
       },
     },
   ],

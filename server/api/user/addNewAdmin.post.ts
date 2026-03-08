@@ -134,6 +134,8 @@ export default defineEventHandler(async (event) => {
 
     const verificationUrl = `${event.headers.get("origin")}/auth/verifyEmail?token=${verificationToken}&id=${newAdminUser.userId}`;
 
+    const userForEmail = { ...newAdminUser, companyId: newAdminUser.companyId ?? undefined };
+
     const { html, text } = getWelcomeAdminTemplate(
       name,
       email,
@@ -143,7 +145,7 @@ export default defineEventHandler(async (event) => {
     const {
       htmlTemplate,
       textTemplate,
-    } = getEmailTemplate(verificationUrl, newAdminUser);
+    } = getEmailTemplate(verificationUrl, userForEmail);
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();
@@ -181,7 +183,7 @@ export default defineEventHandler(async (event) => {
         text: textTemplate,
       });
 
-      mailer.close();
+      await mailer.close();
     }
 
     return {

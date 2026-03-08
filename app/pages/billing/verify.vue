@@ -8,8 +8,7 @@ definePageMeta({
   middleware: ["requires-auth"],
 });
 
-const route = useRoute();
-const router = useRouter();
+const route = useRoute("billing-verify");
 const toast = useToast();
 const { $apiFetch } = useNuxtApp();
 const { user } = useUserSession();
@@ -168,8 +167,8 @@ const billingRoute = computed<RouteLocationRaw>(() => user.value?.role === "admi
   ? { name: "admin-billings" }
   : { name: "student-billing" });
 
-function goToBilling() {
-  router.push(billingRoute.value);
+async function goToBilling() {
+  await navigateTo(billingRoute.value);
 }
 </script>
 

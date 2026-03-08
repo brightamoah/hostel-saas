@@ -119,7 +119,7 @@ export default defineEventHandler(async (event) => {
           text: textTemplate,
         });
 
-        if (typeof mailer.close === "function") mailer.close();
+        if (typeof mailer.close === "function") await mailer.close();
       }
     }
     catch (emailError) {

@@ -170,8 +170,8 @@ export const useAnnouncementStore = defineStore("announcementStore", () => {
     }
   }, 5000);
 
-  watch(announcementState, (newState) => {
-    saveDraft(newState);
+  watch(announcementState, async (newState) => {
+    await saveDraft(newState);
   }, { deep: true });
 
   const createAnnouncement = async (payload: FormSubmitEvent<CreateAnnouncementSchema>) => {
@@ -293,9 +293,9 @@ export const useAnnouncementStore = defineStore("announcementStore", () => {
   }
 
   if (import.meta.client) {
-    watch(() => user.value?.id, (newId, oldId) => {
+    watch(() => user.value?.id, async (newId, oldId) => {
       if (newId && newId !== oldId) {
-        loadDraft();
+        await loadDraft();
       }
       else {
         announcementState.value = { ...defaultState };

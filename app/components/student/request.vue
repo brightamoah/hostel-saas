@@ -24,7 +24,7 @@ const MaintenanceDetailModal = defineAsyncComponent(() => import("~/components/m
 function openMaintenanceDetailModal(maintenance: MaintenanceType) {
   const modal = overlay.create(MaintenanceDetailModal);
 
-  modal.open({
+  void modal.open({
     maintenance,
   });
 }

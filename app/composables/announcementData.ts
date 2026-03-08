@@ -30,8 +30,8 @@ export function useAnnouncementData() {
     getAnnouncementFromCache,
   } = useAnnouncementTrigger(data, user);
 
-  watch(selectedAnnouncement, (newAnnouncement) => {
-    if (newAnnouncement && !newAnnouncement.isRead) updateReadStatus(newAnnouncement.id, { action: "read" });
+  watch(selectedAnnouncement, async (newAnnouncement) => {
+    if (newAnnouncement && !newAnnouncement.isRead) await updateReadStatus(newAnnouncement.id, { action: "read" });
   });
 
   return {

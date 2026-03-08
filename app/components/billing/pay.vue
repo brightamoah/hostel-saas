@@ -80,7 +80,7 @@ function handleFormError(event: FormErrorEvent) {
   useHandleFormError(event);
 }
 
-function submitPayment() {
+async function submitPayment() {
   const { amount, billingId, email, phoneNumber, totalAmount } = paymentState.value;
 
   if (!amount) throw new Error("Payment amount is missing.");
@@ -89,7 +89,7 @@ function submitPayment() {
   if (!email) throw new Error("Email is missing.");
   if (!phoneNumber) throw new Error("Phone number is missing.");
 
-  initiatePayment({
+  await initiatePayment({
     amount,
     email,
     phoneNumber,

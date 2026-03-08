@@ -19,8 +19,8 @@ const isMobile = inject("isMobile") as ComputedRef<boolean>;
 
 const { updateReadStatus } = useAnnouncementData();
 
-function markAsUnread() {
-  updateReadStatus(announcement.id, { action: "unread" });
+async function markAsUnread() {
+  await updateReadStatus(announcement.id, { action: "unread" });
   emit("close", false);
 }
 
@@ -28,7 +28,7 @@ function openEditModal(announcementId: number) {
   const modal = overlay.create(EditAnnouncementModal);
   const close = modal.close;
 
-  modal.open({
+  void modal.open({
     announcementId,
     "open": true,
     "onUpdate:open": (val: boolean) => {

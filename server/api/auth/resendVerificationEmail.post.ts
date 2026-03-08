@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
         text: textTemplate,
       });
 
-      mailer.close();
+      await mailer.close();
     }
 
     return {

@@ -36,18 +36,18 @@ const {
 } = visitorStore;
 
 function openDetailsModal(visitor: VisitorType) {
-  overlay.create(VisitorDetailsModal).open({
+  void overlay.create(VisitorDetailsModal).open({
     visitor,
   });
 }
 
-function openEditModal(visitor: VisitorType) {
+async function openEditModal(visitor: VisitorType) {
   initEditSession(visitor);
 
   const modal = overlay.create(EditVisitorModal);
   const close = modal.close;
 
-  modal.open({
+  await modal.open({
     isLoading,
     editVisitorState: editVisitorState.value as EditVisitor["data"],
     handleFormError,

@@ -5,7 +5,6 @@ const state = ref<Partial<VerifyPaymentSchema>>({
   reference: "",
 });
 const toast = useToast();
-const router = useRouter();
 
 const form = useTemplateRef("form");
 
@@ -40,7 +39,7 @@ async function proceedToVerification() {
 
   isOpen.value = false;
 
-  router.push({
+  await navigateTo({
     name: "billing-verify",
     query: {
       reference,

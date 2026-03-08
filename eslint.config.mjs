@@ -7,14 +7,29 @@ export default withNuxt(
   antfu({
     type: "app",
     vue: true,
-    typescript: true,
+    typescript: {
+      tsconfigRootDir: import.meta.dirname,
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: [
+            "drizzle.config.ts",
+            "eslint.config.mjs",
+          ],
+        },
+      },
+    },
     formatters: true,
     stylistic: {
       indent: 2,
       semi: true,
       quotes: "double",
     },
-    ignores: [".pnpm-store/**", "**/migrations/*", ".github/**"],
+    ignores: [".pnpm-store/**", "**/migrations/*", ".github/**", "**/dist/**"],
+  }, {
+    files: ["**/*.ts", "**/*.mts", "**/*.vue"],
+    rules: {
+      "ts/no-floating-promises": "error",
+    },
   }, {
     rules: {
       "antfu/if-newline": "off",

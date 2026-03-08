@@ -56,8 +56,8 @@ onMounted(async () => {
   }
 });
 
-function retryLogin() {
-  navigateTo({ name: "auth-login" }, { replace: true });
+async function retryLogin() {
+  await navigateTo({ name: "auth-login" }, { replace: true });
 }
 </script>
 

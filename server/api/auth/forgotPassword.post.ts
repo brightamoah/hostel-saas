@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
         text,
       });
 
-      mailer.close();
+      await mailer.close();
     }
 
     return {
