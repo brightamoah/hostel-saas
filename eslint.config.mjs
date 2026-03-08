@@ -15,6 +15,7 @@ export default withNuxt(
             "drizzle.config.ts",
             "eslint.config.mjs",
           ],
+          defaultProject: "tsconfig.json",
         },
       },
     },

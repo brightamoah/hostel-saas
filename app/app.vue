@@ -5,7 +5,7 @@ import { breakpointsTailwind, useBreakpoints } from "@vueuse/core";
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const isMobile = breakpoints.smaller("md");
 
-provide("isMobile", isMobile);
+provide(isMobileKey, isMobile);
 
 const appLocale = useState("appLocale", () => en_gb);
 </script>

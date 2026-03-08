@@ -1,65 +1,147 @@
 <script setup lang="ts">
-import { hostels } from "~/data/hostels";
-
 definePageMeta({
   middleware: ["requires-auth"],
   layout: "onboard",
 });
 
 useSeoMeta({
-  title: "Hostels — Find Your Next Stay",
-  description: "Discover handpicked hostels across the globe.",
+  title: "Hostels - Find Your Next Stay",
+  description: "Discover available hostels. Search by name or use a join code to find your perfect accommodation.",
+});
+
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
+
+const toast = useToast();
+
+const {
+  data: hostels,
+  status,
+  error,
+  refresh,
+} = await useFetch("/api/student/hostels", {
+  method: "GET",
+  key: "studentHostels",
+  lazy: true,
+  default: () => [],
+  getCachedData: (key, nuxtApp, ctx) => {
+    if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
+    return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
+  },
 });
 
 const searchQuery = ref("");
-const sortBy = ref("rating");
-const activeTagFilter = ref<string | null>(null);
+const sortBy = ref<"price_asc" | "price_desc" | "availability" | "name">("availability");
+const joinCode = ref("");
+const isJoiningByCode = ref(false);
+const isSelectingHostel = ref(false);
+const selectedHostel = ref<StudentHostel | null>(null);
 
 const sortOptions = [
-  { label: "Top Rated", value: "rating" },
+  { label: "Most Available", value: "availability" },
   { label: "Price: Low to High", value: "price_asc" },
   { label: "Price: High to Low", value: "price_desc" },
-  { label: "Most Reviewed", value: "reviews" },
+  { label: "Name: A-Z", value: "name" },
 ];
 
 const filteredHostels = computed(() => {
-  let result = [...hostels];
+  if (!hostels.value) return [];
 
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase();
+  let result = [...hostels.value];
+
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase().trim();
     result = result.filter(h =>
       h.name.toLowerCase().includes(q)
-      || h.city.toLowerCase().includes(q)
-      || h.country.toLowerCase().includes(q)
-      || h.location.toLowerCase().includes(q),
+      || h.address.toLowerCase().includes(q),
     );
   }
 
-  if (activeTagFilter.value) {
-    result = result.filter(h => h.tags.includes(activeTagFilter.value!));
-  }
-
   switch (sortBy.value) {
-    case "rating":
-      result.sort((a, b) => b.rating - a.rating);
-      break;
     case "price_asc":
-      result.sort((a, b) => a.price - b.price);
+      result.sort((a, b) => a.minimumRoomPrice - b.minimumRoomPrice);
       break;
     case "price_desc":
-      result.sort((a, b) => b.price - a.price);
+      result.sort((a, b) => b.minimumRoomPrice - a.minimumRoomPrice);
       break;
-    case "reviews":
-      result.sort((a, b) => b.reviewCount - a.reviewCount);
+    case "name":
+      result.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case "availability":
+      result.sort((a, b) => b.availableRooms - a.availableRooms);
       break;
   }
 
   return result;
 });
+
+async function joinByCode() {
+  const code = joinCode.value.trim().toUpperCase();
+
+  if (!code || code.length < 4) {
+    toast.add({
+      title: "Invalid Code",
+      description: "Please enter a valid join code (at least 4 characters).",
+      color: "warning",
+      icon: "i-lucide-triangle-alert",
+    });
+    return;
+  }
+
+  isJoiningByCode.value = true;
+}
+
+function selectHostel(hostel: StudentHostel) {
+  selectedHostel.value = hostel;
+}
+
+function clearSelection() {
+  selectedHostel.value = null;
+}
+
+async function confirmSelection() {
+  if (!selectedHostel.value) return;
+
+  isSelectingHostel.value = true;
+
+  // try {
+  //   await $apiFetch("/api/student/hostels/select", {
+  //     method: "POST",
+  //     body: { hostelId: selectedHostel.value.id },
+  //   });
+
+  //   await refreshSession();
+
+  //   toast.add({
+  //     title: "Hostel Selected",
+  //     description: `Redirecting to ${selectedHostel.value.name} rooms...`,
+  //     color: "success",
+  //     icon: "i-lucide-check-circle",
+  //   });
+
+  //   await router.push({
+  //     name: "hostels-hostelSlug",
+  //     params: { hostelSlug: selectedHostel.value.slug },
+  //   });
+  // }
+  // catch (err: any) {
+  //   toast.add({
+  //     title: "Selection Failed",
+  //     description: err?.data?.message || "Failed to select hostel.",
+  //     color: "error",
+  //     icon: "i-lucide-circle-alert",
+  //   });
+  // }
+  // finally {
+  //   isSelectingHostel.value = false;
+  // }
+}
 </script>
 
 <template>
-  <UContainer class="py-10">
+  <UContainer
+    v-auto-animate
+    class="py-10"
+  >
     <div class="mb-10">
       <div class="flex items-center gap-2 mb-2">
         <UBadge
@@ -81,12 +163,16 @@ const filteredHostels = computed(() => {
         Find Your Next Stay
       </h1>
 
-      <p class="max-w-xl text-muted text-lg">
-        Handpicked hostels across the globe — social, safe, and unforgettable.
+      <p class="max-w-2xl text-muted text-lg">
+        Browse available hostels or use a join code from your hostel administrator.
       </p>
     </div>
 
-    <div class="flex sm:flex-row flex-col gap-3 mb-8">
+    <div
+      v-if="!selectedHostel"
+      v-auto-animate
+      class="flex sm:flex-row flex-col gap-3 mb-8"
+    >
       <USelect
         v-model="sortBy"
         :items="sortOptions"
@@ -102,54 +188,114 @@ const filteredHostels = computed(() => {
         v-model="searchQuery"
         placeholder="Search by city, country or name..."
         icon="i-lucide-search"
-        size="lg"
+        :size="isMobile ? 'md' : 'xl'"
         class="flex-1"
         :ui="{ base: 'rounded-xl' }"
       />
 
-      <UFieldGroup size="lg">
+      <UFieldGroup
+        size="lg"
+        class="w-100"
+      >
         <UInput
-          v-model="searchQuery"
-          placeholder="Enter hostel code..."
-          icon="i-lucide-key"
-          size="lg"
-          class="flex-1"
+          v-model="joinCode"
+          placeholder="Enter code (e.g. KINGS-26)"
+          :size="isMobile ? 'md' : 'xl'"
+          class="flex-1 max-w-sm font-mono uppercase"
+          :disabled="isJoiningByCode"
           :ui="{ base: 'rounded-xl' }"
+          @keyup.enter="joinByCode"
         />
 
         <UButton
           color="primary"
           class="rounded-xl cursor-pointer"
-          label="Use Code"
+          :label="isJoiningByCode ? 'Joining...' : 'Join'"
           icon="i-lucide-arrow-right"
+          :loading="isJoiningByCode"
+          :disabled="isJoiningByCode || !joinCode.trim()"
+          @click="joinByCode"
         />
       </UFieldGroup>
     </div>
 
     <div
-      v-if="activeTagFilter"
-      class="flex items-center gap-2 mb-6"
+      v-if="status === 'pending'"
+      class="gap-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
     >
-      <span class="text-muted text-sm">Filtering by:</span>
-
-      <UBadge
-        color="primary"
-        variant="solid"
-        :label="activeTagFilter"
-        class="cursor-pointer"
-        @click="activeTagFilter = null"
+      <UCard
+        v-for="i in 6"
+        :key="i"
+        class="overflow-hidden"
       >
-        <template #trailing>
-          <UIcon
-            name="i-lucide-x"
-            class="size-3"
-          />
+        <template #header>
+          <USkeleton class="w-full h-48" />
         </template>
-      </UBadge>
+
+        <USkeleton class="mb-2 w-3/4 h-6" />
+
+        <USkeleton class="mb-4 w-1/2 h-4" />
+
+        <USkeleton class="w-full h-10" />
+      </UCard>
     </div>
 
+    <UCard
+      v-else-if="error"
+      class="text-center"
+    >
+      <div class="py-12">
+        <UIcon
+          name="i-lucide-alert-circle"
+          class="mx-auto mb-4 text-error text-5xl"
+        />
+
+        <h3 class="mb-2 font-semibold text-lg">
+          Failed to Load Hostels
+        </h3>
+
+        <p class="mb-4 text-muted">
+          {{ error.message || 'Something went wrong' }}
+        </p>
+
+        <UButton
+          color="primary"
+          label="Try Again"
+          icon="i-lucide-refresh-cw"
+          class="cursor-pointer"
+          @click="() => refresh()"
+        />
+      </div>
+    </UCard>
+
+    <UEmpty
+      v-else-if="filteredHostels.length === 0 && !selectedHostel"
+      :title="searchQuery ? 'No hostels found' : 'No hostels available'"
+      :description="searchQuery ? `No hostels match '${searchQuery}'` : 'Check back later or contact support.'"
+      icon="i-lucide-search-x"
+      size="xl"
+      variant="naked"
+      :ui="{
+        title: 'text-highlighted font-newsreader font-bold text-2xl',
+        description: 'text-muted text-base',
+        avatar: 'size-16 text-5xl bg-default',
+      }"
+      class="flex flex-1 justify-center items-center w-full"
+      :actions="[
+        {
+          label: 'Clear Search',
+          icon: 'i-lucide-x',
+          variant: 'subtle',
+          color: 'neutral',
+          size: 'lg',
+          class: 'cursor-pointer',
+          onClick: () => { searchQuery = ''; },
+        },
+      ]"
+    />
+
     <div
-      v-if="filteredHostels.length"
+      v-else-if="filteredHostels.length && !selectedHostel"
       v-auto-animate
       class="gap-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
     >
@@ -158,24 +304,36 @@ const filteredHostels = computed(() => {
         :key="hostel.id"
         class="group hover:shadow-xl border border-default rounded-2xl overflow-hidden transition-all cursor-pointer"
         :ui="{ body: 'p-0' }"
-        @click="navigateTo({ name: 'hostels-hostelSlug', params: { hostelSlug: hostel.id } })"
+        @click="selectHostel(hostel)"
       >
         <div class="relative h-52 overflow-hidden">
           <NuxtImg
-            :src="hostel.image"
+            v-if="hostel.logoUrl"
+            :src="hostel.logoUrl"
             :alt="hostel.name"
-            class="w-full h-full object-cover"
+            class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
+            placeholder
           />
+
+          <div
+            v-else
+            class="flex justify-center items-center bg-primary/10 rounded-xl w-full h-full"
+          >
+            <UIcon
+              name="i-lucide-building-2"
+              class="text-primary/50 text-6xl"
+            />
+          </div>
 
           <div class="top-3 left-3 absolute">
             <UBadge
-              v-if="hostel.badge"
-              color="primary"
+              :color="hostel.availableRooms > 0 ? 'success' : 'error'"
               variant="solid"
-              :label="hostel.badge"
               size="sm"
-              class="shadow-md backdrop-blur-sm"
-            />
+              class="shadow-lg backdrop-blur-sm capitalize"
+            >
+              {{ hostel.availableRooms > 0 ? `${hostel.availableRooms} available` : 'Fully booked' }}
+            </UBadge>
           </div>
 
           <div class="right-3 bottom-3 absolute">
@@ -185,23 +343,23 @@ const filteredHostels = computed(() => {
               size="sm"
               class="bg-white/90 shadow backdrop-blur font-semibold text-neutral-900"
             >
-              From {{ hostel.currency }} {{ hostel.price }}
-              <span class="font-normal text-neutral-700">/semester</span>
+              From {{ formatCurrency(hostel.minimumRoomPrice) }}
+              <span class="font-normal text-neutral-700">/year</span>
             </UBadge>
           </div>
         </div>
 
         <div class="pt-3">
-          <div class="flex justify-center items-center gap-1 mb-1 text-muted text-xs">
+          <p class="flex justify-center items-center gap-1 mb-1 text-muted text-sm text-center">
             <UIcon
               name="i-lucide-map-pin"
-              class="size-3 shrink-0"
+              class="size-4 shrink-0"
             />
 
-            <span>{{ hostel.location }}</span>
-          </div>
+            <span class="truncate">{{ hostel.address }}</span>
+          </p>
 
-          <h2 class="mb-3 font-bold text-highlighted group-hover:text-primary text-lg text-center leading-tight transition-colors">
+          <h2 class="mb-3 font-newsreader font-bold text-highlighted group-hover:text-primary text-lg text-center leading-tight transition-colors">
             {{ hostel.name }}
           </h2>
 
@@ -212,36 +370,111 @@ const filteredHostels = computed(() => {
               class="flex justify-center items-center w-[70%] font-medium cursor-pointer"
               trailing-icon="i-lucide-arrow-right"
               :ui="{ base: 'rounded-lg' }"
-              @click="navigateTo({ name: 'hostels-hostelSlug', params: { hostelSlug: hostel.id } })"
+              @click="selectHostel(hostel)"
             />
           </div>
         </div>
       </UCard>
     </div>
 
-    <!-- Empty state -->
-    <div
-      v-else
-      class="py-24 text-center"
+    <UCard
+      v-if="selectedHostel"
+      class="mb-8 border-2 border-muted"
     >
-      <UIcon
-        name="i-lucide-search-x"
-        class="mx-auto mb-4 size-12 text-muted"
-      />
+      <div class="flex md:flex-row flex-col items-center gap-6">
+        <div class="group relative mx-auto md:mx-0 rounded-xl max-w-lg h-52 overflow-hidden shrink-0">
+          <NuxtImg
+            v-if="selectedHostel.logoUrl"
+            :src="selectedHostel.logoUrl"
+            :alt="selectedHostel.name"
+            class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
+            placeholder
+          />
 
-      <p class="mb-1 font-semibold text-highlighted text-lg">
-        No hostels found
-      </p>
+          <div
+            v-else
+            class="flex justify-center items-center bg-primary/10 rounded-xl w-full h-full"
+          >
+            <UIcon
+              name="i-lucide-building-2"
+              class="text-primary/50 text-6xl"
+            />
+          </div>
+        </div>
 
-      <p class="mb-6 text-muted">
-        Try adjusting your search or filters.
-      </p>
+        <div class="flex-1 md:text-left text-center">
+          <h2 class="mb-2 font-bold text-2xl">
+            {{ selectedHostel.name }}
+          </h2>
 
-      <UButton
-        label="Clear search"
-        variant="soft"
-        @click="searchQuery = ''; activeTagFilter = null"
-      />
-    </div>
+          <p class="flex justify-center md:justify-start items-center gap-1 mb-3 text-muted">
+            <UIcon
+              name="i-lucide-map-pin"
+              class="size-4"
+            />
+            {{ selectedHostel.address }}
+          </p>
+
+          <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
+            <UBadge
+              color="success"
+              variant="subtle"
+              size="lg"
+            >
+              <UIcon
+                name="i-lucide-door-open"
+                class="mr-1 size-3"
+              />
+              {{ selectedHostel.availableRooms }} rooms available
+            </UBadge>
+
+            <UBadge
+              color="info"
+              variant="subtle"
+              size="lg"
+            >
+              <UIcon
+                name="i-lucide-banknote"
+                class="mr-1 size-3"
+              />
+              From {{ formatCurrency(selectedHostel.minimumRoomPrice) }}/year
+            </UBadge>
+
+            <UBadge
+              v-for="type in selectedHostel.roomTypes.slice(0, 3)"
+              :key="type"
+              color="neutral"
+              variant="subtle"
+            >
+              {{ type }}
+            </UBadge>
+          </div>
+
+          <div class="flex md:flex-row flex-col gap-3">
+            <UButton
+              color="primary"
+              size="lg"
+              icon="i-lucide-arrow-right"
+              label="View Rooms & Book"
+              class="flex justify-center items-center cursor-pointer"
+              :loading="isSelectingHostel"
+              :disabled="isSelectingHostel"
+              @click="confirmSelection"
+            />
+
+            <UButton
+              variant="outline"
+              color="neutral"
+              size="lg"
+              icon="i-lucide-x"
+              label="Choose Another"
+              class="flex justify-center items-center cursor-pointer"
+              :disabled="isSelectingHostel"
+              @click="clearSelection"
+            />
+          </div>
+        </div>
+      </div>
+    </UCard>
   </UContainer>
 </template>

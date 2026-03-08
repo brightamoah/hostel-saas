@@ -8,7 +8,7 @@ export interface Hostel {
   currency: string;
   rating: number;
   reviewCount: number;
-  image: string;
+  logoUrl: string;
   gallery: string[];
   amenities: string[];
   roomTypes: { type: string; price: number; available: boolean }[];
@@ -30,7 +30,7 @@ export const hostels: Hostel[] = [
     currency: "GBP",
     rating: 4.8,
     reviewCount: 1243,
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
+    logoUrl: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
       "https://images.unsplash.com/photo-1520277739336-7bf67ec9e5e8?w=800&q=80",
@@ -58,7 +58,7 @@ export const hostels: Hostel[] = [
     currency: "EUR",
     rating: 4.6,
     reviewCount: 892,
-    image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
+    logoUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&q=80",
@@ -85,7 +85,7 @@ export const hostels: Hostel[] = [
     currency: "JPY",
     rating: 4.9,
     reviewCount: 2107,
-    image: "https://images.unsplash.com/photo-1535082623926-b39352a03fb7?w=800&q=80",
+    logoUrl: "https://images.unsplash.com/photo-1535082623926-b39352a03fb7?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1535082623926-b39352a03fb7?w=800&q=80",
       "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&q=80",
@@ -113,7 +113,7 @@ export const hostels: Hostel[] = [
     currency: "USD",
     rating: 4.5,
     reviewCount: 634,
-    image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
+    logoUrl: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
       "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80",
@@ -140,7 +140,7 @@ export const hostels: Hostel[] = [
     currency: "ZAR",
     rating: 4.7,
     reviewCount: 789,
-    image: "https://images.unsplash.com/photo-1562790351-d273a961e0e9?w=800&q=80",
+    logoUrl: "https://images.unsplash.com/photo-1562790351-d273a961e0e9?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1562790351-d273a961e0e9?w=800&q=80",
       "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80",
@@ -169,7 +169,7 @@ export const hostels: Hostel[] = [
     currency: "EUR",
     rating: 4.4,
     reviewCount: 1056,
-    image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80",
+    logoUrl: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80",
     gallery: [
       "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80",
       "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",

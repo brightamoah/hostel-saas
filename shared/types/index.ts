@@ -547,3 +547,51 @@ export type PostLoginResponse
     | { success: true; nextUrl: "/auth/onboarding" }
     | { success: true; nextUrl: "/auth/hostelHub" }
     | { success: true; nextUrl: "/student/dashboard" };
+
+export interface StudentHostel {
+  id: number;
+  name: string;
+  slug: string;
+  address: string;
+  logoUrl: string | null;
+  status: "active" | "inactive" | "under renovation";
+  companyId: number;
+  joinCode: string | null;
+  minimumRoomPrice: number;
+  maximumRoomPrice: number;
+  availableRooms: number;
+  totalCapacity: number;
+  currentOccupancy: number;
+  roomTypes: string[];
+}
+
+export interface HostelSearchResult {
+  id: number;
+  name: string;
+  slug: string;
+  address: string;
+  logoUrl: string | null;
+  availableRooms: number;
+  status: "active" | "inactive" | "under renovation";
+  companyId: number;
+  companyName: string;
+}
+
+export interface HostelDetails extends StudentHostel {
+  supportEmail: string | null;
+  supportPhone: string | null;
+  rooms: HostelRoom[];
+}
+
+export interface HostelRoom {
+  id: number;
+  roomNumber: string;
+  floor: number;
+  capacity: number;
+  currentOccupancy: number;
+  roomType: string;
+  amountPerYear: number;
+  status: string;
+  allowedGender: string;
+  features: string[];
+}

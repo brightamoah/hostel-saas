@@ -48,6 +48,13 @@ export default defineNuxtConfig({
           name: "lruCache",
         },
       },
+      headers: {
+        contentSecurityPolicy: {
+          "img-src": [
+            "http:",
+          ],
+        },
+      },
     },
 
     routeRules: {
@@ -232,6 +239,8 @@ export default defineNuxtConfig({
           "https://*.paystack.com",
           "https://*.paystack.co",
           "https://api.iconify.design/",
+          "blob:",
+          "data:",
         ],
         "connect-src": [
           "'self'",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { loggedIn, user } = useUserSession();
+const config = useRuntimeConfig();
 
 const dashboardRoute = computed(() => {
   if (!loggedIn.value || !user.value) return "auth-login";
@@ -12,6 +13,16 @@ const dashboardRoute = computed(() => {
     default:
       return "auth-login";
   }
+});
+
+const isAdminDomain = computed(() => {
+  const adminUrl = config.public.adminBaseUrl;
+
+  if (!adminUrl) return false;
+
+  const currentUrl = useRequestURL().href;
+
+  return currentUrl.startsWith(adminUrl) || currentUrl.includes("admin.");
 });
 
 const features = ref([
@@ -78,7 +89,6 @@ const features = ref([
 
       <template #links>
         <UButton
-          v-if="loggedIn && user"
           label="Get Started"
           icon="i-lucide-rocket"
           variant="solid"
@@ -89,14 +99,14 @@ const features = ref([
         />
 
         <UButton
-          v-else
-          label="Get Started"
-          icon="i-lucide-rocket"
-          variant="solid"
+          v-if="isAdminDomain"
+          label="Register Your Company"
+          icon="i-lucide-building-2"
+          variant="subtle"
           color="primary"
           size="xl"
           class="cursor-pointer"
-          @click="$router.push({ name: 'auth-login' })"
+          @click="navigateTo({ name: 'auth-registerCompany' })"
         />
       </template>
 
@@ -138,7 +148,9 @@ const features = ref([
         />
       </UPageGrid>
 
-      <!-- <AppStarsEffect /> -->
+      <div class="linebreak" />
+
+      <AppHeroCta />
     </UPageSection>
 
     <div class="linebreak" />
