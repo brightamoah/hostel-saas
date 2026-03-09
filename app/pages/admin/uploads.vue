@@ -51,51 +51,76 @@ async function uploadImage(file: File): Promise<{ url: string; key: string } | n
   }
 }
 
-async function copyJoinCode() {
-  if (!url.value) return;
-
-  try {
-    await navigator.clipboard.writeText(url.value);
+async function handleUpload() {
+  if (!image.value) return;
+  const res = await uploadImage(image.value);
+  if (res) {
+    url.value = res.url;
     toast.add({
-      title: "Copied!",
-      description: "Join code copied to clipboard.",
+      title: "Success",
+      description: "Image uploaded successfully!",
       color: "success",
-      icon: "i-lucide-copy-check",
-      duration: 2000,
+      icon: "i-lucide-circle-check-big",
     });
   }
-  catch {
-    toast.add({
-      title: "Copy Failed",
-      description: "Could not copy to clipboard.",
-      color: "error",
-    });
-  }
+}
+
+async function copyUrl() {
+  if (!url.value) return;
+  await navigator.clipboard.writeText(url.value);
+  toast.add({ title: "Copied to clipboard", color: "success", duration: 2000 });
+}
+
+function clearAll() {
+  url.value = "";
+  image.value = null;
 }
 </script>
 
 <template>
   <div
     v-auto-animate
-    class="flex flex-col justify-center items-center min-h-screen"
+    class="flex flex-col justify-center items-center gap-3 min-h-screen"
   >
     <UAlert
       v-if="url"
-      :title="url"
-      color="neutral"
-      class="mb-6 max-w-xl text-center"
+      icon="i-lucide-check-circle"
+      color="success"
+      variant="subtle"
+      title="Upload Successful!"
+      description="Your hostel image is ready. Copy the URL below."
+      class="w-full max-w-xl"
     >
-      <template #leading>
-        <UTooltip text="Copy code">
-          <UButton
+      <template #description>
+        <div class="flex items-center gap-2 mt-2">
+          <UInput
+            :model-value="url"
+            readonly
+            class="flex-1 font-mono text-xs"
+            color="success"
             variant="outline"
-            color="neutral"
-            icon="i-lucide-copy"
-            class="cursor-pointer"
-            :disabled="!url"
-            @click="copyJoinCode"
           />
-        </UTooltip>
+
+          <UTooltip text="Copy URL">
+            <UButton
+              variant="ghost"
+              color="success"
+              class="cursor-pointer"
+              icon="i-lucide-copy"
+              @click="copyUrl"
+            />
+          </UTooltip>
+
+          <UTooltip text="Clear and Upload New">
+            <UButton
+              variant="ghost"
+              color="error"
+              class="cursor-pointer"
+              icon="i-lucide-refresh-ccw"
+              @click="clearAll"
+            />
+          </UTooltip>
+        </div>
       </template>
     </UAlert>
 
@@ -120,7 +145,7 @@ async function copyJoinCode() {
         <UButton
           label="Select From Your Device"
           icon="i-lucide-upload"
-          color="neutral"
+          color="primary"
           variant="outline"
           class="cursor-pointer"
           @click="open()"
@@ -137,7 +162,7 @@ async function copyJoinCode() {
       icon="i-lucide-upload"
       class="mt-6 cursor-pointer"
       :loading="isUploading"
-      @click="uploadImage(image)"
+      @click="handleUpload"
     />
   </div>
 </template>
