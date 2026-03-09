@@ -143,7 +143,13 @@ const genderSchema = z.union([
   z.literal(""),
 ]).refine(val => val !== "", "Gender is required");
 
-const addressSchema = z.string().min(1, "Address is required").min(5, "Address is too short");
+const addressSchema = z
+  .string()
+  .trim()
+  .min(5, "Address is too short")
+  .max(120, "Address is too long")
+  .regex(/^(?!.*([._/-])\1)[\w\s,./-]+$/, "Repeated special characters are not allowed")
+  .regex(/[a-z]/i, "Address must contain at least one letter");
 
 const idSchema = z.int().min(10000000, "Invalid id: less than required length").max(99999999, "Invalid id: exceeds maximum length");
 
@@ -724,6 +730,14 @@ export const inviteCompanyMemberSchema = z.object({
   role: z.enum(["owner", "admin", "finance", "support", "staff"]),
 });
 
+const joinCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .min(6, "Join code must be at least 6 characters")
+  .max(10, "Join code must be at most 10 characters")
+  .regex(/^[A-Z0-9]+$/, "Join code can only contain letters and numbers and must be uppercase");
+
 export type InviteCompanyMemberSchema = z.output<typeof inviteCompanyMemberSchema>;
 
 const ownerSchema = z.object({
@@ -750,6 +764,7 @@ const companySchema = z.object({
   hostelLogo: imageFileSchema.optional(),
   hostelLogoUrl: z.string().optional(),
   hostelLogoKey: z.string().optional(),
+  joinCode: joinCodeSchema.optional(),
 }).superRefine((data, ctx) => {
   if (data.createHostelNow) {
     if (!data.hostelName || data.hostelName.trim().length < 2) {
@@ -781,6 +796,14 @@ const companySchema = z.object({
         code: "custom",
         message: "Support phone number is required",
         path: ["supportPhone"],
+      });
+    }
+
+    if (!data.joinCode || data.joinCode.trim() === "") {
+      ctx.addIssue({
+        code: "custom",
+        message: "Join code is required",
+        path: ["joinCode"],
       });
     }
   }

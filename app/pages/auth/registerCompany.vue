@@ -44,6 +44,7 @@ const {
 const {
   removeHostelLogo,
   submitRegistration,
+  regenerateJoinCode,
 } = companyStore;
 
 const canGoNext = computed(() => ownerSchema.safeParse(createCompanyState.value).success);
@@ -60,6 +61,28 @@ async function nextTab() {
   }
   isOwnerComplete.value = true;
   activeTab.value = "1";
+}
+
+async function copyJoinCode() {
+  if (!createCompanyState.value.joinCode) return;
+
+  try {
+    await navigator.clipboard.writeText(createCompanyState.value.joinCode);
+    toast.add({
+      title: "Copied!",
+      description: "Join code copied to clipboard.",
+      color: "success",
+      icon: "i-lucide-copy-check",
+      duration: 2000,
+    });
+  }
+  catch {
+    toast.add({
+      title: "Copy Failed",
+      description: "Could not copy to clipboard.",
+      color: "error",
+    });
+  }
 }
 </script>
 
@@ -358,20 +381,68 @@ async function nextTab() {
                       />
                     </UFormField>
 
-                    <UFormField
-                      label="Hostel Address"
-                      name="hostelAddress"
-                      class="w-full"
-                    >
-                      <UTextarea
-                        v-model="createCompanyState.hostelAddress"
-                        placeholder="e.g. 123 Main St, Accra"
-                        icon="i-lucide-map-pin"
+                    <div class="flex flex-col gap-3">
+                      <UFormField
+                        label="Hostel Join Code"
+                        name="joinCode"
                         class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                        :rows="7"
-                      />
-                    </UFormField>
+                      >
+                        <div class="flex gap-2">
+                          <UInput
+                            v-model="createCompanyState.joinCode"
+                            placeholder="e.g. KINGS2024"
+                            icon="i-lucide-key-round"
+                            class="flex-1 font-mono uppercase tracking-wider"
+                            :size="isMobile ? 'lg' : 'xl'"
+                            maxlength="10"
+                          />
+
+                          <UTooltip text="Regenerate code">
+                            <UButton
+                              variant="outline"
+                              color="neutral"
+                              icon="i-lucide-refresh-cw"
+                              :size="isMobile ? 'lg' : 'xl'"
+                              class="cursor-pointer"
+                              @click="regenerateJoinCode"
+                            />
+                          </UTooltip>
+
+                          <UTooltip text="Copy code">
+                            <UButton
+                              variant="outline"
+                              color="neutral"
+                              icon="i-lucide-copy"
+                              :size="isMobile ? 'lg' : 'xl'"
+                              class="cursor-pointer"
+                              :disabled="!createCompanyState.joinCode"
+                              @click="copyJoinCode"
+                            />
+                          </UTooltip>
+                        </div>
+
+                        <template #help>
+                          <span class="text-muted text-xs">
+                            Students use this code to join your hostel.
+                          </span>
+                        </template>
+                      </UFormField>
+
+                      <UFormField
+                        label="Hostel Address"
+                        name="hostelAddress"
+                        class="w-full"
+                      >
+                        <UTextarea
+                          v-model="createCompanyState.hostelAddress"
+                          placeholder="e.g. 123 Main St, Accra"
+                          icon="i-lucide-map-pin"
+                          class="w-full"
+                          :size="isMobile ? 'lg' : 'xl'"
+                          :rows="3"
+                        />
+                      </UFormField>
+                    </div>
 
                     <UFormField
                       label="Hostel Logo / Image"
@@ -426,7 +497,7 @@ async function nextTab() {
                   icon="i-lucide-arrow-left"
                   label="Back"
                   type="button"
-                  class="cursor-pointer"
+                  class="flex justify-center items-center cursor-pointer"
                   :disabled="isLoading"
                   @click="activeTab = '0'"
                 />
@@ -436,7 +507,7 @@ async function nextTab() {
                   icon="i-lucide-building-2"
                   :label="isLoading ? 'Registering...' : 'Register Company'"
                   type="submit"
-                  class="cursor-pointer"
+                  class="flex justify-center items-center cursor-pointer"
                   :loading="isLoading"
                   :disabled="isLoading"
                 />

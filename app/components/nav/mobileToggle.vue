@@ -8,7 +8,7 @@ const { items, isLoggedIn, user, activeSection } = defineProps<{
   activeSection: string;
 }>();
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 const route = useRoute();
 const isMobileMenuOpen = ref(false);
 

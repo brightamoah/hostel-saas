@@ -423,7 +423,7 @@ async function confirmSelection() {
             >
               <UIcon
                 name="i-lucide-door-open"
-                class="mr-1 size-3"
+                class="mr-0.5 size-4"
               />
               {{ selectedHostel.availableRooms }} rooms available
             </UBadge>
@@ -435,7 +435,7 @@ async function confirmSelection() {
             >
               <UIcon
                 name="i-lucide-banknote"
-                class="mr-1 size-3"
+                class="mr-0.5 size-4"
               />
               From {{ formatCurrency(selectedHostel.minimumRoomPrice) }}/year
             </UBadge>

@@ -30,6 +30,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
     hostelLogo: undefined,
     hostelLogoKey: undefined,
     hostelLogoUrl: undefined,
+    joinCode: undefined,
   });
 
   const setupAutoSlug = (
@@ -68,6 +69,46 @@ export const useCompanyStore = defineStore("companyStore", () => {
   setupAutoSlug("companyName", "companySlug");
   setupAutoSlug("hostelName", "hostelSlug");
 
+  const isJoinCodeTouched = ref(false);
+  const lastAutoJoinCode = ref("");
+
+  watch(
+    () => createCompanyState.joinCode,
+    (newVal, oldVal) => {
+      if (newVal && oldVal !== undefined && newVal !== lastAutoJoinCode.value) {
+        isJoinCodeTouched.value = true;
+      }
+
+      if (!newVal) {
+        isJoinCodeTouched.value = false;
+      }
+    },
+  );
+
+  watch(
+    () => createCompanyState.hostelName,
+    (newName) => {
+      if (isJoinCodeTouched.value) return;
+
+      if (newName && newName.trim().length >= 2) {
+        const generated = generateHostelJoinCode(newName);
+        lastAutoJoinCode.value = generated;
+        createCompanyState.joinCode = generated;
+      }
+      else {
+        createCompanyState.joinCode = undefined;
+        lastAutoJoinCode.value = "";
+      }
+    },
+    { immediate: true },
+  );
+
+  function regenerateJoinCode() {
+    const hostelName = createCompanyState.hostelName;
+    createCompanyState.joinCode = generateHostelJoinCode(hostelName || "HOSTEL");
+    isJoinCodeTouched.value = false;
+  }
+
   watch(
     () => createCompanyState.createHostelNow,
     (enabled) => {
@@ -81,7 +122,10 @@ export const useCompanyStore = defineStore("companyStore", () => {
           hostelLogoUrl: undefined,
           hostelLogoKey: undefined,
           hostelAddress: undefined,
+          joinCode: undefined,
         });
+        isJoinCodeTouched.value = false;
+        lastAutoJoinCode.value = "";
       }
     },
   );
@@ -138,8 +182,24 @@ export const useCompanyStore = defineStore("companyStore", () => {
     }
   };
 
+  async function deleteImage(key: string): Promise<boolean> {
+    try {
+      await $apiFetch("/api/upload/image", {
+        method: "DELETE",
+        body: { key },
+      });
+      return true;
+    }
+    catch (error) {
+      console.error("Failed to delete image:", error);
+      return false;
+    }
+  };
+
   const submitRegistration = async (payload: FormSubmitEvent<RegisterCompanySchema>) => {
     isLoading.value = true;
+    let uploadedKey: string | undefined;
+
     try {
       if (createCompanyState.hostelLogo && !createCompanyState.hostelLogoUrl) {
         const result = await uploadImage(createCompanyState.hostelLogo);
@@ -147,6 +207,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
         if (result) {
           createCompanyState.hostelLogoUrl = result.url;
           createCompanyState.hostelLogoKey = result.key;
+          uploadedKey = result.key;
         }
       }
 
@@ -165,6 +226,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
         supportEmail: payload.data.supportEmail,
         supportPhone: payload.data.supportPhone,
         hostelLogoUrl: createCompanyState.hostelLogoUrl,
+        joinCode: createCompanyState.joinCode,
       };
 
       const response = await $apiFetch("/api/auth/registerCompanyOwner", {
@@ -179,6 +241,8 @@ export const useCompanyStore = defineStore("companyStore", () => {
         icon: "i-lucide-circle-check-big",
       });
 
+      resetState();
+
       await navigateTo({ name: "auth-login" });
     }
     catch (error: any) {
@@ -191,14 +255,8 @@ export const useCompanyStore = defineStore("companyStore", () => {
         duration: 8000,
       });
 
-      if (createCompanyState.hostelLogoKey) {
-        try {
-          await $apiFetch("/api/upload/image", {
-            method: "DELETE",
-            body: { key: createCompanyState.hostelLogoKey },
-          });
-        }
-        catch { }
+      if (uploadedKey) {
+        await deleteImage(uploadedKey);
         createCompanyState.hostelLogoKey = undefined;
         createCompanyState.hostelLogoUrl = undefined;
       }
@@ -207,29 +265,21 @@ export const useCompanyStore = defineStore("companyStore", () => {
       isLoading.value = false;
     }
   };
-  // Remove uploaded logo
+
   const removeHostelLogo = async () => {
-    if (createCompanyState.hostelLogoKey) {
-      try {
-        await $apiFetch("/api/upload/image", {
-          method: "DELETE",
-          body: { key: createCompanyState.hostelLogoKey },
-        });
-      }
-      catch {
-        // Ignore errors
-      }
-    }
+    if (createCompanyState.hostelLogoKey) await deleteImage(createCompanyState.hostelLogoKey);
 
     createCompanyState.hostelLogo = undefined;
-    createCompanyState.hostelLogoUrl = undefined;
     createCompanyState.hostelLogoKey = undefined;
+    createCompanyState.hostelLogoUrl = undefined;
   };
 
   const hasLogo = computed(() => !!createCompanyState.hostelLogo || !!createCompanyState.hostelLogoUrl);
 
   const logoPreviewUrl = computed(() => {
     if (createCompanyState.hostelLogoUrl) {
+      if (createCompanyState.hostelLogoUrl.startsWith("http")) return createCompanyState.hostelLogoUrl;
+
       const config = useRuntimeConfig();
       const baseUrl = config.public.adminBaseUrl?.replace(/\/$/, "") || "";
 
@@ -242,6 +292,29 @@ export const useCompanyStore = defineStore("companyStore", () => {
     return null;
   });
 
+  function resetState() {
+    Object.assign(createCompanyState, {
+      name: "",
+      email: "",
+      phoneNumber: "",
+      password: "",
+      confirmPassword: "",
+      companyName: "",
+      companySlug: "",
+      createHostelNow: true,
+      hostelName: undefined,
+      hostelSlug: undefined,
+      supportEmail: undefined,
+      supportPhone: undefined,
+      hostelAddress: undefined,
+      hostelLogo: undefined,
+      hostelLogoKey: undefined,
+      hostelLogoUrl: undefined,
+      hostelJoinCode: undefined,
+    });
+    isJoinCodeTouched.value = false;
+  };
+
   return {
     createCompanyState,
     isLoading,
@@ -251,7 +324,9 @@ export const useCompanyStore = defineStore("companyStore", () => {
     hasLogo,
     uploadImage,
     submitRegistration,
+    deleteImage,
     removeHostelLogo,
+    regenerateJoinCode,
   };
 });
 
