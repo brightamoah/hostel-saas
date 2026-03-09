@@ -1,7 +1,10 @@
 /* eslint-disable node/no-process-env */
+import { config } from "dotenv";
 import * as z from "zod";
 
 import tryParseEnv from "./tryParseEnv";
+
+config();
 
 const baseSchema = z.object({
   // NUXT_PLATFORM_SEED_SECRET: z.string(),

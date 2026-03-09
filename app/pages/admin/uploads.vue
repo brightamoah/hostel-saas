@@ -50,6 +50,28 @@ async function uploadImage(file: File): Promise<{ url: string; key: string } | n
     isUploading.value = false;
   }
 }
+
+async function copyJoinCode() {
+  if (!url.value) return;
+
+  try {
+    await navigator.clipboard.writeText(url.value);
+    toast.add({
+      title: "Copied!",
+      description: "Join code copied to clipboard.",
+      color: "success",
+      icon: "i-lucide-copy-check",
+      duration: 2000,
+    });
+  }
+  catch {
+    toast.add({
+      title: "Copy Failed",
+      description: "Could not copy to clipboard.",
+      color: "error",
+    });
+  }
+}
 </script>
 
 <template>
@@ -62,7 +84,20 @@ async function uploadImage(file: File): Promise<{ url: string; key: string } | n
       :title="url"
       color="neutral"
       class="mb-6 max-w-xl text-center"
-    />
+    >
+      <template #leading>
+        <UTooltip text="Copy code">
+          <UButton
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-copy"
+            class="cursor-pointer"
+            :disabled="!url"
+            @click="copyJoinCode"
+          />
+        </UTooltip>
+      </template>
+    </UAlert>
 
     <UFileUpload
       v-model="image"
