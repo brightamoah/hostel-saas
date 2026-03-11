@@ -28,9 +28,9 @@ const footerItems = [
       <UBadge
         color="primary"
         variant="subtle"
-        size="md"
+        size="lg"
         label="Get Started"
-        class="mb-4"
+        class="mb-4 rounded-full"
       />
 
       <h2 class="mb-4 font-newsreader font-bold text-highlighted text-4xl lg:text-5xl tracking-tight">

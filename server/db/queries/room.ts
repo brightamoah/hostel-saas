@@ -53,6 +53,43 @@ export async function roomQueries() {
     return activeAllocation;
   };
 
+  const getHostelByCode = async (joinCode: string) => {
+    const hostelToJoin = await db
+      .query
+      .hostel
+      .findFirst({
+        where: and(
+          eq(hostel.joinCode, joinCode),
+          eq(hostel.status, "active"),
+        ),
+        columns: {
+          primaryColor: false,
+          createdAt: false,
+          updatedAt: false,
+        },
+      });
+    return hostelToJoin;
+  };
+
+  const getHostelBySlug = async (slug: string) => {
+    const hostelResult = db
+      .query
+      .hostel
+      .findFirst({
+        where: and(
+          eq(hostel.slug, slug),
+          eq(hostel.status, "active"),
+        ),
+        columns: {
+          primaryColor: false,
+          createdAt: false,
+          updatedAt: false,
+        },
+      });
+
+    return hostelResult;
+  };
+
   const getAllRooms = async () => {
     const rooms = await db
       .query
@@ -366,6 +403,33 @@ export async function roomQueries() {
     return allocations;
   };
 
+  const getRoomTypes = async (hostelId: number, gender: "male" | "female") => {
+    const roomTypesResult = await db
+      .selectDistinct({ roomType: room.roomType })
+      .from(room)
+      .where(
+        and(
+          eq(room.hostelId, hostelId),
+          eq(room.allowedGender, gender),
+        ),
+      );
+
+    return roomTypesResult.map(r => r.roomType);
+  };
+
+  const getGenderSpecificRoomStats = async (hostelId: number, gender: "male" | "female") => {
+    const [stats] = await db
+      .select({
+        totalRooms: sql<number>`COUNT(*)`,
+        availableRooms: sql<number>`COUNT(*) FILTER (WHERE ${room.status} IN ('vacant', 'partially occupied') AND ${room.currentOccupancy} < ${room.capacity} AND ${room.allowedGender} = ${gender})`,
+        minimumPrice: sql<number>`COALESCE(MIN(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender}), 0)`,
+        maximumPrice: sql<number>`COALESCE(MAX(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender}), 0)`,
+      })
+      .from(room)
+      .where(eq(room.hostelId, hostelId));
+
+    return stats;
+  };
   return {
     getAllRooms,
     getRoomById,
@@ -387,6 +451,10 @@ export async function roomQueries() {
     getRoomsInHostel,
     getAllocationByStudentId,
     checkActiveOrPendingAllocation,
+    getHostelByCode,
+    getRoomTypes,
+    getHostelBySlug,
+    getGenderSpecificRoomStats,
   };
 }
 

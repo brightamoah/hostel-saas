@@ -10,7 +10,7 @@ const emit = defineEmits<{
   (e: "confirm", payload: PromoteDemoteSchema): void;
 }>();
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const { user: currentUser } = useUserSession();
 const open = defineModel<boolean>("open");

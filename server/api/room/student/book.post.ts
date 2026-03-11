@@ -1,11 +1,18 @@
 import { userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, {
-    message: "Unauthorized Access: Please log in to continue.",
-  });
-
   try {
+    const session = await requireUserSession(event, {
+      message: "Unauthorized Access: Please log in to continue.",
+    });
+
+    if (session.user.role !== "student") {
+      throw createError({
+        statusCode: 403,
+        message: "Only students can book rooms",
+      });
+    }
+
     const body = await readValidatedBody(event, body => bookRoomSchema.safeParse(body));
 
     if (!body.success) {
@@ -17,11 +24,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getStudentByUserId } = await userQueries();
+    const { getStudentIdByUserId } = await userQueries();
 
     const { roomId, userId, endDate } = body.data;
 
-    const student = await getStudentByUserId(userId);
+    const student = await getStudentIdByUserId(userId);
 
     if (!student) {
       throw createError({
@@ -34,9 +41,16 @@ export default defineEventHandler(async (event) => {
 
     const allocation = await bookRoom(studentId, roomId, endDate);
 
+    await setUserSession(event, {
+      ...session,
+      hasActiveAllocation: true,
+      selectedHostelId: allocation.hostel.id,
+      selectedHostelSlug: allocation.hostel.slug,
+    });
+
     return {
       success: true,
-      message: "Room booked successfully. An invoice has been generated.",
+      message: `Room ${allocation.room.roomNumber} at ${allocation.hostel.name} booked successfully. An invoice has been generated.`,
       allocation,
     };
   }

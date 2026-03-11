@@ -15,7 +15,7 @@ const isAdmin = computed(() => user.value?.role === "admin");
 const overlay = useOverlay();
 const EditAnnouncementModal = defineAsyncComponent(() => import("./edit.vue"));
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const { updateReadStatus } = useAnnouncementData();
 

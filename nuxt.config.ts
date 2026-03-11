@@ -84,11 +84,21 @@ export default defineNuxtConfig({
 
   css: ["~/assets/css/main.css"],
 
+  image: {
+    domains: ["localhost", "res.cloudinary.com", "images.unsplash.com", env.NUXT_PUBLIC_SITE_BASE_URL, env.NUXT_PUBLIC_SITE_URL, env.NUXT_PUBLIC_ADMIN_BASE_URL],
+    alias: {
+      api: "/api/images",
+    },
+  },
+
   nitro: {
     preset: "cloudflare_module",
     cloudflare: {
       deployConfig: true,
       nodeCompat: true,
+      dev: {
+        environment: "preview",
+      },
       wrangler: {
         kv_namespaces: [
           {
@@ -104,7 +114,7 @@ export default defineNuxtConfig({
         ],
         r2_buckets: [
           {
-            binding: "IMAGES",
+            binding: "BUCKET",
             bucket_name: env.NUXT_R2_BUCKET_NAME,
             preview_bucket_name: env.NUXT_R2_PREVIEW_BUCKET_NAME,
           },
@@ -129,8 +139,12 @@ export default defineNuxtConfig({
         base: "./.data/kv",
       },
       images: {
-        driver: "fs-lite",
-        base: "./.data/images",
+        driver: "s3",
+        accessKeyId: env.NUXT_R2_ACCESS_KEY_ID,
+        secretAccessKey: env.NUXT_R2_SECRET_ACCESS_KEY,
+        endpoint: env.NUXT_R2_ENDPOINT,
+        bucket: env.NUXT_R2_PREVIEW_BUCKET_NAME,
+        region: "auto",
       },
     },
     storage: {
@@ -251,6 +265,7 @@ export default defineNuxtConfig({
           "https://api.iconify.design/",
           "https://static.cloudflareinsights.com",
         ],
+        "script-src-attr": ["'unsafe-inline'"],
       },
     },
   },

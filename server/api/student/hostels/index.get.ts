@@ -24,8 +24,8 @@ export default defineEventHandler(async (event) => {
 
       let logoUrl = hostel.logoUrl;
 
-      if (logoUrl && !logoUrl.startsWith("http")) {
-        logoUrl = getImageFullUrl(logoUrl);
+      if (logoUrl && typeof logoUrl === "string") {
+        logoUrl = getImageFullUrl(logoUrl, event);
       }
 
       return {

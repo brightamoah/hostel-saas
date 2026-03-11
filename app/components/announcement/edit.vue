@@ -37,7 +37,7 @@ const roomOptions = computed(() => {
   }));
 });
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const isOpen = defineModel<boolean>("open", { required: true });
 

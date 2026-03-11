@@ -22,7 +22,7 @@ const {
   refresh,
 } = useAnnouncementData();
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const isLoading = ref<boolean>(false);
 

@@ -7,7 +7,7 @@ definePageMeta({
 });
 
 const toast = useToast();
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const activeTab = ref<"0" | "1">("0");
 const isOwnerComplete = ref(false);

@@ -8,18 +8,34 @@ await refreshSession();
 </script>
 
 <template>
-  <div>
-    <SvgsLine1 class="-z-10 absolute inset-0 opacity-15 w-full h-full pointer-events-none" />
+  <div class="relative min-h-screen">
+    <SvgsLine1 class="-z-10 fixed inset-0 opacity-15 w-full h-full pointer-events-none" />
+
+    <!-- <div
+      class="absolute inset-0 overflow-hidden pointer-events-none"
+      aria-hidden="true"
+    >
+      <div class="absolute inset-0 hero-grid-overlay opacity-[0.035] dark:opacity-[0.06]" />
+
+      <div class="top-0 left-1/2 absolute bg-primary/30 w-150 h-px -translate-x-1/2" />
+    </div> -->
 
     <AppNavbar />
 
     <UMain>
       <slot />
     </UMain>
-    <!-- <AppStarsEffect /> -->
 
     <AppFooter />
   </div>
 </template>
 
-<style></style>
+<style>
+  .hero-grid-overlay {
+  background-image:
+    linear-gradient(to right, currentColor 3px, transparent 2px),
+    linear-gradient(to bottom, currentColor 3px, transparent 2px);
+  background-size: 48px 48px;
+  color: var(--ui-color-neutral-800);
+}
+</style>

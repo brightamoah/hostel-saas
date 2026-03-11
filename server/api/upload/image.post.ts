@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: "File uploaded successfully",
-      url: `/api/images/${key}`,
+      url: `/api/_images/${key}`,
       key,
       filename,
     };

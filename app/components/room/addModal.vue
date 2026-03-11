@@ -1,10 +1,10 @@
 <script setup lang="ts">
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const roomStore = useRoomStore();
 const {
   addRoomState,
-  isFormValid,
+  // isFormValid,
   isLoading,
   isModalOpen,
   allowedGender,
@@ -79,6 +79,7 @@ watch(
         :state="addRoomState"
         :schema="addRoomSchema"
         @submit="roomStore.addNewRoom"
+        @error="useHandleFormError"
       >
         <div class="flex md:flex-row flex-col justify-between gap-5 mb-4 px-4">
           <UFormField
@@ -228,7 +229,7 @@ watch(
           required
           label="Allowed Gender"
           name="allowedGender"
-          class="w-full px-4 mb-4"
+          class="mb-4 px-4 w-full"
         >
           <USelectMenu
             v-model="addRoomState.allowedGender as AddRoomSchema['allowedGender']"
@@ -245,7 +246,7 @@ watch(
           required
           label="Features"
           name="features"
-          class="w-full px-4"
+          class="px-4 w-full"
         >
           <UTextarea
             v-model="addRoomState.features"
@@ -273,7 +274,6 @@ watch(
           icon="i-lucide-send"
           class="cursor-pointer"
           :loading="isLoading"
-          :disabled="!isFormValid"
           @click="addRoomFormRef?.submit()"
         />
       </div>

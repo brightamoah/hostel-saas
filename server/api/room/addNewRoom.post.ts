@@ -2,7 +2,7 @@ import { roomQueries } from "~~/server/db/queries";
 import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
-  await adminSessionCheck(event);
+  const { companyId } = await adminSessionCheck(event);
 
   try {
     const { getExistingRoomByRoomNumberAndHostel, addNewRoom } = await roomQueries();
@@ -13,6 +13,13 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: `Invalid data: ${body.error.issues.map(i => i.message).join(", ")}`,
+      });
+    }
+
+    if (!companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "Admin not associated with any company",
       });
     }
 
@@ -28,13 +35,6 @@ export default defineEventHandler(async (event) => {
       status,
       allowedGender,
     } = body.data;
-
-    if (roomType === "" || status === "" || allowedGender === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Room type, status, and allowed gender must be provided",
-      });
-    }
 
     const existingRoom = await getExistingRoomByRoomNumberAndHostel(roomNumber, hostelId);
 
@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
       roomType,
       status,
       allowedGender,
+      companyId,
     });
 
     if (!newRoom) {

@@ -1,10 +1,8 @@
 /* eslint-disable node/no-process-env */
-import { config } from "dotenv";
+
 import * as z from "zod";
 
 import tryParseEnv from "./tryParseEnv";
-
-config();
 
 const baseSchema = z.object({
   // NUXT_PLATFORM_SEED_SECRET: z.string(),
@@ -32,6 +30,9 @@ const nodemailerSchema = z.object({
   NUXT_NODEMAILER_PORT: z.coerce.number(),
   NUXT_NODEMAILER_AUTH_USER: z.string(),
   NUXT_NODEMAILER_AUTH_PASS: z.string(),
+  NUXT_R2_ENDPOINT: z.string(),
+  NUXT_R2_ACCESS_KEY_ID: z.string(),
+  NUXT_R2_SECRET_ACCESS_KEY: z.string(),
 });
 
 const isDev = process.env.NODE_ENV === "development" || import.meta.dev;

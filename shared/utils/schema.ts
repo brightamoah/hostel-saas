@@ -835,6 +835,7 @@ export {
   emailSchema,
   emailVerificationSchema,
   imageFileSchema,
+  joinCodeSchema,
   linkSchema,
   logActionSchema,
   loginSchema,

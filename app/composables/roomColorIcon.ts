@@ -36,6 +36,8 @@ export function useRoomColorIcon(roomRef: RoomRef) {
       "washroom": "i-lucide-shower-head",
       "toilet": "i-lucide-shower-head",
       "shower": "i-lucide-shower-head",
+      "fan": "i-lucide-fan",
+      "ceiling fan": "i-lucide-fan",
     };
     return featuresArray.map((feature) => {
       const lowerFeature = feature.toLowerCase();

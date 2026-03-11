@@ -2,7 +2,7 @@
 const { user } = useUserSession();
 const admin = user.value?.adminData;
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const addAdminFormRef = useTemplateRef("addAdminFormRef");
 

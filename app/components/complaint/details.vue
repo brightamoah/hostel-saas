@@ -12,7 +12,7 @@ const emit = defineEmits<{ close: [boolean] }>();
 
 const { user } = useUserSession();
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const items = computed<TabsItem[]>(() => [
   {

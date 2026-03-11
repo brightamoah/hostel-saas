@@ -14,7 +14,7 @@ const emit = defineEmits<{ close: [boolean] }>();
 
 const UButton = resolveComponent("UButton");
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const visitorInitials = generateInitials(visitor.name);
 const avatarBgColor = generateUserColor(visitor.id);

@@ -15,7 +15,7 @@ const { table, totalItems, defaultPage = 1, itemsPerPage = 10 } = defineProps<{
 
 const displayTotal = computed<number>(() => totalItems);
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 </script>
 
 <template>

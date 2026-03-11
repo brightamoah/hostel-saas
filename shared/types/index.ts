@@ -595,3 +595,16 @@ export interface HostelRoom {
   allowedGender: string;
   features: string[];
 }
+
+export interface HostelDetailsResponse {
+  hostel: Omit<StudentHostel, "minimumRoomPrice" | "maximumRoomPrice" | "totalCapacity" | "currentOccupancy" | "availableRooms" | "roomTypes">;
+  rooms: HostelRoom[];
+  stats: {
+    totalRooms: number;
+    availableRooms: number;
+    minimumPrice: number;
+    maximumPrice: number;
+  };
+  roomTypes: string[];
+  studentGender: "male" | "female";
+}

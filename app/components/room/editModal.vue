@@ -7,7 +7,7 @@ const { roomData, roomId, closeModal } = defineProps<{
 
 const { $apiFetch } = useNuxtApp();
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const roomStore = useRoomStore();
 const {

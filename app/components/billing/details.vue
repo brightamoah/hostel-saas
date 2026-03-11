@@ -12,7 +12,7 @@ const billingStore = useBillingStore();
 const { isSending } = storeToRefs(billingStore);
 const { emailInvoice } = billingStore;
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const detailCards = [
   [

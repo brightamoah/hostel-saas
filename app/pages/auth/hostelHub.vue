@@ -12,6 +12,7 @@ useSeoMeta({
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const toast = useToast();
+const { $apiFetch } = useNuxtApp();
 
 const {
   data: hostels,
@@ -88,6 +89,35 @@ async function joinByCode() {
   }
 
   isJoiningByCode.value = true;
+
+  try {
+    const hostel = await $apiFetch<StudentHostel>("/api/student/hostels/joinByCode", {
+      method: "POST",
+      body: { code },
+    });
+
+    // Set as selected hostel to show details
+    selectedHostel.value = hostel;
+    joinCode.value = "";
+
+    toast.add({
+      title: "Hostel Found!",
+      description: `You can now view rooms at ${hostel.name}`,
+      color: "success",
+      icon: "i-lucide-check-circle",
+    });
+  }
+  catch (err: any) {
+    toast.add({
+      title: "Invalid Code",
+      description: err?.data?.message || "The join code is invalid or expired.",
+      color: "error",
+      icon: "i-lucide-circle-alert",
+    });
+  }
+  finally {
+    isJoiningByCode.value = false;
+  }
 }
 
 function selectHostel(hostel: StudentHostel) {
@@ -103,37 +133,23 @@ async function confirmSelection() {
 
   isSelectingHostel.value = true;
 
-  // try {
-  //   await $apiFetch("/api/student/hostels/select", {
-  //     method: "POST",
-  //     body: { hostelId: selectedHostel.value.id },
-  //   });
-
-  //   await refreshSession();
-
-  //   toast.add({
-  //     title: "Hostel Selected",
-  //     description: `Redirecting to ${selectedHostel.value.name} rooms...`,
-  //     color: "success",
-  //     icon: "i-lucide-check-circle",
-  //   });
-
-  //   await router.push({
-  //     name: "hostels-hostelSlug",
-  //     params: { hostelSlug: selectedHostel.value.slug },
-  //   });
-  // }
-  // catch (err: any) {
-  //   toast.add({
-  //     title: "Selection Failed",
-  //     description: err?.data?.message || "Failed to select hostel.",
-  //     color: "error",
-  //     icon: "i-lucide-circle-alert",
-  //   });
-  // }
-  // finally {
-  //   isSelectingHostel.value = false;
-  // }
+  try {
+    await navigateTo({
+      name: "hostels-hostelSlug",
+      params: { hostelSlug: selectedHostel.value.slug },
+    });
+  }
+  catch (err: any) {
+    toast.add({
+      title: "Navigation Failed",
+      description: `Failed to navigate to room catalog.${err}`,
+      color: "error",
+      icon: "i-lucide-circle-alert",
+    });
+  }
+  finally {
+    isSelectingHostel.value = false;
+  }
 }
 </script>
 
@@ -313,6 +329,7 @@ async function confirmSelection() {
             :alt="hostel.name"
             class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
             placeholder
+            loading="lazy"
           />
 
           <div
@@ -389,6 +406,7 @@ async function confirmSelection() {
             :alt="selectedHostel.name"
             class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
             placeholder
+            loading="lazy"
           />
 
           <div

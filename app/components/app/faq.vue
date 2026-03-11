@@ -43,7 +43,7 @@ const faqItems = ref<AccordionItem[]>([
       <div class="text-center animate-fade-in-up animation-delay-1600">
         <UBadge
           variant="subtle"
-          class="justify-center items-center"
+          class="justify-center items-center rounded-full"
         >
           FAQs
         </UBadge>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TiptapExtensions } from "./extensions";
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const content = defineModel<string>("content");
 

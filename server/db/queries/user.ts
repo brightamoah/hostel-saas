@@ -139,6 +139,14 @@ export async function userQueries() {
     }).where(eq(user.id, userId));
   }
 
+  const getStudentIdByUserId = async (userId: number) => {
+    const studentRecord = await db.query.student.findFirst({
+      where: eq(student.userId, userId),
+      columns: { id: true },
+    });
+    return studentRecord;
+  };
+
   async function cleanupExpiredVerificationTokens() {
     const now = new Date();
 
@@ -505,6 +513,17 @@ export async function userQueries() {
     return studentRecord;
   };
 
+  const getStudentGenderByUserId = async (userId: number) => {
+    const gender = await db
+      .query
+      .student
+      .findFirst({
+        where: eq(student.userId, userId),
+        columns: { gender: true },
+      });
+    return gender;
+  };
+
   return {
     updateUserLastLogin,
     cleanupExpiredVerificationTokens,
@@ -528,6 +547,8 @@ export async function userQueries() {
     getUsers,
     getUser,
     getStudentWithRelations,
+    getStudentGenderByUserId,
+    getStudentIdByUserId,
   };
 }
 

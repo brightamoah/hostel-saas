@@ -17,7 +17,7 @@ const { createAnnouncement } = announcementStore;
 const { users, status } = useFetchUserData();
 const { hostels, rooms, status: roomStatus } = useFetchRoomData();
 
-const isMobile = inject("isMobile") as ComputedRef<boolean>;
+const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const userOptions = computed(() => {
   return users.value.map(user => ({

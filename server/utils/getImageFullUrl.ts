@@ -1,12 +1,17 @@
-export function getImageFullUrl(path: string | null | undefined): string | null {
-  const config = useRuntimeConfig();
-  const baseUrl = config.public?.adminBaseUrl?.replace(/\/$/, "") || "";
+import type { H3Event } from "h3";
 
-  let imageUrl = path;
+export function getImageFullUrl(
+  path: string | null | undefined,
+  event?: H3Event,
+): string | null {
+  if (!path) return null;
 
-  if (path && !path.startsWith("http")) {
-    return imageUrl = `${baseUrl}${path}`;
-  }
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
 
-  return imageUrl || null;
+  if (!event) return path;
+
+  const requestUrl = getRequestURL(event);
+  const origin = requestUrl.origin;
+
+  return `${origin}${path}`;
 }

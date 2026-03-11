@@ -1,28 +1,29 @@
-<script lang="ts" setup>
-import type { RouteLocationRaw } from "vue-router";
+<script setup lang="ts">
+const { loggedIn, user } = useUserSession();
+const config = useRuntimeConfig();
 
-const title = ref("Transform Your Hostel Management Experience");
-const description = ref(
-  `Streamline operations, enhance resident satisfaction, and boost efficiency with our comprehensive hostel management platform. From seamless bookings to automated payments - everything you need in one powerful solution.`,
-);
+const dashboardRoute = computed(() => {
+  if (!loggedIn.value || !user.value) return "auth-login";
 
-const links = ref([
-  {
-    label: "Get Started",
-    to: { name: "auth-signup" } as RouteLocationRaw,
-    icon: "i-lucide-rocket",
-    size: "xl" as const,
-    class: "cursor-pointer",
-  },
-  {
-    label: "Admin Dashboard",
-    to: { name: "admin-dashboard" } as RouteLocationRaw,
-    icon: "i-lucide-user",
-    variant: "outline" as const,
-    size: "xl" as const,
-    class: "cursor-pointer rounded-lg",
-  },
-]);
+  switch (user.value.role) {
+    case "admin":
+      return "admin-dashboard";
+    case "student":
+      return "auth-hostelHub";
+    default:
+      return "auth-login";
+  }
+});
+
+const isAdminDomain = computed(() => {
+  const adminUrl = config.public.adminBaseUrl;
+
+  if (!adminUrl) return false;
+
+  const currentUrl = useRequestURL().href;
+
+  return currentUrl.startsWith(adminUrl) || currentUrl.includes("admin.");
+});
 
 const features = ref([
   {
@@ -59,71 +60,69 @@ const features = ref([
     description: "Round-the-clock customer support whenever you need help.",
   },
 ]);
-
-// const appConfig = useAppConfig();
 </script>
 
 <template>
-  <UMain>
+  <div
+    id="home"
+    class="relative flex flex-col items-center space-y-4 bg-transparent mx-auto mt-2 w-full h-full overflow-hidden"
+  >
     <UPageHero
-      :title
-      :description
-      class="relative p-0"
+      title="Transform Your Hostel Management Experience"
       :ui="{
-        title: 'font-newsreader animate-fade-in-up ',
-        description: 'animate-fade-in-up animation-delay-600',
+        container: 'py-8 sm:py-12 lg:py-13',
+        title: 'font-newsreader text-3xl sm:text-6xl font-semibold',
+        description: 'animate-fade-in-up animation-delay-600 mt-2.5',
         links: 'animate-fade-in-up animation-delay-1000 cursor-pointer',
-
+        footer: 'mt-5',
       }"
     >
-      <template #top>
-        <div class="left-1/2 absolute dark:bg-primary blur-[300px] rounded-full size-60 sm:size-80 -translate-x-1/2 -translate-y-80 transform" />
+      <template #description>
+        <span class="hidden md:inline">
+          Seamless Hostel Management for Everyone. Easily book rooms, manage tenants, and track payments. Whether you're a resident or an admin, our system keeps everything organized and hassle-free!
+        </span>
 
-        <!-- <AppStarsEffect /> -->
-
-        <!-- <AppStarBg
-          :star-count="2000"
-          :color="appConfig.ui.colors.primary"
-          :size="{ min: 1, max: 6 }"
-        /> -->
+        <span class="md:hidden inline">
+          Seamless Hostel Management for Everyone. Easily book rooms, manage tenants, and track payments all in one place.
+        </span>
       </template>
 
       <template #links>
         <UButton
-          v-for="button in links"
-          :key="button.label"
-          v-bind="button"
+          label="Get Started"
+          icon="i-lucide-rocket"
+          variant="solid"
+          color="primary"
+          size="xl"
+          class="cursor-pointer"
+          @click="navigateTo({ name: dashboardRoute })"
+        />
+
+        <UButton
+          v-if="isAdminDomain"
+          label="Register Your Company"
+          icon="i-lucide-building-2"
+          variant="subtle"
+          color="primary"
+          size="xl"
+          class="cursor-pointer"
+          @click="navigateTo({ name: 'auth-registerCompany' })"
         />
       </template>
 
       <UColorModeImage
-        light="/svgs/light/line-1.svg"
-        dark="/svgs/dark/line-1.svg"
-        class="top-0 left-0 absolute pb-10 h-162.5 object-cover pointer-events-none"
+        light="https://res.cloudinary.com/eves-oasis/image/upload/v1768310662/Screenshot_20260113_131446_Chrome_uenak4.jpg"
+        dark="https://res.cloudinary.com/eves-oasis/image/upload/v1768248510/Screenshot_20260112_195234_Chrome_f7tcdb.jpg"
+        class="-mt-10 w-full"
       />
-
-      <UColorModeImage
-        light="/svgs/light/line-7.svg"
-        dark="/svgs/dark/line-7.svg"
-        class="top-0 right-0 absolute pb-10 object-cover pointer-events-none"
-      />
-
-      <!-- <div class="flex justify-center md:-mt-30 animate-fade-in-up animation-delay-1400">
-        <div class="relative">
-          <NuxtImg
-            src="https://res.cloudinary.com/eves-oasis/image/upload/v1757872068/hostel-no-bg_l8uurx.png"
-            alt="Kings Hostel Management System"
-            class="z-10 relative drop-shadow-2xl hero-image"
-          />
-        </div>
-      </div> -->
     </UPageHero>
 
-    <!-- Features Section -->
+    <div class="linebreak" />
+
     <UPageSection
+      id="features"
       title="Everything you need for efficient hostel administration"
       description="Our comprehensive hostel management system streamlines operations for both administrators and residents."
-      class="-mt-5 md:-mt-40"
       :ui="{
         title: 'font-newsreader animate-fade-in-up capitalize text-2xl md:text-3xl lg:text-4xl',
         description: 'animate-fade-in-up animation-delay-600 md:-mt-0.5',
@@ -131,13 +130,11 @@ const features = ref([
     >
       <template #headline>
         <div class="text-center animate-fade-in-up animation-delay-1600">
-          <div class="mb-6 linebreak" />
-
           <UBadge
             variant="subtle"
             class="justify-center items-center"
           >
-            Hostel Management Features
+            Features
           </UBadge>
         </div>
       </template>
@@ -151,16 +148,19 @@ const features = ref([
         />
       </UPageGrid>
 
-      <!-- <AppStarsEffect /> -->
+      <div class="linebreak" />
+
+      <AppHeroCta />
     </UPageSection>
 
     <div class="linebreak" />
 
-    <AppFaq
-      id="faq"
-      class="md:-mt-20"
-    />
-  </UMain>
+    <AppFaq id="faq" />
+
+    <div class="linebreak" />
+
+    <AppContactUs id="contact" />
+  </div>
 </template>
 
 <style scoped>

@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 
-import { allocation, billing, room, student } from "../db/schema";
+import { allocation, billing, hostel, room, student } from "../db/schema";
 
 export async function bookRoom(
   studentId: number,
@@ -44,10 +44,18 @@ export async function bookRoom(
             eq(allocation.studentId, studentId),
             inArray(allocation.status, ["active", "pending"]),
           ),
+          columns: {
+            id: true,
+            status: true,
+          },
         }),
 
         tx.query.student.findFirst({
-          columns: { gender: true },
+          columns: {
+            id: true,
+            gender: true,
+            companyId: true,
+          },
           where: eq(student.id, studentId),
         }),
       ]);
@@ -60,9 +68,10 @@ export async function bookRoom(
       }
 
       if (existingAllocation) {
+        const article = ["active", "expired"].includes(existingAllocation.status) ? "an" : "a";
         throw createError({
           statusCode: 400,
-          message: "You already has an active or pending room allocation.",
+          message: `You already have ${article} ${existingAllocation.status} room allocation.`,
         });
       }
 
@@ -74,10 +83,21 @@ export async function bookRoom(
       }
 
       const [targetRoom] = await tx
-        .select()
+        .select({
+          id: room.id,
+          allowedGender: room.allowedGender,
+          status: room.status,
+          hostelId: room.hostelId,
+          roomNumber: room.roomNumber,
+          capacity: room.capacity,
+          currentOccupancy: room.currentOccupancy,
+          amountPerYear: room.amountPerYear,
+          companyId: room.companyId,
+        })
         .from(room)
         .where(eq(room.id, roomId))
-        .for("update");
+        .for("update")
+        .limit(1);
 
       if (!targetRoom) {
         throw createError({
@@ -89,21 +109,14 @@ export async function bookRoom(
       if (targetRoom.allowedGender !== studentRecord.gender) {
         throw createError({
           statusCode: 400,
-          message: `You cannot book this room. It is reserved for ${targetRoom.allowedGender} students.`,
+          message: `You cannot book this room. It is reserved for ${targetRoom.allowedGender} students only.`,
         });
       }
 
-      if (targetRoom.status === "under maintenance") {
+      if (!["vacant", "partially occupied"].includes(targetRoom.status)) {
         throw createError({
-          statusCode: 400,
-          message: "You cannot book this room. It is currently under maintenance.",
-        });
-      }
-
-      if (targetRoom.status === "reserved") {
-        throw createError({
-          statusCode: 400,
-          message: "You cannot book room. It is reserved.",
+          statusCode: 409,
+          message: `The room is currently ${targetRoom.status}. Please choose a different room.`,
         });
       }
 
@@ -111,6 +124,23 @@ export async function bookRoom(
         throw createError({
           statusCode: 400,
           message: "This room is fully occupied.",
+        });
+      }
+
+      const hostelRecord = await tx.query.hostel.findFirst({
+        where: eq(hostel.id, targetRoom.hostelId),
+        columns: {
+          id: true,
+          name: true,
+          companyId: true,
+          slug: true,
+        },
+      });
+
+      if (!hostelRecord) {
+        throw createError({
+          statusCode: 404,
+          message: "Hostel not found for the selected room.",
         });
       }
 
@@ -122,6 +152,7 @@ export async function bookRoom(
           allocationDate,
           academicPeriod,
           status: "pending",
+          companyId: hostelRecord.companyId,
           endDate: allocationEndDate,
         } satisfies typeof allocation.$inferInsert)
         .returning();
@@ -140,6 +171,9 @@ export async function bookRoom(
           status: "unpaid",
           paidAmount: "0.00",
           hostelId: targetRoom.hostelId,
+          companyId: hostelRecord.companyId,
+          academicPeriod,
+          type: "hostel fee",
         } satisfies typeof billing.$inferInsert)
         .returning();
 
@@ -154,6 +188,25 @@ export async function bookRoom(
         })
         .where(eq(room.id, roomId));
 
-      return newAllocation;
+      await tx.update(student)
+        .set({
+          hostelId: hostelRecord.id,
+          companyId: hostelRecord.companyId,
+        })
+        .where(eq(student.id, studentId));
+
+      return {
+        allocationId: newAllocation,
+        room: {
+          id: targetRoom.id,
+          roomNumber: targetRoom.roomNumber,
+          amountPerYear: targetRoom.amountPerYear,
+        },
+        hostel: {
+          id: hostelRecord.id,
+          name: hostelRecord.name,
+          slug: hostelRecord.slug,
+        },
+      };
     });
 }
