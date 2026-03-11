@@ -1,5 +1,3 @@
-import { Buffer } from "node:buffer";
-
 export default defineEventHandler(async (event) => {
   try {
     const rawPath = getRouterParam(event, "path");
@@ -27,44 +25,45 @@ export default defineEventHandler(async (event) => {
       jpeg: "image/jpeg",
       png: "image/png",
       webp: "image/webp",
-      gif: "image/gif",
-      svg: "image/svg+xml",
     };
 
     const contentType = contentTypes[extension] || "application/octet-stream";
 
     setHeader(event, "Cache-Control", "public, max-age=31536000, immutable");
 
-    const storage = useStorage("images");
+    if (import.meta.dev) {
+      const storage = useStorage("images");
+      const data = await storage.getItemRaw(path);
 
-    const data = await storage.getItemRaw(path);
+      if (!data) {
+        throw createError({ statusCode: 404, message: `Dev: Image not found ${path}` });
+      }
 
-    if (!data) {
+      setHeader(event, "Content-Type", contentType);
+      return data instanceof ArrayBuffer ? new Uint8Array(data) : data;
+    }
+
+    const r2Bucket = event.context?.cloudflare?.env?.BUCKET;
+
+    if (!r2Bucket) {
       throw createError({
-        statusCode: 404,
-        message: `Image not found ${path}`,
+        statusCode: 500,
+        message: "R2 bucket binding 'BUCKET' not found in production environment.",
       });
     }
-    setHeader(event, "Content-Type", contentType);
 
-    if (data instanceof ArrayBuffer) {
-      return new Uint8Array(data);
+    const image = await r2Bucket.get(path);
+
+    if (!image) {
+      throw createError({
+        statusCode: 404,
+        message: `R2: Image not found at key: ${path}`,
+      });
     }
 
-    if (data instanceof Uint8Array) {
-      return data;
-    }
+    setHeader(event, "Content-Type", image.httpMetadata?.contentType || contentType);
 
-    if (Buffer.isBuffer(data)) {
-      return data;
-    }
-
-    // If it's a readable stream
-    if (data && typeof data === "object" && "pipe" in data) {
-      return sendStream(event, data as ReadableStream<any>);
-    }
-
-    return data;
+    return image.body;
   }
   catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) throw error;
