@@ -4,6 +4,8 @@ import { authHandoffQueries, companyQueries, userQueries } from "~~/server/db/qu
 
 export default defineEventHandler(async (event) => {
   try {
+    await clearUserSession(event);
+
     const body = await readBody(event);
     const token = body?.token;
 
@@ -82,6 +84,7 @@ export default defineEventHandler(async (event) => {
       loggedInAt: now,
       expiresAt,
       onboarded: true,
+      portal: "admin",
     });
 
     return { success: true, nextUrl: "/admin/dashboard" };

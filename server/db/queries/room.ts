@@ -139,7 +139,7 @@ export async function roomQueries() {
     return rooms;
   };
 
-  const getAvailableRooms = async (gender: "male" | "female") => {
+  const getAvailableRooms = async (gender: "male" | "female", hostelId: number) => {
     const rooms = await db
       .query
       .room
@@ -148,6 +148,7 @@ export async function roomQueries() {
         where: and(
           inArray(room.status, ["vacant", "partially occupied"]),
           eq(room.allowedGender, gender),
+          eq(room.hostelId, hostelId),
         ),
       });
     return rooms;
@@ -461,3 +462,5 @@ export async function roomQueries() {
 type RoomWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getScopedRooms"]>>;
 
 export type Room = NonNullable<RoomWithRelations>[number];
+
+export type HostelRoomType = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getAvailableRooms"]>>>[number];

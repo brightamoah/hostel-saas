@@ -134,6 +134,8 @@ async function confirmSelection() {
   isSelectingHostel.value = true;
 
   try {
+    clearNuxtData(`hostelRooms:${selectedHostel.value.slug}`);
+
     await navigateTo({
       name: "hostels-hostelSlug",
       params: { hostelSlug: selectedHostel.value.slug },
@@ -323,14 +325,13 @@ async function confirmSelection() {
         @click="selectHostel(hostel)"
       >
         <div class="relative h-52 overflow-hidden">
-          <NuxtImg
+          <img
             v-if="hostel.logoUrl"
             :src="hostel.logoUrl"
             :alt="hostel.name"
             class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
-            placeholder
             loading="lazy"
-          />
+          >
 
           <div
             v-else
@@ -349,7 +350,7 @@ async function confirmSelection() {
               size="sm"
               class="shadow-lg backdrop-blur-sm capitalize"
             >
-              {{ hostel.availableRooms > 0 ? `${hostel.availableRooms} available` : 'Fully booked' }}
+              {{ hostel.availableRooms > 0 ? `available` : 'Fully booked' }}
             </UBadge>
           </div>
 
@@ -400,14 +401,13 @@ async function confirmSelection() {
     >
       <div class="flex md:flex-row flex-col items-center gap-6">
         <div class="group relative mx-auto md:mx-0 rounded-xl max-w-lg h-52 overflow-hidden shrink-0">
-          <NuxtImg
+          <img
             v-if="selectedHostel.logoUrl"
             :src="selectedHostel.logoUrl"
             :alt="selectedHostel.name"
             class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
-            placeholder
             loading="lazy"
-          />
+          >
 
           <div
             v-else

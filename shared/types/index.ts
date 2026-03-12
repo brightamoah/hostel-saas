@@ -9,7 +9,7 @@ import type { AnnouncementType } from "~~/server/db/queries/announcement";
 import type { BillingType } from "~~/server/db/queries/billing";
 import type { ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance } from "~~/server/db/queries/maintenance";
-import type { Room as RoomType } from "~~/server/db/queries/room";
+import type { HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard } from "~~/server/db/queries/user";
 import type { Visitor } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
@@ -583,18 +583,7 @@ export interface HostelDetails extends StudentHostel {
   rooms: HostelRoom[];
 }
 
-export interface HostelRoom {
-  id: number;
-  roomNumber: string;
-  floor: number;
-  capacity: number;
-  currentOccupancy: number;
-  roomType: string;
-  amountPerYear: number;
-  status: string;
-  allowedGender: string;
-  features: string[];
-}
+export type HostelRoom = HostelRoomType;
 
 export interface HostelDetailsResponse {
   hostel: Omit<StudentHostel, "minimumRoomPrice" | "maximumRoomPrice" | "totalCapacity" | "currentOccupancy" | "availableRooms" | "roomTypes">;

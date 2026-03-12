@@ -1,4 +1,4 @@
-export function useStudentRoomFilters(table: TableType<Room>, data: DataType<StudentRoomData>) {
+export function useStudentRoomFilters(table: TableType<HostelRoom>, data: DataType<HostelDetailsResponse | undefined>) {
   const statusFilter = ref("");
 
   const statusFilterOptions = ref([
@@ -19,20 +19,6 @@ export function useStudentRoomFilters(table: TableType<Room>, data: DataType<Stu
       value: "vacant",
     },
   ]);
-
-  const hostelFilter = ref("");
-
-  const hostelFilterOptions = computed(() => {
-    const raw = (data.value?.hostels.map(
-      hostel => hostel.name,
-    ) ?? []) as string[];
-
-    const options = raw.map(name => ({
-      label: name,
-      value: name,
-    }));
-    return [{ label: "All Hostels", value: "all" }, ...options];
-  });
 
   const floorFilter = ref<string | number>("");
 
@@ -55,9 +41,9 @@ export function useStudentRoomFilters(table: TableType<Room>, data: DataType<Stu
     defaultPage,
     itemsToDisplay,
     itemsPerPage,
-  } = useTableFilters<Room>(table, data, "rooms");
+  } = useTableFilters<HostelRoom>(table, data, "rooms");
 
-  watch(() => [statusFilter.value, hostelFilter.value, floorFilter.value], async ([newStatus, newHostel, newFloor]) => {
+  watch(() => [statusFilter.value, floorFilter.value], async ([newStatus, newFloor]) => {
     await nextTick();
     const tableApi = safeTableApi();
     if (!tableApi) return;
@@ -69,13 +55,6 @@ export function useStudentRoomFilters(table: TableType<Room>, data: DataType<Stu
     if (newStatus === "all") statusColumn.setFilterValue(undefined);
 
     else statusColumn.setFilterValue(newStatus);
-
-    const hostelColumn = tableApi.getColumn?.("hostel");
-    if (hostelColumn) {
-      if (!newHostel || newHostel === "all") hostelColumn.setFilterValue(undefined);
-
-      else hostelColumn.setFilterValue(newHostel);
-    }
 
     const floorColumn = tableApi.getColumn?.("floor");
     if (floorColumn) {
@@ -93,8 +72,6 @@ export function useStudentRoomFilters(table: TableType<Room>, data: DataType<Stu
   return {
     statusFilter,
     statusFilterOptions,
-    hostelFilter,
-    hostelFilterOptions,
     floorFilter,
     floorFilterOptions,
     selectedRoomsLength,

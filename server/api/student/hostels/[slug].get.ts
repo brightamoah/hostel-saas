@@ -52,6 +52,7 @@ export default defineEventHandler(async (event) => {
 
     const rooms = await getAvailableRooms(
       student.gender,
+      hostel.id,
     );
 
     const roomTypes = await getRoomTypes(

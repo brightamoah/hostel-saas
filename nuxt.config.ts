@@ -13,8 +13,6 @@ export default defineNuxtConfig({
     "nuxt-auth-utils",
     "@formkit/auto-animate",
     "nuxt-tiptap-editor",
-    "@pinia/colada-nuxt",
-    "pinia-plugin-persistedstate/nuxt",
   ],
 
   $development: {
@@ -47,6 +45,8 @@ export default defineNuxtConfig({
         driver: {
           name: "lruCache",
         },
+        tokensPerInterval: 200,
+        interval: 60 * 1000,
       },
       headers: {
         contentSecurityPolicy: {
@@ -84,12 +84,17 @@ export default defineNuxtConfig({
 
   css: ["~/assets/css/main.css"],
 
-  image: {
-    domains: ["localhost", "res.cloudinary.com", "images.unsplash.com", env.NUXT_PUBLIC_SITE_BASE_URL, env.NUXT_PUBLIC_SITE_URL, env.NUXT_PUBLIC_ADMIN_BASE_URL],
-    alias: {
-      api: "/api/images",
-    },
-  },
+  // image: {
+  //   domains: ["localhost", "res.cloudinary.com", "images.unsplash.com", env.NUXT_PUBLIC_SITE_BASE_URL, env.NUXT_PUBLIC_SITE_URL, env.NUXT_PUBLIC_ADMIN_BASE_URL],
+  //   alias: {
+  //     api: "/api/images",
+  //   },
+  //   ipx:{
+  //     modifiers:{
+
+  //     }
+  //   }
+  // },
 
   nitro: {
     preset: "cloudflare_module",
@@ -220,6 +225,26 @@ export default defineNuxtConfig({
         csrf: false,
       },
     },
+    "/api/_images/**": {
+      security: {
+        rateLimiter: false,
+      },
+    },
+    "/api/images/**": {
+      security: {
+        rateLimiter: false,
+      },
+    },
+    "/_ipx/**": {
+      security: {
+        rateLimiter: false,
+      },
+    },
+    "/api/_auth/**": {
+      security: {
+        rateLimiter: false,
+      },
+    },
   },
 
   security: {
@@ -228,6 +253,7 @@ export default defineNuxtConfig({
       driver: {
         name: "lruCache",
       },
+      tokensPerInterval: 100,
     },
     headers: {
       contentSecurityPolicy: {

@@ -34,9 +34,10 @@ declare module "#auth-utils" {
     secure?: SecureSessionData;
     expiresAt: Date;
     onboarded: boolean;
-    hasActiveAllocation: boolean;
+    hasActiveAllocation?: boolean;
     selectedHostelId?: number | null;
     selectedHostelSlug?: string | null;
+    portal: "admin" | "public";
   }
 }
 

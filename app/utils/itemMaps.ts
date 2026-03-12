@@ -82,7 +82,7 @@ export const charCountMap: Record<CharStatus, CharCountInfo> = {
   },
 };
 
-export const roomStatusColorMap: Record<Room["status"], ColorType> = {
+export const roomStatusColorMap: Record<HostelRoom["status"], ColorType> = {
   "vacant": "success",
   "partially occupied": "info",
   "fully occupied": "error",

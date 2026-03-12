@@ -3,8 +3,8 @@ const props = defineProps<{
   modelValue: string;
   statusFilter: string;
   statusFilterOptions: FilterOption[];
-  hostelFilter: string;
-  hostelFilterOptions: FilterOption[];
+  hostelFilter?: string;
+  hostelFilterOptions?: FilterOption[];
   floorFilter: string | number;
   floorFilterOptions: FilterOption[];
 }>();
@@ -59,6 +59,7 @@ const floorFilterModel = computed({
       />
 
       <USelect
+        v-if="hostelFilterOptions"
         v-model="hostelFilterModel"
         arrow
         placeholder="Filter by Hostel"

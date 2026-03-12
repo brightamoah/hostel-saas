@@ -18,7 +18,26 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { studentId, amount, academicPeriod, description, dueDate, type, sendNotification } = body.data;
+    const {
+      studentId,
+      amount,
+      academicPeriod,
+      description,
+      dueDate,
+      type,
+      sendNotification,
+    } = body.data;
+
+    const {
+      companyId,
+    } = adminData;
+
+    if (!companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "Admin not associated with any company",
+      });
+    }
 
     const { createBilling } = await billingQueries();
     const { getAllocationByStudentId } = await roomQueries();
@@ -68,6 +87,7 @@ export default defineEventHandler(async (event) => {
       status: "unpaid",
       dueDate: dueDate.toString(),
       type,
+      companyId,
     });
 
     if (sendNotification) {

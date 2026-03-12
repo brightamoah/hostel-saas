@@ -12,6 +12,8 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
     const surface = getSurface(event);
     const { siteBase, adminBase } = getPortalBaseUrls(event);
 
+    await clearUserSession(event);
+
     const rawIp = getIP(event);
     const ip = normalizeIp(rawIp);
 
@@ -94,7 +96,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       const { createHandoffToken } = await authHandoffQueries();
       const { token } = await createHandoffToken(currentUser.id);
 
-      await recordLoginAttempt(currentUser.id, ip);
+      await recordLoginAttempt(currentUser.id, ip, true);
 
       return {
         success: true,
@@ -157,7 +159,10 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     const now = new Date();
 
-    const sessionDurationMs = 1000 * 60 * 60 * 24 * 1;
+    const sessionDurationMs = rememberMe
+      ? 1000 * 60 * 60 * 24 * 7
+      : 1000 * 60 * 60 * 24 * 1;
+
     const expiresAt = new Date(now.getTime() + sessionDurationMs);
 
     await setUserSession(event, {
@@ -181,15 +186,8 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       hasActiveAllocation,
       selectedHostelId: null,
       selectedHostelSlug: null,
+      portal: surface,
     });
-
-    if (rememberMe) {
-      const extendedExpiresAt = new Date(now.getTime() + (1000 * 60 * 60 * 24 * 7));
-      await replaceUserSession(event, {
-        ...await getUserSession(event),
-        expiresAt: extendedExpiresAt,
-      });
-    }
 
     await updateUserLastLogin(currentUser.id);
 

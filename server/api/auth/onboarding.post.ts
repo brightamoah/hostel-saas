@@ -97,6 +97,7 @@ export default defineEventHandler(async (event) => {
       hasActiveAllocation: false,
       selectedHostelId: null,
       selectedHostelSlug: null,
+      portal: "public",
     });
 
     return {

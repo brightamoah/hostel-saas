@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from "@nuxt/ui";
 
+const {
+  sidebar = true,
+} = defineProps<{
+  sidebar?: boolean;
+}>();
+
 const toast = useToast();
 
 const open = ref(false);
@@ -133,6 +139,7 @@ onMounted(async () => {
 <template>
   <UDashboardGroup unit="rem">
     <UDashboardSidebar
+      v-if="sidebar"
       id="student-sidebar"
       v-model:open="open"
       collapsible

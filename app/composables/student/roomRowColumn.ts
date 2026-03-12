@@ -27,12 +27,12 @@ export function useStudentRoomRowColumn(
     });
   };
 
-  const openBookRoomModal = async (room: Room) => {
+  const openBookRoomModal = async (room: HostelRoom) => {
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
 
     await modal.open({
-      title: `Book Room ${room.roomNumber} in ${room.hostel?.name} Hostel`,
+      title: `Book Room ${room.roomNumber} at ${room.hostel.name}`,
       confirmLabel: "Book Room",
       description: `This action will reserve room ${room.roomNumber} for you.`,
       renderTrigger: false,
@@ -61,7 +61,7 @@ export function useStudentRoomRowColumn(
     });
   };
 
-  const getRowItems = (row: Row<Room>) => {
+  const getRowItems = (row: Row<HostelRoom>) => {
     const room = row.original;
     return [
       {
@@ -87,20 +87,12 @@ export function useStudentRoomRowColumn(
     ];
   };
 
-  const columns = computed<TableColumn<Room>[]>(() => [
+  const columns = computed<TableColumn<HostelRoom>[]>(() => [
     {
       accessorKey: "roomNumber",
       header: createSortableHeader("Room #", UButton),
       cell: ({ row }) => {
         return h("p", { class: "font-medium" }, row.original.roomNumber);
-      },
-    },
-    {
-      id: "hostel",
-      accessorFn: row => row.hostel?.name ?? "N/A",
-      header: createSortableHeader("Hostel", UButton),
-      cell: ({ row }) => {
-        return h("p", { class: "font-medium" }, row.original.hostel?.name ?? "N/A");
       },
     },
     {

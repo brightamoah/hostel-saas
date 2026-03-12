@@ -18,6 +18,8 @@ export default defineEventHandler(async (event) => {
 
     const userId = user.id;
 
+    const surface = getSurface(event);
+
     const {
       getUserById,
       getAdminByUserId,
@@ -97,6 +99,7 @@ export default defineEventHandler(async (event) => {
       hasActiveAllocation,
       selectedHostelId: selectedHostelId ?? null,
       selectedHostelSlug: selectedHostelSlug ?? null,
+      portal: surface,
     });
 
     return { success: true, message: "Session refreshed" };

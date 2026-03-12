@@ -59,22 +59,21 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (publicRoutes.includes(routeName)) return;
 
   if (authRoutes.includes(routeName)) {
-    if (loggedIn.value && user.value) {
-      if (user.value.role === "admin") {
-        return navigateTo("/admin/dashboard");
-      }
+    if (!loggedIn.value && !user.value) return;
 
-      if (!session.value?.onboarded) {
-        return navigateTo({ name: "auth-onboarding" });
-      }
+    if (user.value?.role === "admin") {
+      return navigateTo("/admin/dashboard");
+    }
 
-      if (!session.value?.hasActiveBooking) {
-        return navigateTo({ name: "auth-hostelHub" });
-      }
+    if (!session.value?.onboarded) {
+      return navigateTo({ name: "auth-onboarding" });
+    }
 
+    if (!session.value?.hasActiveBooking) {
       return navigateTo({ name: "auth-hostelHub" });
     }
-    return;
+
+    return navigateTo({ name: "student-dashboard" });
   }
 
   if (!loggedIn.value || !user.value) {
@@ -99,9 +98,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (onboarded && !hasActiveAllocation) {
     if (hostelSelectionRoutes.includes(routeName)) return;
 
-    if (routeName === "auth-onboarding") {
-      return navigateTo({ name: "auth-hostelHub" });
-    }
+    if (routeName === "auth-onboarding") return navigateTo({ name: "auth-hostelHub" });
 
     if (studentProtectedRoutes.includes(routeName)) {
       if (import.meta.client) {
