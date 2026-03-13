@@ -2,7 +2,7 @@ import { roomQueries } from "~~/server/db/queries";
 import { getImageFullUrl } from "~~/server/utils/getImageFullUrl";
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, {
+  await requirePortalUserSession(event, {
     message: "",
   });
 

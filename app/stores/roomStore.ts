@@ -4,7 +4,7 @@ import { acceptHMRUpdate, defineStore } from "pinia";
 
 export const useRoomStore = defineStore("roomStore", () => {
   const toast = useToast();
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   const { $apiFetch } = useNuxtApp();
 
   const roomDataKey = computed(() => user.value?.role === "admin"

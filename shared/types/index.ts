@@ -14,6 +14,7 @@ import type { StudentDashboard } from "~~/server/db/queries/user";
 import type { Visitor } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
+import type { useSession } from "h3";
 import type { randomUUID } from "uncrypto";
 import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
 import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
@@ -597,3 +598,5 @@ export interface HostelDetailsResponse {
   roomTypes: string[];
   studentGender: "male" | "female";
 }
+
+export type UseSessionEvent = Parameters<typeof useSession>[0];

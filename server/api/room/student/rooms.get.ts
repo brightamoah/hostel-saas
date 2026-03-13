@@ -1,7 +1,7 @@
 import { roomQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 
@@ -18,7 +18,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const rooms = await getAvailableRooms(student.gender);
+    const hostelId = student.hostelId;
+
+    if (!hostelId) {
+      throw createError({
+        statusCode: 404,
+        message: "Hostel information not found for the student.",
+      });
+    }
+
+    const rooms = await getAvailableRooms(student.gender, hostelId);
 
     const hostels = await getAllHostels();
 

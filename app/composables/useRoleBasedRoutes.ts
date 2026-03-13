@@ -23,12 +23,12 @@ const routesByRole = {
     visitors: { name: "student-visitors" },
     settings: { name: "student-settings" },
     dashboard: { name: "student-dashboard" },
-    users: { name: "student-users" },
+    users: { name: "student-dashboard" },
   }),
 } as const; // 'as const' for literal key inference
 
 export function useRoleBasedRoute() {
-  const { loggedIn, user } = useUserSession();
+  const { loggedIn, user } = usePortalUserSession();
 
   // Infer keys from the admin routes (assuming symmetric structure)
   type RouteKeys = keyof typeof routesByRole.admin;

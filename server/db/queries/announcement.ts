@@ -131,6 +131,7 @@ export async function announcementQueries() {
 
   const updateAnnouncementReadStatus = async (
     announcementId: number,
+    companyId: number,
     userId: number,
     isRead: boolean,
   ) => {
@@ -140,6 +141,7 @@ export async function announcementQueries() {
         .values({
           announcementId,
           userId,
+          companyId,
         })
         .onConflictDoNothing();
     }

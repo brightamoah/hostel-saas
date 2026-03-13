@@ -10,7 +10,7 @@ const { maintenance } = defineProps<{
 
 const emit = defineEmits<{ close: [boolean] }>();
 
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 

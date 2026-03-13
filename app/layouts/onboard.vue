@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-const { fetch: refreshSession } = useUserSession();
+const { fetch: refreshSession } = usePortalUserSession();
 
 await refreshSession();
 </script>

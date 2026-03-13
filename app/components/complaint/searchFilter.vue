@@ -29,7 +29,7 @@ const emit = defineEmits<{
   (e: "update:studentFilter", value: string): void;
 }>();
 
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const globalFilterModel = computed({
   get: () => modelValue,

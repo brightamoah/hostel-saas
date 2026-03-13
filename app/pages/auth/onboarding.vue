@@ -14,7 +14,7 @@ const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const toast = useToast();
 const router = useRouter();
-const { fetch: refreshSession, user: loggedInUser } = useUserSession();
+const { fetch: refreshSession, user: loggedInUser } = usePortalUserSession();
 
 const errorMessage = ref<string | null>(null);
 

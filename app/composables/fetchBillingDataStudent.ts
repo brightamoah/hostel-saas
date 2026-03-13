@@ -1,5 +1,5 @@
 export function useFetchBillingDataStudent() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const billingKey = computed(() => `billingData:${user.value?.id}`);
 

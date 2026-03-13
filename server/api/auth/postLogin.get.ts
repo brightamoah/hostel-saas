@@ -2,13 +2,18 @@ import type { PostLoginResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event): Promise<PostLoginResponse> => {
   try {
-    const {
-      user,
-      onboarded,
-      hasActiveAllocation,
-    } = await requireUserSession(event, {
-      message: "User not authenticated",
-    });
+    const session = await getPortalUserSession(event);
+
+    const user = session?.user;
+    const onboarded = session?.onboarded;
+    const hasActiveAllocation = session?.hasActiveAllocation;
+
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        message: "Unauthorized",
+      });
+    }
 
     if (user.role === "admin") {
       return {

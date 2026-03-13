@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
       loggedInAt,
       selectedHostelId,
       selectedHostelSlug,
-    } = await requireUserSession(event, {
+    } = await requirePortalUserSession(event, {
       message: "User not authenticated",
     });
 

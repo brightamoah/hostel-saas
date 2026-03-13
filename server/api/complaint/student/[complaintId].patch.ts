@@ -31,13 +31,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (data.priority === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Priority cannot be an empty string.",
-      });
-    }
-
     const { updateComplaint, getComplaintForStudentById } = await complaintQueries();
 
     const updatedComplaint = await updateComplaint(

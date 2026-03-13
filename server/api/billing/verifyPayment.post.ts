@@ -1,7 +1,7 @@
 import { billingQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event);
+  await requirePortalUserSession(event);
 
   try {
     const body = await readValidatedBody(event, body => verifyPaymentSchema.safeParse(body));

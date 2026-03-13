@@ -1,7 +1,7 @@
 import type { SelectMenuItem } from "@nuxt/ui";
 
 export function useFetchStudentRoomData(hostelSlug: Ref<string> | ComputedRef<string>) {
-  // const { user } = useUserSession();
+  // const { user } = usePortalUserSession();
 
   // const { data, status, refresh } = useFetch<StudentRoomData>("/api/room/student/rooms", {
   //   method: "GET",

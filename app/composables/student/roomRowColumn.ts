@@ -10,7 +10,7 @@ export function useStudentRoomRowColumn(
   UDropdownMenu: ComponentType,
   UTooltip: ComponentType,
 ) {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { student } = useFetchStudentDashboardData();
 

@@ -2,7 +2,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { userQueries, visitorQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 
@@ -11,6 +11,15 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 403,
         message: "Access denied: Only students can register for a visitor pass.",
+      });
+    }
+
+    const companyId = user.companyId;
+
+    if (!companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to register a visitor. Please contact support if you believe this is an error.",
       });
     }
 
@@ -72,6 +81,7 @@ export default defineEventHandler(async (event) => {
       hostelId: student.allocation.room.hostel.id,
       studentId: student.id,
       visitDate: visitDate.toString(),
+      companyId,
     };
 
     const visitor = await createVisitor(data);

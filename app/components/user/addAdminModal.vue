@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 const admin = user.value?.adminData;
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;

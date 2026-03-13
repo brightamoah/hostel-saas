@@ -1,7 +1,7 @@
 import { announcementQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 
@@ -12,6 +12,15 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         message: "Invalid announcement ID.",
+      });
+    }
+
+    const companyId = user.companyId;
+
+    if (!companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to update announcement read status. Please contact support if you believe this is an error.",
       });
     }
 
@@ -32,6 +41,7 @@ export default defineEventHandler(async (event) => {
 
     await updateAnnouncementReadStatus(
       id,
+      companyId,
       user.id,
       action === "read",
     );

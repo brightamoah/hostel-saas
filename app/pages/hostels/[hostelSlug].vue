@@ -61,23 +61,14 @@ const {
   itemsToDisplay,
 } = useStudentRoomFilters(table, data);
 
-// Filters
-// const selectedRoomType = ref<string | null>(null);
-// const priceRange = ref<[number, number] | null>(null);
-// const sortBy = ref<"price_asc" | "price_desc" | "capacity" | "floor">("price_asc");
+// const selectedPeriod = ref("first semester");
 
-// // Booking modal state
-// const selectedRoom = ref<typeof filteredRooms.value[number] | null>(null);
-// const isBookingModalOpen = ref(false);
-// const isBooking = ref(false);
-const selectedPeriod = ref("first semester");
-
-const academicPeriods = [
-  { label: "First Semester", value: "first semester" },
-  { label: "Second Semester", value: "second semester" },
-  { label: "Entire Year", value: "entire year" },
-  { label: "Vacation Period", value: "vacation period" },
-];
+// const academicPeriods = [
+//   { label: "First Semester", value: "first semester" },
+//   { label: "Second Semester", value: "second semester" },
+//   { label: "Entire Year", value: "entire year" },
+//   { label: "Vacation Period", value: "vacation period" },
+// ];
 
 // async function confirmBooking() {
 //   if (!selectedRoom.value) return;

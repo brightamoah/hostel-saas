@@ -17,13 +17,6 @@ export default defineEventHandler(async (event) => {
 
     const { complaintId, status, responseText } = body.data;
 
-    if (status === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Status cannot be empty.",
-      });
-    }
-
     const { updateStatusAndAddResponse, getComplaintById } = await complaintQueries();
     const { getAdminByUserId } = await userQueries();
 

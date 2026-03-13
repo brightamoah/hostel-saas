@@ -6,7 +6,7 @@ export const useUserStore = defineStore("userStore", () => {
   const toast = useToast();
   const addModalOpen = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { $apiFetch } = useNuxtApp();
 

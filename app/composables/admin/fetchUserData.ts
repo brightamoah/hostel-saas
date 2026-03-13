@@ -1,5 +1,5 @@
 export function useFetchUserData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { data, status, refresh } = useFetch<UserDataResponse>("/api/user/getUserData", {
     method: "get",

@@ -1,5 +1,5 @@
 export function useFetchComplaintData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { data, status, refresh } = useFetch<ComplaintDataResponse>("/api/complaint/getComplaintData", {
     method: "get",

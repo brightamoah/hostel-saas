@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
-    const session = await getUserSession(event);
+    const session = await getPortalUserSession(event);
     let errorMessage: string = "";
 
     if (!session.user

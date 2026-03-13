@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { loggedIn, user } = useUserSession();
+const { loggedIn, user } = usePortalUserSession();
 const config = useRuntimeConfig();
 
 const dashboardRoute = computed(() => {

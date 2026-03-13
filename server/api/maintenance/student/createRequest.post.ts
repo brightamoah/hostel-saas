@@ -1,7 +1,7 @@
 import { maintenanceQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 
@@ -9,6 +9,15 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 403,
       message: "Forbidden: This endpoint is only accessible to students.",
+    });
+  }
+
+  const companyId = user.companyId;
+
+  if (!companyId) {
+    throw createError({
+      statusCode: 403,
+      message: "You do not have permission to create maintenance requests. Please contact support if you believe this is an error.",
     });
   }
 
@@ -31,13 +40,6 @@ export default defineEventHandler(async (event) => {
       priority,
       roomId,
     } = body.data;
-
-    if (issueType === "" || priority === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Issue Type and Priority are required fields and cannot be empty.",
-      });
-    }
 
     const { getStudentByUserId } = await userQueries();
     const { createMaintenance } = await maintenanceQueries();
@@ -65,6 +67,7 @@ export default defineEventHandler(async (event) => {
       issueType,
       priority,
       roomId,
+      companyId,
     });
 
     return {

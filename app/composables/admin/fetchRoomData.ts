@@ -1,7 +1,7 @@
 import type { SelectMenuItem } from "@nuxt/ui";
 
 export function useFetchRoomData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { data, status, refresh, error } = useFetch<RoomDataResponse>("/api/room/getRoomData", {
     method: "get",

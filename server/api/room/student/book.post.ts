@@ -2,7 +2,7 @@ import { userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
   try {
-    const session = await requireUserSession(event, {
+    const session = await requirePortalUserSession(event, {
       message: "Unauthorized Access: Please log in to continue.",
     });
 

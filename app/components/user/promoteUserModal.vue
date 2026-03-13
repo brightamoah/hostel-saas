@@ -12,7 +12,7 @@ const emit = defineEmits<{
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
-const { user: currentUser } = useUserSession();
+const { user: currentUser } = usePortalUserSession();
 const open = defineModel<boolean>("open");
 const promoteFormRef = useTemplateRef("promoteFormRef");
 

@@ -182,12 +182,14 @@ export async function billingQueries() {
   const createPaymentIntent = async (
     billingId: number,
     studentId: number,
+    companyId: number,
     amount: number,
     reference: string,
   ) => {
     await db.insert(payment).values({
       billingId,
       studentId,
+      companyId,
       amount: amount.toString(),
       transactionReference: reference,
       paymentMethod: "card",

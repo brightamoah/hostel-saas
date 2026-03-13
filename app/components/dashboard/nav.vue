@@ -9,7 +9,7 @@ defineProps<{
 
 const { isNotificationsSlideoverOpen } = useDashboard();
 
-const { loggedIn: isLoggedIn, user } = useUserSession();
+const { loggedIn: isLoggedIn, user } = usePortalUserSession();
 
 const { signout } = useAuthStore();
 

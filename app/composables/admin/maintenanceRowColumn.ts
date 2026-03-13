@@ -19,7 +19,7 @@ export function useMaintenanceRowColumn(
   UIcon: ComponentType,
 ) {
   const overlay = useOverlay();
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   const maintenanceStore = useMaintenanceStore();
   const {
     isLoading,

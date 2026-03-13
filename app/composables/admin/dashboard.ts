@@ -1,5 +1,5 @@
 export function useAdminDashboardData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { data, status, refresh } = useFetch<AdminDashboardData>("/api/admin/stats", {
     method: "GET",

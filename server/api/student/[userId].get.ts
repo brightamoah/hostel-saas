@@ -3,7 +3,7 @@ import type { RoomInHostel } from "~~/shared/types";
 import { roomQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  await requireUserSession(event, {
+  await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 

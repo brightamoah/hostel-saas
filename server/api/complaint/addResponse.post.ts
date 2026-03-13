@@ -1,7 +1,7 @@
 import { complaintQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const session = await requireUserSession(event, {
+  const session = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 

@@ -7,7 +7,7 @@ const { announcement } = defineProps<{
 
 const emit = defineEmits<{ close: [boolean] }>();
 
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const isAdmin = computed(() => user.value?.role === "admin");
 // const isStudent = computed(() => user.value?.role === "student");

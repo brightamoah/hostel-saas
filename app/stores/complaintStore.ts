@@ -12,7 +12,7 @@ const baseComplaint: Partial<ComplaintInsert> = {
 };
 
 export const useComplaintStore = defineStore("complaintStore", () => {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   const { $apiFetch } = useNuxtApp();
 
   const toast = useToast();

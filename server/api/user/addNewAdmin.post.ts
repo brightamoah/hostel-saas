@@ -6,7 +6,7 @@ import { randomUUID } from "uncrypto";
 import { getEmailTemplate, getWelcomeAdminTemplate } from "~/utils/emailTemplate";
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event);
+  const session = await usePortalUserSession(event);
   const creator = session.user;
 
   if (

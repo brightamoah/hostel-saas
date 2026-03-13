@@ -12,7 +12,7 @@ export async function adminSessionCheck(event: H3Event): Promise<{
   companyId: AdminScope["companyId"];
   companyRole: AdminScope["companyRole"];
 }> {
-  const session = await requireUserSession(event);
+  const session = await requirePortalUserSession(event);
 
   if (
     session.user.role !== "admin"
@@ -73,7 +73,7 @@ export async function studentSessionCheck(event: H3Event): Promise<{
   studentId: number;
   companyId?: number;
 }> {
-  const session = await requireUserSession(event);
+  const session = await requirePortalUserSession(event);
   const studentId = session.user?.studentId;
 
   if (

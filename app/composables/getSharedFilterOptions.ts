@@ -1,5 +1,5 @@
 export function useGetSharedFilterOptions() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const studentFilter = ref("");
   const studentFilterOptions = ref<FilterOption[]>([]);

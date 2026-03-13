@@ -48,8 +48,6 @@ const {
   totalRooms,
   statusFilter,
   statusFilterOptions,
-  hostelFilter,
-  hostelFilterOptions,
   floorFilter,
   floorFilterOptions,
   currentRoomsShowing,
@@ -77,11 +75,9 @@ const pagination = ref({
             <RoomSearchFilter
               v-model="globalFilter"
               v-model:status-filter="statusFilter"
-              v-model:hostel-filter="hostelFilter"
               v-model:floor-filter="floorFilter"
               class="m-0"
               :status-filter-options
-              :hostel-filter-options
               :floor-filter-options
             >
               <template #actions>

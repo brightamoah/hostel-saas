@@ -1,5 +1,5 @@
 export function useFetchStudentDashboardData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const userId = computed(() => user.value?.id);
 

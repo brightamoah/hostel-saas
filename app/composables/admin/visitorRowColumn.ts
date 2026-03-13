@@ -19,7 +19,7 @@ export function useVisitorRowColumn(
   UCheckbox: ComponentType,
   // UIcon: Component,
 ) {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   const isAdmin = computed<boolean>(() => user.value?.role === "admin");
   const toast = useToast();
   const overlay = useOverlay();

@@ -8,7 +8,7 @@ import { getEmailTemplate } from "~/utils/emailTemplate";
 
 export default defineEventHandler(async (event) => {
   try {
-    await clearUserSession(event);
+    await clearPortalUserSession(event);
 
     const runtimeConfig = useRuntimeConfig(event);
 

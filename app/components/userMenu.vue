@@ -8,7 +8,7 @@ defineProps<{
 const colorMode = useColorMode();
 const appConfig = useAppConfig();
 
-const { user: currentUser } = useUserSession();
+const { user: currentUser } = usePortalUserSession();
 
 const { userInitials, avatarBgColor, userBadgeColor } = useUseUserItems();
 

@@ -6,9 +6,11 @@ import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event): Promise<StudentStatusResponse> => {
   try {
-    const { user } = await getUserSession(event);
+    const session = await getPortalUserSession(event);
     const { getOnboardedStudent } = await userQueries();
     const { checkActiveOrPendingAllocation } = await roomQueries();
+
+    const user = session?.user;
 
     if (!user || !user.emailVerified) {
       return {

@@ -2,7 +2,7 @@ import { roomQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
   try {
-    const { user } = await requireUserSession(event, {
+    const { user } = await requirePortalUserSession(event, {
       message: "Please log in to view hostel details",
     });
 

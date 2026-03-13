@@ -1,7 +1,7 @@
 import { userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event);
+  const session = await usePortalUserSession(event);
 
   await adminSessionCheck(event);
 

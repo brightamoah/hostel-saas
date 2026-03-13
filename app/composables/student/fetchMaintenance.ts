@@ -1,5 +1,5 @@
 export function useFetchMaintenance() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const {
     data,

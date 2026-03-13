@@ -1,7 +1,7 @@
 import { announcementQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const { adminData, companyId } = await adminSessionCheck(event);
 
   try {
     const body = await readValidatedBody(event, body => createAnnouncementSchema.safeParse(body));
@@ -15,18 +15,18 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    if (!companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to create announcements. Please contact support if you believe this is an error.",
+      });
+    }
+
     const { createAnnouncement } = await announcementQueries();
 
     const { content, priority, targetAudience, title, targetHostelId, targetRoomId, targetUserId } = body.data;
 
     const cleanContent = sanitizeHtmlContent(content);
-
-    if (priority === "" || targetAudience === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Priority and Target Audience cannot be empty.",
-      });
-    }
 
     const newAnnouncement = await createAnnouncement({
       content: cleanContent,
@@ -37,6 +37,7 @@ export default defineEventHandler(async (event) => {
       targetRoomId,
       targetUserId,
       postedBy: adminData.id,
+      companyId,
     });
 
     return {

@@ -3,13 +3,13 @@ definePageMeta({
   layout: "auth",
 });
 
-const { clear: clearUserSession } = useUserSession();
+const { clear: clearPortalUserSession } = usePortalUserSession();
 
 onMounted(async () => {
   try {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    await clearUserSession();
+    await clearPortalUserSession();
     clearNuxtData();
   }
   finally {

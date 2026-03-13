@@ -1,7 +1,7 @@
 import { billingQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 
@@ -16,6 +16,15 @@ export default defineEventHandler(async (event) => {
         message: `${body.error.issues
           .map(i => i.message)
           .join(", ")}`,
+      });
+    }
+
+    const { companyId } = user;
+
+    if (!companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to make a payment. Please contact support if you believe this is an error.",
       });
     }
 
@@ -105,6 +114,7 @@ export default defineEventHandler(async (event) => {
     await createPaymentIntent(
       billingId,
       billing.studentId,
+      companyId,
       amount,
       reference,
     );

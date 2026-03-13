@@ -1,6 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { env } from "./app/lib/env";
 
+// const isAdmin =
+
 export default defineNuxtConfig({
   compatibilityDate: "latest",
   modules: [
@@ -183,6 +185,10 @@ export default defineNuxtConfig({
         maxAge: 60 * 60 * 24 * 1, // 1 day in seconds
       },
     },
+    sessionName: env.NUXT_SESSION_NAME,
+    sessionPassword: env.NUXT_SESSION_PASSWORD,
+    adminSessionName: env.NUXT_ADMIN_SESSION_NAME,
+    adminSessionPassword: env.NUXT_ADMIN_SESSION_PASSWORD,
     databaseUrl: env.NUXT_DATABASE_URL,
     nodemailerFrom: env.NUXT_NODEMAILER_FROM,
     nodemailerHost: env.NUXT_NODEMAILER_HOST,
@@ -306,5 +312,11 @@ export default defineNuxtConfig({
   },
   ogImage: {
     enabled: false,
+  },
+
+  hooks: {
+    "nitro:config": (nitroConfig) => {
+      nitroConfig.handlers = nitroConfig.handlers?.filter(handler => handler?.route !== "/api/_auth/session");
+    },
   },
 });

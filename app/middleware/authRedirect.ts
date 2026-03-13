@@ -1,7 +1,7 @@
 import type { RouteLocationRaw } from "vue-router";
 
 export default defineNuxtRouteMiddleware(async () => {
-  const { loggedIn, user } = useUserSession();
+  const { loggedIn, user } = usePortalUserSession();
   const { $apiFetch } = useNuxtApp();
 
   if (loggedIn.value && user.value) {

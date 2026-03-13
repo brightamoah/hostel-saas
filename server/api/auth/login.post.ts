@@ -11,8 +11,9 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
   try {
     const surface = getSurface(event);
     const { siteBase, adminBase } = getPortalBaseUrls(event);
+    const sessionConfig = getPortalSessionConfig(event);
 
-    await clearUserSession(event);
+    await clearPortalUserSession(event);
 
     const rawIp = getIP(event);
     const ip = normalizeIp(rawIp);
@@ -187,7 +188,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       selectedHostelId: null,
       selectedHostelSlug: null,
       portal: surface,
-    });
+    }, sessionConfig);
 
     await updateUserLastLogin(currentUser.id);
 

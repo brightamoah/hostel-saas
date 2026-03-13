@@ -14,7 +14,7 @@ export function useBillingRowColumn(
   UBadge: ComponentType,
   UDropdownMenu: ComponentType,
 ) {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   const overlay = useOverlay();
 
   const billingStore = useBillingStore();

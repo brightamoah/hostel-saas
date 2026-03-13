@@ -8,7 +8,7 @@ definePageMeta({
 
 const title = "Billings Management";
 
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const isSuperAdmin = computed(() => user.value?.role === "admin" && user.value.adminData?.accessLevel === "super");
 

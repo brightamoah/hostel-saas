@@ -22,7 +22,7 @@ export const useAnnouncementStore = defineStore("announcementStore", () => {
   const isLoading = ref(false);
   const isFetchingDraft = ref(false);
 
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const announcementDataKey = computed(() => `announcement-data-${user.value?.id}`);
 

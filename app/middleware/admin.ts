@@ -1,7 +1,7 @@
 import type { RouteLocationRaw } from "vue-router";
 
 export default defineNuxtRouteMiddleware(() => {
-  const { loggedIn, user } = useUserSession();
+  const { loggedIn, user } = usePortalUserSession();
 
   if (loggedIn.value && user.value && user.value.role !== "admin") {
     const toast = useToast();

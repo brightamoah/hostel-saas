@@ -3,7 +3,7 @@ import { joinCodeSchema } from "~~/shared/utils/schema";
 
 export default defineEventHandler(async (event) => {
   try {
-    const { user } = await requireUserSession(event, {
+    const { user } = await requirePortalUserSession(event, {
       message: "You must be logged in to join a hostel",
     });
 
@@ -56,6 +56,7 @@ export default defineEventHandler(async (event) => {
 
     const rooms = await getAvailableRooms(
       student.gender,
+      hostel.id,
     );
 
     const roomTypes = await getRoomTypes(

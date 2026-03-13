@@ -31,13 +31,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (data.issueType === "" || data.priority === "") {
-      throw createError({
-        statusCode: 400,
-        message: "Issue Type and Priority cannot be empty strings.",
-      });
-    }
-
     const { updateMaintenance, getMaintenanceByIdForStudent } = await maintenanceQueries();
 
     const updatedMaintenance = await updateMaintenance(

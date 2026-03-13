@@ -2,7 +2,7 @@ import { roomQueries } from "~~/server/db/queries/room";
 import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event);
+  const session = await usePortalUserSession(event);
 
   if (!session || !session.user) {
     throw createError({

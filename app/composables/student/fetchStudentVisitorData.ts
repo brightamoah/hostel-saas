@@ -1,5 +1,5 @@
 export function useFetchStudentVisitorData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { data, status, refresh, error } = useFetch<VisitorDataResponse>("/api/student/getVisitors", {
     method: "get",

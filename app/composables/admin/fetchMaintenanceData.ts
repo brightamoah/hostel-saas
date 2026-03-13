@@ -1,5 +1,5 @@
 export function useFetchMaintenanceData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const { data, status, refresh } = useFetch<MaintenanceDataResponse>("/api/maintenance/getMaintenanceData", {
     method: "get",

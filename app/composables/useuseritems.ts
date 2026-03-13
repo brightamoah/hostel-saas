@@ -1,7 +1,7 @@
 import { generateInitials } from "~/utils/generateInitials";
 
 export function useUseUserItems() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const userInitials = computed(() => {
     if (!user.value?.name) return "KH";

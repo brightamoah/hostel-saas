@@ -6,7 +6,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     user,
     session,
     fetch: fetchUserSession,
-  } = useUserSession();
+  } = usePortalUserSession();
 
   const { runWithContext } = useNuxtApp();
 

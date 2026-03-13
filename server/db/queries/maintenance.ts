@@ -152,6 +152,7 @@ export async function maintenanceQueries() {
   const updateStatusAndAddResponse = async (
     maintenanceId: number,
     adminId: number,
+    companyId: number,
     status: MaintenanceStatus,
     responseText: string,
     hostelId?: number,
@@ -177,6 +178,7 @@ export async function maintenanceQueries() {
             maintenanceRequestId: maintenanceId,
             responderId: adminId,
             responseText,
+            companyId,
           })
           .returning();
 
@@ -187,6 +189,7 @@ export async function maintenanceQueries() {
   const addMaintenanceResponse = async (
     maintenanceId: number,
     responderId: number,
+    companyId: number,
     responseText: string,
   ) => {
     const [newResponse] = await db
@@ -194,6 +197,7 @@ export async function maintenanceQueries() {
       .values({
         maintenanceRequestId: maintenanceId,
         responderId,
+        companyId,
         responseText,
       })
       .returning();

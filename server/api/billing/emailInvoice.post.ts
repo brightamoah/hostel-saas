@@ -3,7 +3,7 @@ import { getInvoiceEmailTemplate } from "~~/server/utils/invoiceEmailTemplate";
 import { emailInvoiceSchema } from "~~/shared/utils/schema";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requireUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
   try {

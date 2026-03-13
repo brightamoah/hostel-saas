@@ -1,7 +1,7 @@
 import { maintenanceQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { userId } = await adminSessionCheck(event);
+  const { userId, companyId } = await adminSessionCheck(event);
 
   try {
     const body = await readValidatedBody(event, body => maintenanceStatusResponseSchema.safeParse(body));
@@ -15,14 +15,14 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { maintenanceId, status, responseText } = body.data;
-
-    if (status === "") {
+    if (!companyId) {
       throw createError({
-        statusCode: 400,
-        message: "Status cannot be empty.",
+        statusCode: 403,
+        message: "You do not have permission to update maintenance requests. Please contact support if you believe this is an error.",
       });
     }
+
+    const { maintenanceId, status, responseText } = body.data;
 
     const { updateStatusAndAddResponse, getMaintenanceById } = await maintenanceQueries();
     const { getAdminByUserId } = await userQueries();
@@ -69,6 +69,7 @@ export default defineEventHandler(async (event) => {
     const { updatedRequest, newResponse } = await updateStatusAndAddResponse(
       maintenanceId,
       adminMakingRequest.id,
+      companyId,
       status,
       responseText,
       hostelId,

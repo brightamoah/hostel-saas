@@ -2,7 +2,7 @@ import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
   try {
-    await clearUserSession(event);
+    await clearPortalUserSession(event);
     return sendRedirect(event, "/auth/login");
   }
   catch (error) {

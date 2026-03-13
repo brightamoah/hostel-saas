@@ -21,7 +21,7 @@ export function useComplaintRowColumn(
   UIcon: ComponentType,
 ) {
   const overlay = useOverlay();
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const complaintStore = useComplaintStore();
 

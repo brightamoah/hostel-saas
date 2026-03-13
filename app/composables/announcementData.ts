@@ -1,5 +1,5 @@
 export function useAnnouncementData() {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
 
   const announcementKey = computed(() => `announcement-data-${user.value?.id}`,
   );

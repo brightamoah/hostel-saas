@@ -9,6 +9,8 @@ const baseSchema = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("development"),
   NUXT_SESSION_PASSWORD: z.string(),
   NUXT_SESSION_NAME: z.string(),
+  NUXT_ADMIN_SESSION_NAME: z.string(),
+  NUXT_ADMIN_SESSION_PASSWORD: z.string(),
   NUXT_DATABASE_URL: z.string(),
   NUXT_EMAIL_FROM_NAME: z.string(),
   NUXT_EMAIL_FROM_EMAIL: z.email(),

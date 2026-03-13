@@ -18,7 +18,7 @@ export const useBillingStore = defineStore("billingStore", () => {
   const toast = useToast();
 
   const { $apiFetch } = useNuxtApp();
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   // const route = useRoute();
 
   const isModalOpen = ref(false);

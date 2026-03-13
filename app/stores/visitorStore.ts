@@ -5,7 +5,7 @@ import { acceptHMRUpdate, defineStore } from "pinia";
 import { capitalize } from "vue";
 
 export const useVisitorStore = defineStore("visitorStore", () => {
-  const { user } = useUserSession();
+  const { user } = usePortalUserSession();
   const { $apiFetch } = useNuxtApp();
 
   const toast = useToast();

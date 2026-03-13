@@ -6,7 +6,7 @@ definePageMeta({
 const route = useRoute();
 const toast = useToast();
 const { $apiFetch } = useNuxtApp();
-const { fetch: refreshSession } = useUserSession();
+const { fetch: refreshSession } = usePortalUserSession();
 
 const loading = ref(true);
 const error = ref<string | null>(null);

@@ -13,7 +13,7 @@ function getGreeting() {
   }
 }
 
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const refreshContext = inject(refreshKey);
 

@@ -11,7 +11,7 @@ definePageMeta({
 const route = useRoute("billing-verify");
 const toast = useToast();
 const { $apiFetch } = useNuxtApp();
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const isVerifying = ref(true);
 const verificationStatus = ref<"success" | "error" | "processing">("processing");

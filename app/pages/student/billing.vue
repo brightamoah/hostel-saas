@@ -12,7 +12,7 @@ const globalFilter = ref("");
 const columnVisibility = ref<{ [key: string | number]: boolean }>({ id: false });
 const rowSelection = ref({});
 
-const { user } = useUserSession();
+const { user } = usePortalUserSession();
 
 const UButton = resolveComponent("UButton");
 const UAvatar = resolveComponent("UAvatar");

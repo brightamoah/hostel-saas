@@ -15,7 +15,7 @@ export const useAuthStore = defineStore("authStore", () => {
   const errorMessage = ref<string | null>(null);
   const isOnboarded = computed(() => !!hasProfile.value);
 
-  const { user, loggedIn: isLoggedIn, session, fetch: refreshSession } = useUserSession();
+  const { user, loggedIn: isLoggedIn, session, fetch: refreshSession } = usePortalUserSession();
 
   const refreshSessionWithFreshData = async () => {
     try {
