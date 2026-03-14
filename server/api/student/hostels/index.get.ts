@@ -1,15 +1,25 @@
-import { roomQueries } from "~~/server/db/queries";
+import { roomQueries, userQueries } from "~~/server/db/queries";
 import { getImageFullUrl } from "~~/server/utils/getImageFullUrl";
 
 export default defineEventHandler(async (event) => {
-  await requirePortalUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "",
   });
 
   try {
     const { getAllHostels } = await roomQueries();
+    const { getStudentGenderByUserId } = await userQueries();
 
-    const hostels = await getAllHostels();
+    const student = await getStudentGenderByUserId(user.id);
+
+    if (!student) {
+      throw createError({
+        statusCode: 404,
+        message: "Student profile not found",
+      });
+    }
+
+    const hostels = await getAllHostels(student.gender);
 
     const hostelsWithLogos = hostels.map((hostel) => {
       const availableRooms = hostel.rooms?.filter(

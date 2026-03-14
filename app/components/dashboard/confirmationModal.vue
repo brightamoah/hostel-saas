@@ -1,5 +1,20 @@
-<script setup lang="ts">
-const { title, description, confirmLabel, cancelLabel, confirmColor, isLoading, renderTrigger } = defineProps<{
+<script setup lang="ts" generic="T">
+import type { SelectMenuItem } from "@nuxt/ui";
+
+import z from "zod";
+
+const {
+  title,
+  description,
+  confirmLabel,
+  cancelLabel,
+  confirmColor,
+  isLoading,
+  renderTrigger,
+  showSelectMenu = false,
+  selectMenuRequired = true,
+  selectMenuValidation,
+} = defineProps<{
   title?: string;
   description?: string;
   confirmLabel?: string;
@@ -8,13 +23,24 @@ const { title, description, confirmLabel, cancelLabel, confirmColor, isLoading, 
   isLoading?: boolean | Ref<boolean>;
   renderTrigger?: boolean;
   body?: string;
+  showSelectMenu?: boolean;
+  selectMenuPlaceholder?: string;
+  selectMenuIcon?: string;
+  selectMenuRequired?: boolean;
+  selectMenuOptions?: SelectMenuItem[];
+  selectMenuValidation?: z.ZodType<T>;
 }>();
 
 const emit = defineEmits<{
-  (e: "confirm"): void;
+  (e: "confirm", data?: { selectedValue?: T }): void;
+  (e: "update:selectedValue", value: T): void;
 }>();
 
 const open = defineModel<boolean>("open");
+
+const selectedValue = ref<T>();
+
+const validationError = ref<string>();
 
 const isLoadingValue = computed(() => unref(isLoading));
 
@@ -35,8 +61,36 @@ const confirmButtonLabel = computed(() =>
   hasIsLoading.value && isLoadingValue.value ? (confirmLabel ?? "") : confirmLabelProp.value,
 );
 
+const defaultSchema = z.any().refine(v => v !== undefined && v !== null, "This field is required");
+
+function validateSelectMenu() {
+  if (!showSelectMenu || !selectMenuRequired) return true;
+
+  try {
+    validationError.value = undefined;
+    const schema = selectMenuValidation ?? defaultSchema;
+    schema.parse(selectedValue.value);
+    return true;
+  }
+  catch (err) {
+    if (err instanceof z.ZodError) validationError.value = err.issues[0]?.message;
+
+    return false;
+  }
+}
+
+watch(selectedValue, (newValue) => {
+  if (validationError.value) {
+    validateSelectMenu();
+  }
+  // Emit the update event
+  emit("update:selectedValue", newValue as T);
+});
+
 function onConfirm(close?: () => void) {
-  emit("confirm");
+  if (showSelectMenu && selectMenuRequired && !validateSelectMenu()) return;
+
+  emit("confirm", { selectedValue: selectedValue.value });
 
   if (hasIsLoading.value) return;
 
@@ -49,6 +103,8 @@ function show() {
 }
 function hide() {
   open.value = false;
+  validationError.value = undefined;
+  selectedValue.value = undefined;
 }
 function toggle() {
   open.value = !open.value;
@@ -59,6 +115,7 @@ defineExpose({
   hide,
   toggle,
   open,
+  selectedValue,
 });
 </script>
 
@@ -94,6 +151,30 @@ defineExpose({
         <p class="text-base">
           {{ body ?? "Are you sure you want to proceed with this action?" }}
         </p>
+      </slot>
+
+      <slot name="custom">
+        <UFormField
+          label="Select Academic Period"
+          class="mt-4 w-[80%]"
+          :required="selectMenuRequired"
+          :error="validationError"
+        >
+          <USelectMenu
+            v-if="showSelectMenu && selectMenuOptions"
+            v-model="selectedValue"
+            :items="selectMenuOptions"
+            :icon="selectMenuIcon ?? 'i-lucide-calendar-days'"
+            clear
+            value-key="value"
+            size="lg"
+            :placeholder="selectMenuPlaceholder ?? 'Select an option'"
+            class="w-full cursor-pointer"
+            :ui="{
+              item: 'cursor-pointer',
+            }"
+          />
+        </UFormField>
       </slot>
     </template>
 

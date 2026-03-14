@@ -127,7 +127,7 @@ const pagination = ref({
 </script>
 
 <template>
-  <UContainer class="py-8">
+  <UContainer class="sm:px-4 lg:px-4 py-8">
     <!-- Back Button -->
     <UButton
       variant="ghost"
@@ -137,6 +137,8 @@ const pagination = ref({
       class="mb-6 cursor-pointer"
       @click="router.push({ name: 'auth-hostelHub' })"
     />
+
+    <AppThemeToggle class="top-8 right-8 z-10 absolute" />
 
     <UCard variant="subtle">
       <RoomSearchFilter

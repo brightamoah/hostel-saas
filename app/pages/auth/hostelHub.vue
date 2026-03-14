@@ -91,20 +91,23 @@ async function joinByCode() {
   isJoiningByCode.value = true;
 
   try {
-    const hostel = await $apiFetch<StudentHostel>("/api/student/hostels/joinByCode", {
+    const response = await $apiFetch("/api/student/hostels/joinByCode", {
       method: "POST",
       body: { code },
     });
 
-    // Set as selected hostel to show details
-    selectedHostel.value = hostel;
     joinCode.value = "";
 
     toast.add({
       title: "Hostel Found!",
-      description: `You can now view rooms at ${hostel.name}`,
+      description: `You can now view rooms at ${response.hostel.name}`,
       color: "success",
       icon: "i-lucide-check-circle",
+    });
+
+    await navigateTo({
+      name: "hostels-hostelSlug",
+      params: { hostelSlug: response.hostel.slug },
     });
   }
   catch (err: any) {
@@ -124,9 +127,9 @@ function selectHostel(hostel: StudentHostel) {
   selectedHostel.value = hostel;
 }
 
-function clearSelection() {
-  selectedHostel.value = null;
-}
+// function clearSelection() {
+//   selectedHostel.value = null;
+// }
 
 async function confirmSelection() {
   if (!selectedHostel.value) return;
@@ -315,87 +318,106 @@ async function confirmSelection() {
     <div
       v-else-if="filteredHostels.length && !selectedHostel"
       v-auto-animate
-      class="gap-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+      class="gap-3 grid grid-cols-1 sm:grid-cols-2"
     >
       <UCard
         v-for="hostel in filteredHostels"
         :key="hostel.id"
-        class="group hover:shadow-xl border border-default rounded-2xl overflow-hidden transition-all cursor-pointer"
-        :ui="{ body: 'p-0' }"
-        @click="selectHostel(hostel)"
+        class="overflow-hidden"
+        :ui="{ body: 'p-0 flex items-stretch gap-0' }"
       >
-        <div class="relative h-52 overflow-hidden">
-          <img
-            v-if="hostel.logoUrl"
-            :src="hostel.logoUrl"
-            :alt="hostel.name"
-            class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-          >
+        <img
+          v-if="hostel.logoUrl"
+          :src="hostel.logoUrl"
+          :alt="hostel.name"
+          class="w-28 min-w-28 object-cover group-hover:scale-105 transition-transform duration-500"
+          loading="lazy"
+        >
 
-          <div
-            v-else
-            class="flex justify-center items-center bg-primary/10 rounded-xl w-full h-full"
-          >
-            <UIcon
-              name="i-lucide-building-2"
-              class="text-primary/50 text-6xl"
-            />
-          </div>
-
-          <div class="top-3 left-3 absolute">
-            <UBadge
-              :color="hostel.availableRooms > 0 ? 'success' : 'error'"
-              variant="solid"
-              size="sm"
-              class="shadow-lg backdrop-blur-sm capitalize"
-            >
-              {{ hostel.availableRooms > 0 ? `available` : 'Fully booked' }}
-            </UBadge>
-          </div>
-
-          <div class="right-3 bottom-3 absolute">
-            <UBadge
-              color="neutral"
-              variant="solid"
-              size="sm"
-              class="bg-white/90 shadow backdrop-blur font-semibold text-neutral-900"
-            >
-              From {{ formatCurrency(hostel.minimumRoomPrice) }}
-              <span class="font-normal text-neutral-700">/year</span>
-            </UBadge>
-          </div>
+        <div
+          v-else
+          class="flex justify-center items-center bg-muted/10 w-28 min-w-28"
+        >
+          <UIcon
+            name="i-lucide-building-2"
+            class="text-muted text-3xl"
+          />
         </div>
 
-        <div class="pt-3">
-          <p class="flex justify-center items-center gap-1 mb-1 text-muted text-sm text-center">
+        <div class="flex flex-col flex-1 gap-1.5 px-3.5 py-3 min-w-0">
+          <header class="flex justify-between items-start gap-3">
+            <div class="min-w-0">
+              <h2 class="font-medium text-highlighted text-sm truncate">
+                {{ hostel.name }}
+              </h2>
+
+              <UBadge
+                v-for="type in hostel.roomTypes.slice(0, 3)"
+                :key="type"
+                color="neutral"
+                variant="subtle"
+                size="xs"
+              >
+                {{ type }}
+              </UBadge>
+            </div>
+
+            <UBadge
+              :color="hostel.availableRooms > 0 ? 'success' : 'error'"
+              variant="subtle"
+              size="md"
+              class="truncate shrink-0"
+            >
+              <UIcon
+                name="i-lucide-door-open"
+                class="size-4"
+              />
+              {{ hostel.availableRooms }} {{ hostel.availableRooms === 1 ? 'room' : 'rooms' }} available
+            </UBadge>
+          </header>
+
+          <p class="flex items-center gap-1 font-medium text-muted text-xs">
             <UIcon
               name="i-lucide-map-pin"
               class="size-4 shrink-0"
             />
-
-            <span class="truncate">{{ hostel.address }}</span>
+            {{ hostel.address }}
           </p>
 
-          <h2 class="mb-3 font-newsreader font-bold text-highlighted group-hover:text-primary text-lg text-center leading-tight transition-colors">
-            {{ hostel.name }}
-          </h2>
+          <USeparator class="my-0.5" />
 
-          <div class="flex justify-center items-center">
+          <div
+            v-auto-animate
+            class="flex items-center gap-1.5 mt-4"
+          >
             <UButton
               color="primary"
-              label="View details"
-              class="flex justify-center items-center w-[70%] font-medium cursor-pointer"
-              trailing-icon="i-lucide-arrow-right"
-              :ui="{ base: 'rounded-lg' }"
-              @click="selectHostel(hostel)"
+              variant="solid"
+              size="sm"
+              label="View rooms"
+              icon="i-lucide-arrow-right"
+              class="cursor-pointer"
+              @click="selectHostel(hostel); confirmSelection()"
             />
+
+            <UBadge
+              color="info"
+              variant="subtle"
+              size="md"
+              class="ml-auto truncate"
+            >
+              <UIcon
+                name="i-lucide-banknote"
+                class="size-4"
+              />
+              From {{ formatCurrency(hostel.minimumRoomPrice) }}/year
+            </UBadge>
           </div>
         </div>
       </UCard>
     </div>
 
-    <UCard
+    <!-- <UCard
       v-if="selectedHostel"
       class="mb-8 border-2 border-muted"
     >
@@ -443,7 +465,7 @@ async function confirmSelection() {
                 name="i-lucide-door-open"
                 class="mr-0.5 size-4"
               />
-              {{ selectedHostel.availableRooms }} rooms available
+              {{ selectedHostel.availableRooms }} {{ selectedHostel.availableRooms > 1 ? 'rooms' : 'room' }} available
             </UBadge>
 
             <UBadge
@@ -493,6 +515,6 @@ async function confirmSelection() {
           </div>
         </div>
       </div>
-    </UCard>
+    </UCard> -->
   </UContainer>
 </template>

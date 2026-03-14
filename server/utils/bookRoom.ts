@@ -1,3 +1,5 @@
+import type { Allocation } from "~~/shared/types";
+
 import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { allocation, billing, hostel, room, student } from "../db/schema";
@@ -6,6 +8,8 @@ export async function bookRoom(
   studentId: number,
   roomId: number,
   endDate?: Date,
+  bookingAcademicPeriod?: Allocation["academicPeriod"],
+  academicYear?: string,
 ) {
   const { db } = useDB();
 
@@ -14,16 +18,35 @@ export async function bookRoom(
   const defaultEndDate = new Date(now);
   defaultEndDate.setMonth(defaultEndDate.getMonth() + 8);
 
+  let academicPeriod: Allocation["academicPeriod"];
+
   const allocationEndDate = (endDate ? new Date(endDate) : defaultEndDate).toISOString();
 
   const billDueDate = new Date(now);
   billDueDate.setMonth(billDueDate.getMonth() + 1);
   const billingDueDate = billDueDate.toISOString();
 
-  const academicPeriod = getAcademicPeriod(
-    new Date(allocationDate),
-    new Date(allocationEndDate),
-  );
+  if (bookingAcademicPeriod) {
+    academicPeriod = bookingAcademicPeriod;
+  }
+  else {
+    academicPeriod = getAcademicPeriod(
+      new Date(allocationDate),
+      new Date(allocationEndDate),
+    );
+  }
+
+  if (!academicYear) {
+    const allocationStart = new Date(allocationDate);
+    let startYear: number;
+    if (allocationStart.getMonth() >= 7) { // August (7) or later
+      startYear = allocationStart.getFullYear();
+    }
+    else {
+      startYear = allocationStart.getFullYear() - 1;
+    }
+    academicYear = `${startYear}/${startYear + 1}`;
+  }
 
   return await db
     .transaction(async (tx) => {
@@ -154,6 +177,7 @@ export async function bookRoom(
           status: "pending",
           companyId: hostelRecord.companyId,
           endDate: allocationEndDate,
+          academicYear,
         } satisfies typeof allocation.$inferInsert)
         .returning();
 

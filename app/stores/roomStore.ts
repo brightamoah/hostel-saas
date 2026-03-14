@@ -186,6 +186,8 @@ export const useRoomStore = defineStore("roomStore", () => {
       });
 
       await refreshNuxtData();
+
+      await navigateTo({ name: "student-dashboard" });
     }
     catch (error) {
       const message = (error as any)?.data?.message;

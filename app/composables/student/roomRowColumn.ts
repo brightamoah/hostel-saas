@@ -1,5 +1,7 @@
-import type { TableColumn } from "@nuxt/ui";
+import type { SelectMenuItem, TableColumn } from "@nuxt/ui";
 import type { Row } from "@tanstack/table-core";
+
+import z from "zod";
 
 const RoomDetailsModal = defineAsyncComponent(() => import("~/components/room/detailsModal.vue"));
 const ConfirmationModal = defineAsyncComponent(() => import("~/components/dashboard/confirmationModal.vue"));
@@ -20,6 +22,10 @@ export function useStudentRoomRowColumn(
   const { isLoading } = storeToRefs(roomStore);
   const { bookRoom } = roomStore;
 
+  const selectedAcademicPeriod = ref("");
+  let academicYear = "";
+  let period: Allocation["academicPeriod"];
+
   const openDetailsModal = (room: Room) => {
     const modal = overlay.create(RoomDetailsModal);
     void modal.open({
@@ -27,21 +33,66 @@ export function useStudentRoomRowColumn(
     });
   };
 
+  watch(selectedAcademicPeriod, (newValue) => {
+    if (newValue && typeof newValue === "string" && newValue.includes(" - ")) {
+      const parts = newValue.split(" - ");
+      academicYear = parts[0] ?? "";
+      period = parts[1] as Allocation["academicPeriod"];
+    }
+  });
+
+  const academicPeriodOptions = computed<SelectMenuItem[]>(() => {
+    const academicYears = getAcademicYears(2);
+    const periods = [
+      "first semester",
+      "second semester",
+      "entire year",
+      "vacation period",
+    ];
+    const items: SelectMenuItem[] = [];
+    academicYears.forEach((year) => {
+      periods.forEach((period) => {
+        items.push({
+          label: `${year} - ${period}`,
+          value: `${year} - ${period}`,
+        });
+      });
+    });
+    return items;
+  });
+
   const openBookRoomModal = async (room: HostelRoom) => {
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
 
     await modal.open({
-      title: `Book Room ${room.roomNumber} at ${room.hostel.name}`,
-      confirmLabel: "Book Room",
-      description: `This action will reserve room ${room.roomNumber} for you.`,
-      renderTrigger: false,
-      body: `Are you sure you want to proceed with booking room ${room.roomNumber}? \n After booking the room, you have five(5) days to make 60% payment to confirm your allocation.`,
+      "title": `Book Room ${room.roomNumber} at ${room.hostel.name}`,
+      "confirmLabel": "Book Room",
+      "description": `This action will reserve room ${room.roomNumber} for you.`,
+      "renderTrigger": false,
+      "body": `Are you sure you want to proceed with booking room ${room.roomNumber}? \n After booking the room, you have three(3) days to make 60% payment to confirm your allocation.`,
       isLoading,
-      confirmColor: "primary",
-      onConfirm: async () => {
+      "confirmColor": "primary",
+      "showSelectMenu": true,
+      "selectMenuValidation": z.string().nonempty("Please select an academic period to continue."),
+      "selectMenuOptions": academicPeriodOptions.value,
+      "onUpdate:selectedValue": (value: unknown) => {
+        selectedAcademicPeriod.value = value as string;
+      },
+      "onConfirm": async (data) => {
         const userId = user.value?.role === "student" ? user.value.id : undefined;
         if (!userId) return;
+
+        const academicPeriod = data?.selectedValue;
+
+        if (!academicPeriod) {
+          toast.add({
+            title: "Selection Required",
+            description: "Please select an academic period to continue.",
+            color: "warning",
+          });
+          return;
+        }
 
         if (student.value?.allocation?.id) {
           toast.add({
@@ -55,7 +106,12 @@ export function useStudentRoomRowColumn(
           return;
         }
 
-        await bookRoom({ roomId: room.id, userId }, room.roomNumber);
+        await bookRoom({
+          roomId: room.id,
+          userId,
+          academicPeriod: period,
+          academicYear,
+        }, room.roomNumber);
         close();
       },
     });

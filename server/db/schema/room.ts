@@ -92,6 +92,7 @@ export const allocation = pgTable("allocation", t => ({
   roomId: t.integer().notNull().references(() => room.id, { onDelete: "cascade" }),
   allocationDate: t.date().notNull(),
   academicPeriod: academicPeriodEnum().default("first semester").notNull(),
+  academicYear: t.varchar({ length: 9 }).notNull().default("2025/2026"), // e.g., "2023/2024"
   endDate: t.date(),
   status: allocationStatusEnum().default("pending").notNull(),
   createdAt: t.timestamp().defaultNow().notNull(),

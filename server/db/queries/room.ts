@@ -11,31 +11,6 @@ const roomWithRelations = {
   },
 } as const;
 
-const studentHostelsWithRelations = {
-  columns: {
-    id: true,
-    name: true,
-    address: true,
-    logoUrl: true,
-    status: true,
-    companyId: true,
-    slug: true,
-    joinCode: true,
-  },
-  with: {
-    rooms: {
-      columns: {
-        amountPerYear: true,
-        roomType: true,
-        allowedGender: true,
-        status: true,
-        currentOccupancy: true,
-        capacity: true,
-      },
-    },
-  },
-} as const;
-
 export async function roomQueries() {
   const { db } = useDB();
 
@@ -189,13 +164,37 @@ export async function roomQueries() {
     return updatedRoom;
   };
 
-  const getAllHostels = async () => {
+  const getAllHostels = async (gender: "male" | "female") => {
     const hostels = await db
       .query
       .hostel
       .findMany({
-        ...studentHostelsWithRelations,
-        where: eq(hostel.status, "active"),
+        where: and(
+          eq(hostel.status, "active"),
+        ),
+        columns: {
+          id: true,
+          name: true,
+          address: true,
+          logoUrl: true,
+          status: true,
+          companyId: true,
+          slug: true,
+          joinCode: true,
+        },
+        with: {
+          rooms: {
+            where: eq(room.allowedGender, gender),
+            columns: {
+              amountPerYear: true,
+              roomType: true,
+              allowedGender: true,
+              status: true,
+              currentOccupancy: true,
+              capacity: true,
+            },
+          },
+        },
         extras: {
           minimumRoomPrice: sql<number>`(SELECT MIN("room"."amount_per_year") FROM "room" WHERE "room"."hostel_id" = "hostel"."id")`.as("minimumRoomPrice"),
           maximumRoomPrice: sql<number>`(SELECT MAX("room"."amount_per_year") FROM "room" WHERE "room"."hostel_id" = "hostel"."id")`.as("maximumRoomPrice"),

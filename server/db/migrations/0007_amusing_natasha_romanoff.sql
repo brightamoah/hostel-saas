@@ -1,0 +1,1 @@
+ALTER TABLE "allocation" ADD COLUMN "academic_year" varchar(9) DEFAULT '2025/2026' NOT NULL;

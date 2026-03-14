@@ -4,7 +4,7 @@ import * as z from "zod";
 
 import tryParseEnv from "./tryParseEnv";
 
-const baseSchema = z.object({
+const fullSchema = z.object({
   // NUXT_PLATFORM_SEED_SECRET: z.string(),
   NODE_ENV: z.enum(["development", "production"]).default("development"),
   NUXT_SESSION_PASSWORD: z.string(),
@@ -24,9 +24,6 @@ const baseSchema = z.object({
   NUXT_PUBLIC_SITE_BASE_URL: z.url(),
   NUXT_R2_BUCKET_NAME: z.string(),
   NUXT_R2_PREVIEW_BUCKET_NAME: z.string(),
-});
-
-const nodemailerSchema = z.object({
   NUXT_NODEMAILER_FROM: z.string(),
   NUXT_NODEMAILER_HOST: z.string(),
   NUXT_NODEMAILER_PORT: z.coerce.number(),
@@ -37,14 +34,7 @@ const nodemailerSchema = z.object({
   NUXT_R2_SECRET_ACCESS_KEY: z.string(),
 });
 
-const isDev = process.env.NODE_ENV === "development" || import.meta.dev;
-const activeSchema = isDev
-  ? baseSchema.extend(nodemailerSchema.partial().shape)
-  : baseSchema;
-
-tryParseEnv(activeSchema);
-
-const fullSchema = baseSchema.extend(nodemailerSchema.shape);
+tryParseEnv(fullSchema);
 
 export type EnvSchema = z.infer<typeof fullSchema>;
 export const env = fullSchema.parse(process.env) as EnvSchema;

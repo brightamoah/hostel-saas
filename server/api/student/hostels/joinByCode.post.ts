@@ -1,5 +1,6 @@
 import { roomQueries, userQueries } from "~~/server/db/queries";
 import { joinCodeSchema } from "~~/shared/utils/schema";
+import z from "zod";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,7 +15,9 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const body = await readValidatedBody(event, body => joinCodeSchema.safeParse(body));
+    const body = await readValidatedBody(event, body => z.object({
+      code: joinCodeSchema,
+    }).safeParse(body));
 
     if (!body.success) {
       throw createError({
@@ -25,7 +28,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const joinCode = body.data.trim().toUpperCase();
+    const joinCode = body.data.code.trim().toUpperCase();
 
     const { getStudentGenderByUserId } = await userQueries();
 

@@ -613,10 +613,23 @@ const editAnnouncementSchema = z.object({
 
 export type EditAnnouncementSchema = z.output<typeof editAnnouncementSchema>;
 
+const academicPeriodSchema = z.enum([
+  "first semester",
+  "second semester",
+  "entire year",
+  "vacation period",
+], "Academic period is required");
+
+const academicYearSchema = z
+  .string()
+  .regex(/^\d{4}\/\d{4}$/, "Academic year must be in format YYYY/YYYY");
+
 const bookRoomSchema = z.object({
   roomId: createIdSchema("Room"),
   userId: createIdSchema("User"),
   endDate: z.date().optional(),
+  academicPeriod: academicPeriodSchema,
+  academicYear: academicYearSchema,
 });
 
 export type BookRoomSchema = z.output<typeof bookRoomSchema>;
@@ -637,13 +650,6 @@ const billingTypeSchema = z.enum([
   "late payment penalty",
   "other",
 ], "Billing type is required");
-
-const academicPeriodSchema = z.enum([
-  "first semester",
-  "second semester",
-  "entire year",
-  "vacation period",
-], "Academic period is required");
 
 const paymentTermsSchema = z.enum([
   "Net 15 Days",
