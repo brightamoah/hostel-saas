@@ -12,7 +12,8 @@ export function useBillingRowColumn(
   UAvatar: ComponentType,
   UButton: ComponentType,
   UBadge: ComponentType,
-  UDropdownMenu: ComponentType,
+  // UDropdownMenu: ComponentType,
+  UTooltip: ComponentType,
 ) {
   const { user } = usePortalUserSession();
   const overlay = useOverlay();
@@ -202,24 +203,34 @@ export function useBillingRowColumn(
         cell: ({ row }) =>
           h(
             "div",
-            { class: "text-center" },
+            { class: "flex gap-2" },
             [
-              h(UDropdownMenu, {
-                arrow: true,
-                content: {
-                  align: "center",
+              h(
+                UTooltip,
+                {
+                  text: "View Billing Details",
                 },
-                items: getRowItems(row),
-                ui: {
-                  item: "cursor-pointer rounded",
-                },
-              }, () =>
-                h(UButton, {
-                  icon: "i-lucide-ellipsis-vertical",
-                  color: "neutral",
-                  variant: "ghost",
-                  class: "ml-auto cursor-pointer",
-                })),
+                [
+                  h(UButton, {
+                    color: "ghost",
+                    variant: "ghost",
+                    size: "md",
+                    icon: "i-lucide-eye",
+                    class: "cursor-pointer",
+                    onClick: () => openBillingDetails(row.original),
+                  }),
+                ],
+              ),
+              ((user.value?.role === "admin" || (user.value?.role === "student")) && ["unpaid", "partially paid", "overdue"]
+                .some(status => row.original.status.toLowerCase().includes(status)))
+              && h(UButton, {
+                label: user.value?.role === "admin" ? "Record Payment" : "Make Payment",
+                color: user.value?.role === "admin" ? undefined : "primary",
+                variant: user.value?.role === "admin" ? "outline" : undefined,
+                icon: user.value?.role === "admin" ? "lucide-banknote-arrow-up" : "lucide-credit-card",
+                class: "cursor-pointer",
+                onClick: () => openPaymentModal(row.original),
+              }),
             ],
           ),
       },
