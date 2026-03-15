@@ -70,6 +70,7 @@ export default defineEventHandler(async (event) => {
       if (existingStudent) {
         studentId = existingStudent.id;
         onboarded = true;
+        companyId = existingStudent.companyId;
 
         const allocation = await checkActiveOrPendingAllocation(existingStudent.id);
 
@@ -77,7 +78,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    await setUserSession(event, {
+    await setPortalUserSession(event, {
       user: {
         id: freshUser.id,
         email: freshUser.email,

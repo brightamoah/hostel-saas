@@ -20,6 +20,12 @@ export function useRoomColorIcon(roomRef: RoomRef) {
 
     const iconMap: Record<string, string> = {
       "wifi": "i-lucide-wifi",
+      "internet": "i-lucide-wifi",
+      "wi-fi": "i-lucide-wifi",
+      "storage": "i-lucide-archive",
+      "storage space": "i-lucide-archive",
+      "tv": "i-lucide-tv",
+      "television": "i-lucide-tv",
       "wardrobe": "i-mdi-wardrobe-outline",
       "cupboard": "i-mdi-wardrobe-outline",
       "desk": "i-material-symbols-desk-rounded",

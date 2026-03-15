@@ -4,7 +4,6 @@ import { authHandoffQueries, companyQueries, userQueries } from "~~/server/db/qu
 
 export default defineEventHandler(async (event) => {
   try {
-    const sessionConfig = getPortalSessionConfig(event);
     await clearPortalUserSession(event);
 
     const body = await readBody(event);
@@ -67,7 +66,7 @@ export default defineEventHandler(async (event) => {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 1);
 
-    await setUserSession(event, {
+    await setPortalUserSession(event, {
       user: {
         id: currentUser.id,
         email: currentUser.email,
@@ -86,7 +85,7 @@ export default defineEventHandler(async (event) => {
       expiresAt,
       onboarded: true,
       portal: "admin",
-    }, sessionConfig);
+    });
 
     return { success: true, nextUrl: "/admin/dashboard" };
   }

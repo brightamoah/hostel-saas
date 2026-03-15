@@ -114,6 +114,7 @@ export async function complaintQueries() {
     adminId: number,
     status: ComplaintStatus,
     responseText: string,
+    companyId: number,
     hostelId?: number,
   ) => {
     return db.transaction(async (tx) => {
@@ -138,6 +139,7 @@ export async function complaintQueries() {
           responderId: adminId,
           response: responseText,
           actionTaken: actionTakenMap[status],
+          companyId,
         })
         .returning();
 
@@ -149,6 +151,7 @@ export async function complaintQueries() {
     complaintId: number,
     responderId: number,
     response: string,
+    companyId: number,
   ) => {
     const [newResponse] = await db
       .insert(complaintResponse)
@@ -157,6 +160,7 @@ export async function complaintQueries() {
         responderId,
         response,
         actionTaken: "updated",
+        companyId,
       })
       .returning();
     return newResponse;

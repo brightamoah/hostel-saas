@@ -1,11 +1,7 @@
 import { userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const session = await usePortalUserSession(event);
-
-  await adminSessionCheck(event);
-
-  const userId = session.user!.id;
+  const { userId } = await adminSessionCheck(event);
 
   try {
     const body = await readValidatedBody(event, body => logActionSchema.safeParse(body));
@@ -39,6 +35,7 @@ export default defineEventHandler(async (event) => {
       visitorId,
       action,
       adminMakingRequest,
+      adminMakingRequest.companyId!,
     );
 
     return {

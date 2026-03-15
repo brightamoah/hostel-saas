@@ -3,7 +3,7 @@ import { roomQueries } from "~~/server/db/queries/room";
 import { getSpecificRoomError } from "~/utils/roomErrors";
 
 export default defineEventHandler(async (event) => {
-  const session = await usePortalUserSession(event);
+  const session = await getPortalUserSession(event);
   const { getErrorMessage } = getSpecificRoomError();
 
   if (

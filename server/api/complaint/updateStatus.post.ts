@@ -59,11 +59,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const companyId = complaintToUpdate.companyId ?? adminMakingRequest.companyId;
+
+    if (complaintToUpdate.companyId !== adminMakingRequest.companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to update complaints for this company.",
+      });
+    }
+
     const { updatedComplaint, newResponse } = await updateStatusAndAddResponse(
       complaintId,
       adminMakingRequest.id,
       status,
       responseText,
+      companyId,
       hostelId,
     );
 

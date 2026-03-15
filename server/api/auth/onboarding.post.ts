@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    await setUserSession(event, {
+    await setPortalUserSession(event, {
       ...session,
       user: {
         ...session.user,

@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { visitorQueries } from "../db/queries";
 import { visitor, visitorLogs } from "../db/schema";
 
-export async function createVisitorLog(visitorId: number, action: VisitorLog["action"], admin: Admin) {
+export async function createVisitorLog(visitorId: number, action: VisitorLog["action"], admin: Admin, companyId: number) {
   const { db } = useDB();
   const { getVisitorById } = await visitorQueries();
 
@@ -81,6 +81,7 @@ export async function createVisitorLog(visitorId: number, action: VisitorLog["ac
         visitorId,
         adminId: admin.id,
         action,
+        companyId,
       })
       .returning();
 

@@ -73,6 +73,7 @@ export function useStudentRoomRowColumn(
       "body": `Are you sure you want to proceed with booking room ${room.roomNumber}? \n After booking the room, you have three(3) days to make 60% payment to confirm your allocation.`,
       isLoading,
       "confirmColor": "primary",
+      "selectMenuPlaceholder": "Select Academic Period",
       "showSelectMenu": true,
       "selectMenuValidation": z.string().nonempty("Please select an academic period to continue."),
       "selectMenuOptions": academicPeriodOptions.value,
@@ -94,7 +95,7 @@ export function useStudentRoomRowColumn(
           return;
         }
 
-        if (student.value?.allocation?.id) {
+        if (student.value?.allocation?.id && ["active", "pending"].includes(student.value.allocation.status)) {
           toast.add({
             title: "Failed to Book Room",
             description: "You already have an active room allocation. Please contact administration for changes.",

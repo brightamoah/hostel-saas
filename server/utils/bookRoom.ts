@@ -230,6 +230,7 @@ export async function bookRoom(
           id: hostelRecord.id,
           name: hostelRecord.name,
           slug: hostelRecord.slug,
+          companyId: hostelRecord.companyId,
         },
       };
     });

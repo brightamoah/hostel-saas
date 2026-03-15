@@ -46,11 +46,12 @@ export default defineEventHandler(async (event) => {
       academicPeriod,
     );
 
-    await setUserSession(event, {
+    await setPortalUserSession(event, {
       ...session,
       hasActiveAllocation: true,
       selectedHostelId: allocation.hostel.id,
       selectedHostelSlug: allocation.hostel.slug,
+      companyId: allocation.hostel.companyId,
       portal: "public",
     });
 

@@ -1,4 +1,4 @@
-import type { Admin, VisitorCreate } from "~~/shared/types";
+import type { Admin, InsertEditVisitor, VisitorCreate } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";

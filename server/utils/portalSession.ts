@@ -1,6 +1,8 @@
 import type { UserSession, UserSessionRequired } from "#auth-utils";
+import type { OmitWithIndexSignature } from "~~/shared/types";
 import type { H3Event } from "h3";
 
+import { defu } from "defu";
 import { useSession } from "h3";
 
 async function _portalSession(event: H3Event) {
@@ -38,19 +40,19 @@ export async function getPortalUserSession(event: H3Event): Promise<UserSession>
  * @param opts.message The message to use for the error (defaults to Unauthorized)
  * @see https://github.com/atinux/nuxt-auth-utils
  */
-export async function requirePortalUserSession(event: H3Event, opts: { statusCode?: number; message?: string }) {
+export async function requirePortalUserSession(event: H3Event, opts?: { statusCode?: number; message?: string }) {
   const userSession = await getPortalUserSession(event);
 
   if (!userSession.user) {
     if (isEvent(event)) {
       throw createError({
-        statusCode: opts.statusCode || 401,
-        message: opts.message || "Unauthorized",
+        statusCode: opts?.statusCode || 401,
+        message: opts?.message || "Unauthorized",
       });
     }
     else {
-      throw new Response(opts.message || "Unauthorized", {
-        status: opts.statusCode || 401,
+      throw new Response(opts?.message || "Unauthorized", {
+        status: opts?.statusCode || 401,
       });
     }
   }
@@ -69,4 +71,32 @@ export async function clearPortalUserSession(event: H3Event): Promise<boolean> {
   await session.clear();
 
   return true;
+}
+
+/**
+ * Set a user session
+ * @param event The Request (h3) event
+ * @param data User session data, please only store public information since it can be decoded with API calls
+ * @see https://github.com/atinux/nuxt-auth-utils
+ */
+export async function setPortalUserSession(event: H3Event, data: OmitWithIndexSignature<UserSession, "id">): Promise<UserSession> {
+  const session = await _portalSession(event);
+
+  await session.update(defu(data, session.data));
+
+  return session.data;
+}
+
+/**
+ * Replace a user session
+ * @param event The Request (h3) event
+ * @param data User session data, please only store public information since it can be decoded with API calls
+ */
+export async function replacePortalUserSession(event: H3Event, data: OmitWithIndexSignature<UserSession, "id">): Promise<UserSession> {
+  const session = await _portalSession(event);
+
+  await session.clear();
+  await session.update(data);
+
+  return session.data;
 }

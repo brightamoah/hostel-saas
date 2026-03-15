@@ -7,6 +7,15 @@ export default defineEventHandler(async (event) => {
 
   const { user } = session;
 
+  const userCompanyId = user?.companyId;
+
+  if (!userCompanyId) {
+    throw createError({
+      statusCode: 403,
+      message: "Access denied: User is not associated with any company.",
+    });
+  }
+
   try {
     const body = await readValidatedBody(event, body => complaintStatusResponseSchema.pick({ complaintId: true, responseText: true }).safeParse(body));
 
@@ -55,10 +64,26 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    let companyId: number;
+
+    if (!complaint.companyId) {
+      companyId = userCompanyId;
+    }
+    else if (complaint.companyId !== userCompanyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to respond to complaints for this company.",
+      });
+    }
+    else {
+      companyId = complaint.companyId;
+    }
+
     const newResponse = await addComplaintResponse(
       complaintId,
       user.id,
       responseText,
+      companyId,
     );
 
     return {

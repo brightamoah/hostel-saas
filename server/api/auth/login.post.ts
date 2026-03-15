@@ -11,7 +11,6 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
   try {
     const surface = getSurface(event);
     const { siteBase, adminBase } = getPortalBaseUrls(event);
-    const sessionConfig = getPortalSessionConfig(event);
 
     await clearPortalUserSession(event);
 
@@ -145,6 +144,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       if (existingStudent) {
         studentId = existingStudent.id;
         isOnboarded = true;
+        companyId = existingStudent.companyId;
 
         const allocation = await checkActiveOrPendingAllocation(existingStudent.id);
 
@@ -166,7 +166,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     const expiresAt = new Date(now.getTime() + sessionDurationMs);
 
-    await setUserSession(event, {
+    await setPortalUserSession(event, {
       user: {
         id: currentUser.id,
         email: currentUser.email,
@@ -188,7 +188,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       selectedHostelId: null,
       selectedHostelSlug: null,
       portal: surface,
-    }, sessionConfig);
+    });
 
     await updateUserLastLogin(currentUser.id);
 

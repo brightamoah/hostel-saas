@@ -33,6 +33,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    let companyId: number;
+
     const admin = await getAdminByUserId(user.id);
 
     if (admin) {
@@ -42,6 +44,7 @@ export default defineEventHandler(async (event) => {
           message: "You do not have permission to respond to requests for this hostel.",
         });
       }
+      companyId = admin.companyId!;
     }
     else {
       const student = await getStudentByUserId(user.id);
@@ -52,11 +55,27 @@ export default defineEventHandler(async (event) => {
           message: "You can only respond to your own maintenance requests.",
         });
       }
+      companyId = student.companyId!;
+    }
+
+    if (request.companyId !== companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "You do not have permission to respond to this request.",
+      });
+    }
+
+    if (request.status === "completed") {
+      throw createError({
+        statusCode: 400,
+        message: "Cannot add a response to a resolved maintenance request.",
+      });
     }
 
     const newResponse = await addMaintenanceResponse(
       maintenanceId,
       user.id,
+      companyId,
       responseText,
     );
 

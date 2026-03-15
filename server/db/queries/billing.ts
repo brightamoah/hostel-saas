@@ -1,4 +1,4 @@
-import type { BillingInsert } from "~~/shared/types";
+import type { Admin, BillingInsert } from "~~/shared/types";
 
 import { and, eq, ne, sql } from "drizzle-orm";
 
