@@ -90,5 +90,6 @@ export async function studentSessionCheck(event: H3Event): Promise<{
     isActiveStudent: true,
     userId: session.user.id,
     studentId,
+    companyId: session.user.companyId,
   };
 }
