@@ -1,7 +1,7 @@
-import { complaintQueries } from "~~/server/db/queries";
+import { complaintQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { companyId } = await studentSessionCheck(event);
+  const { companyId, userId } = await studentSessionCheck(event);
 
   try {
     const body = await readValidatedBody(event, body => createComplaintSchema.safeParse(body));
@@ -25,6 +25,32 @@ export default defineEventHandler(async (event) => {
     const { priority, ...rest } = body.data;
 
     const { createComplaint } = await complaintQueries();
+    const { getStudentForDashboardByUserId } = await userQueries();
+
+    const studentData = await getStudentForDashboardByUserId(userId);
+
+    if (!studentData) {
+      throw createError({
+        statusCode: 404,
+        message: "Student Not Found: Unable to retrieve student data.",
+      });
+    }
+
+    const student = studentData.studentRecord;
+
+    if (!student.allocation || !student.allocation.room || !student.allocation.room.hostel) {
+      throw createError({
+        statusCode: 403,
+        message: "Access denied: You must have an active room allocation to register a visitor.",
+      });
+    }
+
+    if (student.allocation.status !== "active" || student.residencyStatus !== "active") {
+      throw createError({
+        statusCode: 403,
+        message: "Access denied: Only active hostel residents can register a visitor.",
+      });
+    }
 
     const result = await createComplaint({
       priority,
