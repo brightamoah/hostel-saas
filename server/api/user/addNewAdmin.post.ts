@@ -1,5 +1,5 @@
 import { userQueries } from "~~/server/db/queries/user";
-import { admin, user } from "~~/server/db/schema";
+import { admin, companyMember, user } from "~~/server/db/schema";
 import { generateTempPassword } from "~~/server/utils/generateTemporaryPassword";
 import { randomUUID } from "uncrypto";
 
@@ -8,25 +8,26 @@ import { getEmailTemplate, getWelcomeAdminTemplate } from "~/utils/emailTemplate
 export default defineEventHandler(async (event) => {
   const session = await getPortalUserSession(event);
   const creator = session.user;
+  const companyId = session.user?.companyId;
 
-  if (
-    !creator
-    || creator.role !== "admin"
-    || creator.adminData?.status !== "active"
-  ) {
+  if (!creator || creator.role !== "admin" || creator.adminData?.status !== "active") {
     throw createError({
       statusCode: 403,
       message: "Access Denied: You must be an admin to perform this action.",
     });
   }
 
+  if (!companyId) {
+    throw createError({
+      statusCode: 400,
+      message: "Your account is not associated with a company. Please contact support.",
+    });
+  }
+
   const { db } = useDB();
   const runtimeConfig = useRuntimeConfig();
 
-  const {
-    getAdminByUserId,
-    checkIfUserExists,
-  } = await userQueries();
+  const { getAdminByUserId, checkIfUserExists } = await userQueries();
 
   const creatorAdminDetails = await getAdminByUserId(creator.id);
 
@@ -39,7 +40,12 @@ export default defineEventHandler(async (event) => {
 
   const body = await readValidatedBody(event, b => addAdminSchema.safeParse(b));
 
-  if (!body.success) throw createError({ statusCode: 400, message: body.error.issues.map(i => i.message).join(", ") });
+  if (!body.success) {
+    throw createError({
+      statusCode: 400,
+      message: body.error.issues.map(i => i.message).join(", "),
+    });
+  }
 
   const {
     name,
@@ -49,14 +55,17 @@ export default defineEventHandler(async (event) => {
     accessLevel,
     hostelId,
     role,
-  } = body.data;
+    companyRole,
+  }
+    = body.data;
 
   let assignedHostelId: number | null = null;
+  let assignedCompanyId: number | null = null;
 
   if (creatorAdminDetails.accessLevel === "super") {
     assignedHostelId = hostelId ?? null;
+    assignedCompanyId = companyId ?? null;
   }
-
   else {
     if (!creatorAdminDetails.hostelId) {
       throw createError({
@@ -66,12 +75,20 @@ export default defineEventHandler(async (event) => {
     }
 
     assignedHostelId = creatorAdminDetails.hostelId;
+    assignedCompanyId = creatorAdminDetails.companyId;
   }
 
-  if (accessLevel !== "super" && !assignedHostelId) {
+  if (accessLevel !== "super" && (!assignedHostelId || !assignedCompanyId)) {
     throw createError({
       statusCode: 400,
       message: "Regular and Support admins must be assigned to a hostel.",
+    });
+  }
+
+  if (accessLevel === "super" && companyRole !== "owner") {
+    throw createError({
+      statusCode: 400,
+      message: "Only platform admins (super) can have accessLevel 'super'; companyOwner must use regular access.",
     });
   }
 
@@ -84,7 +101,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const generatedPassword = generateTempPassword();
-  const passwordHash = await hashPassword(generatedPassword);
+  const passwordHash = await hash(generatedPassword);
   const verificationToken = randomUUID();
   const hashedVerificationToken = await hash(verificationToken);
 
@@ -118,6 +135,7 @@ export default defineEventHandler(async (event) => {
           department,
           accessLevel,
           hostelId: assignedHostelId,
+          companyId: assignedCompanyId,
         })
         .returning();
 
@@ -129,23 +147,44 @@ export default defineEventHandler(async (event) => {
         });
       }
 
-      return { ...newUser, ...newAdmin };
+      const [membership] = await txn
+        .insert(companyMember)
+        .values({
+          userId: newUser.id,
+          companyId,
+          role: companyRole,
+          status: "active",
+        })
+        .returning();
+
+      if (!membership) {
+        txn.rollback();
+        throw createError({
+          statusCode: 500,
+          message: "Failed to create company membership record.",
+        });
+      }
+
+      return {
+        ...newUser,
+        ...newAdmin,
+        companyId,
+        companyRole: membership.role,
+      };
     });
 
-    const verificationUrl = `${event.headers.get("origin")}/auth/verifyEmail?token=${verificationToken}&id=${newAdminUser.userId}`;
+    let siteUrl: string;
+
+    if (import.meta.dev) siteUrl = getRequestURL(event).origin;
+    else siteUrl = runtimeConfig.public.siteUrl ?? getRequestURL(event).origin;
+
+    const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${newAdminUser.userId}`;
 
     const userForEmail = { ...newAdminUser, companyId: newAdminUser.companyId ?? undefined };
 
-    const { html, text } = getWelcomeAdminTemplate(
-      name,
-      email,
-      generatedPassword,
-    );
+    const { html, text } = getWelcomeAdminTemplate(name, email, generatedPassword);
 
-    const {
-      htmlTemplate,
-      textTemplate,
-    } = getEmailTemplate(verificationUrl, userForEmail);
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, userForEmail);
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();

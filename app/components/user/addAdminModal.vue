@@ -16,9 +16,12 @@ const {
 
 const accessLevel = ref<AdminUser["accessLevel"][]>([
   "regular",
-  "super",
   "support",
 ]);
+
+if (admin && admin.accessLevel === "super") {
+  accessLevel.value.push("super");
+}
 
 const {
   hostels,
@@ -54,7 +57,7 @@ watch(
     :dismissible="false"
     :ui="{
       footer: 'justify-end',
-      content: 'w-[70%] max-w-3xl  rounded-lg shadow-lg ring ring-default overflow-hidden',
+      content: 'md:w-[70%] max-w-3xl  rounded-lg shadow-lg ring ring-default overflow-hidden',
       title: 'font-newsreader text-xl font-semibold',
       close: 'cursor-pointer',
       overlay: 'backdrop-blur-sm',
@@ -131,6 +134,29 @@ watch(
               :items="accessLevel"
               placeholder="Select Admin Access Level"
               class="w-full cursor-pointer"
+              :size="isMobile ? 'lg' : 'xl'"
+              clear
+            />
+          </UFormField>
+
+          <UFormField
+            required
+            label="Company Role"
+            name="companyRole"
+            class="w-full"
+          >
+            <USelectMenu
+              v-model="adminState.companyRole"
+              :items="[
+                { label: 'Owner', value: 'owner' },
+                { label: 'Admin', value: 'admin' },
+                { label: 'Finance', value: 'finance' },
+                { label: 'Support', value: 'support' },
+                { label: 'Staff', value: 'staff' },
+              ]"
+              placeholder="Select Company Role"
+              class="w-full cursor-pointer"
+              value-key="value"
               :size="isMobile ? 'lg' : 'xl'"
               clear
             />

@@ -11,6 +11,11 @@ export async function adminSessionCheck(event: H3Event): Promise<{
   isPlatformAdmin: AdminScope["isPlatformAdmin"];
   companyId: AdminScope["companyId"];
   companyRole: AdminScope["companyRole"];
+  companyMember?: {
+    role: string;
+    status: string;
+    companyId: number;
+  };
 }> {
   const session = await requirePortalUserSession(event);
 
@@ -36,6 +41,7 @@ export async function adminSessionCheck(event: H3Event): Promise<{
       isPlatformAdmin: true,
       companyId: null,
       companyRole: null,
+      companyMember: undefined,
     };
   }
 
@@ -64,6 +70,7 @@ export async function adminSessionCheck(event: H3Event): Promise<{
     isPlatformAdmin: false,
     companyId: membership.companyId,
     companyRole: membership.role,
+    companyMember: membership,
   };
 }
 

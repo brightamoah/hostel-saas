@@ -270,6 +270,14 @@ const departmentSchema = z.string("Department is required")
   .min(2, "Department must be at least 2 characters long")
   .max(100, "Department must be at most 100 characters long");
 
+const companyRoleSchema = z.enum([
+  "owner",
+  "admin",
+  "finance",
+  "support",
+  "staff",
+], "Company Role is required");
+
 const addAdminSchema = z.object({
   name: nameSchema,
   email: emailSchema,
@@ -278,6 +286,7 @@ const addAdminSchema = z.object({
   department: departmentSchema,
   accessLevel: accessLevelSchema,
   hostelId: hostelIdSchema,
+  companyRole: companyRoleSchema,
 });
 
 export type AddAdminSchema = z.output<typeof addAdminSchema>;

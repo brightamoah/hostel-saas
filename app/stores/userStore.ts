@@ -20,6 +20,7 @@ export const useUserStore = defineStore("userStore", () => {
     accessLevel: "regular",
     department: "",
     hostelId: null,
+    companyRole: "admin",
   });
 
   const isFormValid = computed(() => {
@@ -152,6 +153,7 @@ export const useUserStore = defineStore("userStore", () => {
       accessLevel: "regular",
       department: "",
       hostelId: null,
+      companyRole: "admin",
     };
   }
 
