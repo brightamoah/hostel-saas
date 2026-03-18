@@ -42,9 +42,10 @@ const {
 } = storeToRefs(companyStore);
 
 const {
-  removeHostelLogo,
+  removeCompanyHostelLogo,
   submitRegistration,
-  regenerateJoinCode,
+  regenerateCompanyJoinCode,
+  copyJoinCode,
 } = companyStore;
 
 const canGoNext = computed(() => ownerSchema.safeParse(createCompanyState.value).success);
@@ -62,28 +63,6 @@ async function nextTab() {
   isOwnerComplete.value = true;
   activeTab.value = "1";
 }
-
-async function copyJoinCode() {
-  if (!createCompanyState.value.joinCode) return;
-
-  try {
-    await navigator.clipboard.writeText(createCompanyState.value.joinCode);
-    toast.add({
-      title: "Copied!",
-      description: "Join code copied to clipboard.",
-      color: "success",
-      icon: "i-lucide-copy-check",
-      duration: 2000,
-    });
-  }
-  catch {
-    toast.add({
-      title: "Copy Failed",
-      description: "Could not copy to clipboard.",
-      color: "error",
-    });
-  }
-}
 </script>
 
 <template>
@@ -96,6 +75,20 @@ async function copyJoinCode() {
       description: '-mt-0.5',
     }"
   >
+    <div class="top-8 left-8 z-10 absolute">
+      <AppSpotlightButton
+        aria-label="scroll to top button"
+        class="flex justify-center items-center p-1 size-10 text-muted transition-all duration-200 cursor-pointer"
+        rounded
+        @click="navigateTo({ name: 'index' })"
+      >
+        <UIcon
+          name="i-lucide-arrow-left"
+          class="z-20 size-6"
+        />
+      </AppSpotlightButton>
+    </div>
+
     <template #headline>
       <div class="text-center">
         <UBadge
@@ -314,172 +307,21 @@ async function copyJoinCode() {
                   v-auto-animate
                   class="w-full"
                 >
-                  <div
+                  <CompanyHostelForm
                     v-if="createCompanyState.createHostelNow"
-                    class="gap-5 grid grid-cols-1 md:grid-cols-2"
-                  >
-                    <UFormField
-                      label="Hostel Name"
-                      name="hostelName"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.hostelName"
-                        placeholder="e.g. Kings Hostel - Accra"
-                        icon="i-lucide-home"
-                        class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-                    </UFormField>
-
-                    <UFormField
-                      label="Hostel Slug"
-                      name="hostelSlug"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.hostelSlug"
-                        placeholder="e.g. kings-hostel-accra"
-                        icon="i-lucide-hash"
-                        class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-
-                      <template #help>
-                        <span class="text-muted text-xs">
-                          Portal: <span class="font-mono">/h/{{ createCompanyState.hostelSlug || "your-hostel" }}</span>
-                        </span>
-                      </template>
-                    </UFormField>
-
-                    <UFormField
-                      label="Hostel Support Email"
-                      name="supportEmail"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.supportEmail"
-                        placeholder="e.g. support@kingshostel.com"
-                        icon="i-lucide-mail"
-                        class="w-full"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-                    </UFormField>
-
-                    <UFormField
-                      label="Hostel Support Phone Number"
-                      name="supportPhone"
-                      class="w-full"
-                    >
-                      <UInput
-                        v-model="createCompanyState.supportPhone"
-                        placeholder="e.g. +233 55 000 0000"
-                        icon="i-lucide-phone"
-                        class="w-full"
-                        type="tel"
-                        :size="isMobile ? 'lg' : 'xl'"
-                      />
-                    </UFormField>
-
-                    <div class="flex flex-col gap-3">
-                      <UFormField
-                        label="Hostel Join Code"
-                        name="joinCode"
-                        class="w-full"
-                      >
-                        <div class="flex gap-2">
-                          <UInput
-                            v-model="createCompanyState.joinCode"
-                            placeholder="e.g. KINGS2024"
-                            icon="i-lucide-key-round"
-                            class="flex-1 font-mono uppercase tracking-wider"
-                            :size="isMobile ? 'lg' : 'xl'"
-                            maxlength="10"
-                          />
-
-                          <UTooltip text="Regenerate code">
-                            <UButton
-                              variant="outline"
-                              color="neutral"
-                              icon="i-lucide-refresh-cw"
-                              :size="isMobile ? 'lg' : 'xl'"
-                              class="cursor-pointer"
-                              @click="regenerateJoinCode"
-                            />
-                          </UTooltip>
-
-                          <UTooltip text="Copy code">
-                            <UButton
-                              variant="outline"
-                              color="neutral"
-                              icon="i-lucide-copy"
-                              :size="isMobile ? 'lg' : 'xl'"
-                              class="cursor-pointer"
-                              :disabled="!createCompanyState.joinCode"
-                              @click="copyJoinCode"
-                            />
-                          </UTooltip>
-                        </div>
-
-                        <template #help>
-                          <span class="text-muted text-xs">
-                            Students use this code to join your hostel.
-                          </span>
-                        </template>
-                      </UFormField>
-
-                      <UFormField
-                        label="Hostel Address"
-                        name="hostelAddress"
-                        class="w-full"
-                      >
-                        <UTextarea
-                          v-model="createCompanyState.hostelAddress"
-                          placeholder="e.g. 123 Main St, Accra"
-                          icon="i-lucide-map-pin"
-                          class="w-full"
-                          :size="isMobile ? 'lg' : 'xl'"
-                          :rows="3"
-                        />
-                      </UFormField>
-                    </div>
-
-                    <UFormField
-                      label="Hostel Logo / Image"
-                      name="hostelLogo"
-                      class="w-full"
-                    >
-                      <UFileUpload
-                        v-model="createCompanyState.hostelLogo"
-                        icon="i-lucide-image"
-                        label="Drop your hostel Logo or image"
-                        description="SVG, PNG, JPG or GIF (max. 2MB)"
-                        class="w-full min-h-43"
-                        accept="image/png, image/jpeg, image/webp, image/jpg"
-                        :interactive="false"
-                        :disabled="isUploading || isLoading"
-                        :file-delete="{
-                          class: 'cursor-pointer hover:bg-error hover:text-white rounded size-5 hover:border-error text-center font-bold',
-                          onClick: removeHostelLogo,
-                        }"
-                        :ui="{
-                          base: 'border-3 border-muted rounded-md p-4 cursor-pointer',
-                        }"
-                      >
-                        <template #actions="{ open }">
-                          <UButton
-                            label="Select From Your Device"
-                            icon="i-lucide-upload"
-                            color="neutral"
-                            variant="outline"
-                            class="cursor-pointer"
-                            :disabled="isUploading || isLoading"
-                            @click="open()"
-                          />
-                        </template>
-                      </UFileUpload>
-                    </UFormField>
-                  </div>
+                    v-model:name="createCompanyState.hostelName"
+                    v-model:slug="createCompanyState.hostelSlug"
+                    v-model:support-email="createCompanyState.supportEmail"
+                    v-model:support-phone="createCompanyState.supportPhone"
+                    v-model:join-code="createCompanyState.joinCode"
+                    v-model:address="createCompanyState.hostelAddress"
+                    v-model:logo-file="createCompanyState.hostelLogo"
+                    :is-loading
+                    :is-uploading
+                    :copy-join-code="() => copyJoinCode(createCompanyState.joinCode)"
+                    :remove-hostel-logo="removeCompanyHostelLogo"
+                    :regenerate-join-code="regenerateCompanyJoinCode"
+                  />
 
                   <div
                     v-else

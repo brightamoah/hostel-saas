@@ -2,17 +2,10 @@ import { roomQueries } from "~~/server/db/queries/room";
 import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
-  const session = await getPortalUserSession(event);
-
-  if (!session || !session.user) {
-    throw createError({
-      statusCode: 403,
-      message: "Access denied: Must be a loggedIn verified user",
-    });
-  }
+  const scope = await adminSessionCheck(event);
 
   try {
-    const { getRoomById } = await roomQueries();
+    const { getRoomByIdScoped } = await roomQueries();
 
     const id = getRouterParam(event, "roomId");
 
@@ -25,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     const roomId = Number(id);
 
-    const room = await getRoomById(roomId);
+    const room = await getRoomByIdScoped(roomId, scope);
     if (!room) {
       throw createError({
         statusCode: 404,

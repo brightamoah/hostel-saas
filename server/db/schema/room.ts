@@ -42,7 +42,7 @@ export const hostel = pgTable("hostel", t => ({
   name: t.text().notNull().unique(),
   address: t.text().notNull(),
   contactNumber: t.varchar({ length: 20 }).notNull(),
-  email: t.varchar({ length: 255 }).notNull().unique(),
+  email: t.varchar({ length: 255 }).notNull(),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()

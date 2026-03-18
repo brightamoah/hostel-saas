@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
     const {
       getHostelByCode,
-      getAvailableRooms,
+      getAvailableRoomsForStudent,
       getRoomTypes,
       getGenderSpecificRoomStats,
     } = await roomQueries();
@@ -57,9 +57,9 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const rooms = await getAvailableRooms(
-      student.gender,
+    const rooms = await getAvailableRoomsForStudent(
       hostel.id,
+      student.gender,
     );
 
     const roomTypes = await getRoomTypes(

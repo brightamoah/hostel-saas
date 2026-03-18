@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { user } = usePortalUserSession();
 const admin = user.value?.adminData;
+const companyRole = user.value?.companyRole;
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
@@ -194,7 +195,7 @@ watch(
         </div>
 
         <UFormField
-          v-if="admin && admin.accessLevel === 'super'"
+          v-if="admin && companyRole === 'owner'"
           required
           label="Hostels"
           name="hostelId"

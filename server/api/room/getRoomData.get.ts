@@ -2,9 +2,20 @@ import { roomQueries } from "~~/server/db/queries/room";
 import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
   try {
+    if (
+      !scope.isPlatformAdmin
+      && scope.companyRole !== "owner"
+      && !scope.hostelId
+    ) {
+      throw createError({
+        statusCode: 403,
+        message: "No assigned hostel or insufficient permission.",
+      });
+    }
+
     const {
       getRoomStatusCount,
       getAllHostelsScoped,
@@ -20,10 +31,10 @@ export default defineEventHandler(async (event) => {
       totalFullyOccupiedRooms,
       totalPartiallyOccupiedRooms,
       totalReservedRooms,
-    } = await getRoomStatusCount(adminData);
+    } = await getRoomStatusCount(scope);
 
-    const hostels: Hostel[] = await getAllHostelsScoped(adminData);
-    const rooms = await getScopedRooms(adminData);
+    const hostels = await getAllHostelsScoped(scope);
+    const rooms = await getScopedRooms(scope);
 
     return {
       rooms,

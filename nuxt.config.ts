@@ -138,7 +138,7 @@ export default defineNuxtConfig({
       openAPI: true,
     },
     scheduledTasks: {
-      "*/15 * * * *": ["schedular"],
+      "0 0 * * *": ["schedular"],
     },
     devStorage: {
       kv: {

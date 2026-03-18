@@ -6,10 +6,13 @@ export const useCompanyStore = defineStore("companyStore", () => {
   const toast = useToast();
 
   const { $apiFetch } = useNuxtApp();
+  const { user } = usePortalUserSession();
 
   const isLoading = ref(false);
   const isUploading = ref(false);
   const uploadProgress = ref(0);
+
+  const roomDataKey = computed(() => `roomData:${user.value?.adminData?.accessLevel}`);
 
   const createCompanyState = reactive<RegisterCompanySchema>({
     name: "",
@@ -33,15 +36,28 @@ export const useCompanyStore = defineStore("companyStore", () => {
     joinCode: undefined,
   });
 
+  const createHostelState = reactive<HostelDetailsSchema>({
+    name: "",
+    slug: "",
+    supportEmail: "",
+    supportPhone: "",
+    joinCode: "",
+    address: "",
+    logo: undefined,
+    logoUrl: "",
+    logoKey: "",
+  });
+
   const setupAutoSlug = (
-    nameKey: "companyName" | "hostelName",
-    slugKey: "companySlug" | "hostelSlug",
+    state: any,
+    nameKey: string,
+    slugKey: string,
   ) => {
     const isTouched = ref(false);
     const lastAutoSlug = ref("");
 
     watch(
-      () => createCompanyState[slugKey],
+      () => state[slugKey],
       (newVal, oldVal) => {
         if (!newVal) {
           isTouched.value = false;
@@ -54,59 +70,77 @@ export const useCompanyStore = defineStore("companyStore", () => {
     );
 
     watch(
-      () => createCompanyState[nameKey],
+      () => state[nameKey],
       (newName) => {
         if (isTouched.value) return;
 
         const generated = createSlug(newName || "");
         lastAutoSlug.value = generated;
-        createCompanyState[slugKey] = generated;
+        state[slugKey] = generated;
       },
       { immediate: true },
     );
   };
 
-  setupAutoSlug("companyName", "companySlug");
-  setupAutoSlug("hostelName", "hostelSlug");
+  setupAutoSlug(createCompanyState, "companyName", "companySlug");
+  setupAutoSlug(createCompanyState, "hostelName", "hostelSlug");
+  setupAutoSlug(createHostelState, "name", "slug");
 
-  const isJoinCodeTouched = ref(false);
-  const lastAutoJoinCode = ref("");
+  const setupAutoJoinCode = (state: any, nameKey: string, joinCodeKey: string) => {
+    const isJoinCodeTouched = ref(false);
+    const lastAutoJoinCode = ref("");
 
-  watch(
-    () => createCompanyState.joinCode,
-    (newVal, oldVal) => {
-      if (newVal && oldVal !== undefined && newVal !== lastAutoJoinCode.value) {
-        isJoinCodeTouched.value = true;
-      }
+    watch(
+      () => state[joinCodeKey],
+      (newVal, oldVal) => {
+        if (newVal && oldVal !== undefined && newVal !== lastAutoJoinCode.value) {
+          isJoinCodeTouched.value = true;
+        }
 
-      if (!newVal) {
-        isJoinCodeTouched.value = false;
-      }
-    },
-  );
+        if (!newVal) {
+          isJoinCodeTouched.value = false;
+        }
+      },
+    );
 
-  watch(
-    () => createCompanyState.hostelName,
-    (newName) => {
-      if (isJoinCodeTouched.value) return;
+    watch(
+      () => state[nameKey],
+      (newName) => {
+        if (isJoinCodeTouched.value) return;
 
-      if (newName && newName.trim().length >= 2) {
-        const generated = generateHostelJoinCode(newName);
-        lastAutoJoinCode.value = generated;
-        createCompanyState.joinCode = generated;
-      }
-      else {
-        createCompanyState.joinCode = undefined;
-        lastAutoJoinCode.value = "";
-      }
-    },
-    { immediate: true },
-  );
+        if (newName && newName.trim().length >= 2) {
+          const generated = generateHostelJoinCode(newName, lastAutoJoinCode.value);
+          lastAutoJoinCode.value = generated;
+          state[joinCodeKey] = generated;
+        }
+        else {
+          state[joinCodeKey] = undefined;
+          lastAutoJoinCode.value = "";
+        }
+      },
+      { immediate: true },
+    );
 
-  function regenerateJoinCode() {
+    return { isJoinCodeTouched, lastAutoJoinCode };
+  };
+
+  const companyJoinTracker = setupAutoJoinCode(createCompanyState, "hostelName", "joinCode");
+  const standaloneJoinTracker = setupAutoJoinCode(createHostelState, "name", "joinCode");
+
+  function regenerateCompanyJoinCode() {
     const hostelName = createCompanyState.hostelName;
-    createCompanyState.joinCode = generateHostelJoinCode(hostelName || "HOSTEL");
-    isJoinCodeTouched.value = false;
+    const generated = generateHostelJoinCode(hostelName || "HOSTEL");
+    createCompanyState.joinCode = generated;
+    companyJoinTracker.lastAutoJoinCode.value = generated;
+    companyJoinTracker.isJoinCodeTouched.value = false;
+  }
+
+  function regenerateStandaloneJoinCode() {
+    const hostelName = createHostelState.name;
+    const generated = generateHostelJoinCode(hostelName || "HOSTEL");
+    createHostelState.joinCode = generated;
+    standaloneJoinTracker.lastAutoJoinCode.value = generated;
+    standaloneJoinTracker.isJoinCodeTouched.value = false;
   }
 
   watch(
@@ -124,8 +158,8 @@ export const useCompanyStore = defineStore("companyStore", () => {
           hostelAddress: undefined,
           joinCode: undefined,
         });
-        isJoinCodeTouched.value = false;
-        lastAutoJoinCode.value = "";
+        companyJoinTracker.isJoinCodeTouched.value = false;
+        companyJoinTracker.lastAutoJoinCode.value = "";
       }
     },
   );
@@ -266,12 +300,15 @@ export const useCompanyStore = defineStore("companyStore", () => {
     }
   };
 
-  const removeHostelLogo = async () => {
+  const removeCompanyHostelLogo = async () => {
     if (createCompanyState.hostelLogoKey) await deleteImage(createCompanyState.hostelLogoKey);
-
     createCompanyState.hostelLogo = undefined;
     createCompanyState.hostelLogoKey = undefined;
     createCompanyState.hostelLogoUrl = undefined;
+  };
+
+  const removeStandaloneHostelLogo = () => {
+    createHostelState.logo = undefined;
   };
 
   const hasLogo = computed(() => !!createCompanyState.hostelLogo || !!createCompanyState.hostelLogoUrl);
@@ -291,6 +328,91 @@ export const useCompanyStore = defineStore("companyStore", () => {
     if (createCompanyState.hostelLogo) return URL.createObjectURL(createCompanyState.hostelLogo);
     return null;
   });
+
+  const createHostel = async (payload: FormSubmitEvent<HostelDetailsSchema>) => {
+    isLoading.value = true;
+    let uploadedKey: string | undefined;
+
+    try {
+      if (createHostelState.logo && !createHostelState.logoUrl) {
+        const result = await uploadImage(createHostelState.logo);
+
+        if (result) {
+          createHostelState.logoUrl = result.url;
+          createHostelState.logoKey = result.key;
+          uploadedKey = result.key;
+        }
+      }
+
+      const hostelData = {
+        name: payload.data.name,
+        slug: payload.data.slug,
+        supportEmail: payload.data.supportEmail,
+        supportPhone: payload.data.supportPhone,
+        address: payload.data.address,
+        logoUrl: createHostelState.logoUrl,
+        logoKey: createHostelState.logoKey,
+        joinCode: payload.data.joinCode,
+      } satisfies HostelDetailsSchema;
+
+      const response = await $apiFetch("/api/admin/hostel/create", {
+        method: "POST",
+        body: hostelData,
+      });
+
+      await refreshNuxtData(roomDataKey.value);
+
+      toast.add({
+        title: response.message || "Hostel Created",
+        description: "The hostel has been created successfully.",
+        color: "success",
+        icon: "i-lucide-circle-check-big",
+      });
+
+      resetState();
+    }
+    catch (error: any) {
+      const message = error?.data?.message || "Failed to create hostel. Please try again.";
+      toast.add({
+        title: "Hostel Creation Failed",
+        description: message,
+        color: "error",
+        icon: "i-lucide-circle-alert",
+        duration: 8000,
+      });
+
+      if (uploadedKey) {
+        await deleteImage(uploadedKey);
+        createHostelState.logoKey = "";
+        createHostelState.logoUrl = "";
+      }
+    }
+    finally {
+      isLoading.value = false;
+    }
+  };
+
+  async function copyJoinCode(code: string | undefined) {
+    if (!code) return;
+
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.add({
+        title: "Copied!",
+        description: "Join code copied to clipboard.",
+        color: "success",
+        icon: "i-lucide-copy-check",
+        duration: 2000,
+      });
+    }
+    catch {
+      toast.add({
+        title: "Copy Failed",
+        description: "Could not copy to clipboard.",
+        color: "error",
+      });
+    }
+  }
 
   function resetState() {
     Object.assign(createCompanyState, {
@@ -312,7 +434,19 @@ export const useCompanyStore = defineStore("companyStore", () => {
       hostelLogoUrl: undefined,
       hostelJoinCode: undefined,
     });
-    isJoinCodeTouched.value = false;
+    companyJoinTracker.isJoinCodeTouched.value = false;
+
+    Object.assign(createHostelState, {
+      name: "",
+      slug: "",
+      supportEmail: "",
+      supportPhone: "",
+      joinCode: "",
+      address: "",
+      logo: undefined,
+      email: "",
+      contactNumber: "",
+    });
   };
 
   return {
@@ -322,11 +456,16 @@ export const useCompanyStore = defineStore("companyStore", () => {
     uploadProgress,
     logoPreviewUrl,
     hasLogo,
+    createHostelState,
+    createHostel,
     uploadImage,
     submitRegistration,
     deleteImage,
-    removeHostelLogo,
-    regenerateJoinCode,
+    regenerateCompanyJoinCode,
+    regenerateStandaloneJoinCode,
+    removeCompanyHostelLogo,
+    removeStandaloneHostelLogo,
+    copyJoinCode,
   };
 });
 

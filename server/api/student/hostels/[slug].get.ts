@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const { getStudentGenderByUserId } = await userQueries();
     const {
       getHostelBySlug,
-      getAvailableRooms,
+      getAvailableRoomsForStudent,
       getRoomTypes,
       getGenderSpecificRoomStats,
     } = await roomQueries();
@@ -50,9 +50,9 @@ export default defineEventHandler(async (event) => {
 
     const roomStats = await getGenderSpecificRoomStats(hostel.id, student.gender);
 
-    const rooms = await getAvailableRooms(
-      student.gender,
+    const rooms = await getAvailableRoomsForStudent(
       hostel.id,
+      student.gender,
     );
 
     const roomTypes = await getRoomTypes(

@@ -33,19 +33,23 @@ export function generateJoinCode(prefix?: string, length: number = 8): string {
  * @param hostelName - The name of the hostel to generate the code for.
  * @returns A string representing the generated join code (8 characters total).
  */
-export function generateHostelJoinCode(hostelName: string): string {
-  const words = hostelName.trim().split(/\s+/);
-  const initials = words
-    .map(word => word[0]?.toUpperCase() || "")
-    .filter(char => /[A-Z]/.test(char))
-    .join("")
-    .slice(0, 4);
+export function generateHostelJoinCode(hostelName: string, existingCode?: string): string {
+  const cleanName = hostelName.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  const prefix = cleanName.slice(0, 5);
 
-  if (initials.length >= 2) {
-    return generateJoinCode(initials, 8);
+  if (prefix.length >= 2) {
+    if (existingCode && existingCode.length === 8) {
+      const requiredSuffixLength = 8 - prefix.length;
+      const suffix = existingCode.slice(-requiredSuffixLength);
+      return prefix + suffix;
+    }
+
+    return generateJoinCode(prefix, 8);
   }
 
-  return generateJoinCode(undefined, 8);
+  return (existingCode && existingCode.length === 8)
+    ? existingCode
+    : generateJoinCode(undefined, 8);
 }
 
 /**

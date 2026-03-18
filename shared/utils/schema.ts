@@ -750,7 +750,7 @@ const joinCodeSchema = z
   .trim()
   .toUpperCase()
   .min(6, "Join code must be at least 6 characters")
-  .max(10, "Join code must be at most 10 characters")
+  .max(8, "Join code must be at most 10 characters")
   .regex(/^[A-Z0-9]+$/, "Join code can only contain letters and numbers and must be uppercase");
 
 export type InviteCompanyMemberSchema = z.output<typeof inviteCompanyMemberSchema>;
@@ -766,20 +766,34 @@ const ownerSchema = z.object({
   path: ["confirmPassword"],
 });
 
+const hostelDetailsSchema = z.object({
+  name: z.string().trim().min(2, "Hostel name is required"),
+  slug: slugSchema,
+  supportEmail: emailSchema,
+  supportPhone: phoneNumberSchema,
+  address: addressSchema,
+  logo: imageFileSchema.optional(),
+  logoUrl: z.string(),
+  logoKey: z.string(),
+  joinCode: joinCodeSchema,
+});
+
+export type HostelDetailsSchema = z.output<typeof hostelDetailsSchema>;
+
 const companySchema = z.object({
   companyName: z.string().trim().min(3, "Company name is required").max(120),
   companySlug: slugSchema,
   createHostelNow: z.boolean().default(true),
 
-  hostelName: z.string().trim().min(2, "Hostel name is required").optional(),
-  hostelSlug: slugSchema.optional(),
-  supportEmail: emailSchema.optional(),
-  supportPhone: phoneNumberSchema.optional(),
-  hostelAddress: addressSchema.optional(),
-  hostelLogo: imageFileSchema.optional(),
-  hostelLogoUrl: z.string().optional(),
-  hostelLogoKey: z.string().optional(),
-  joinCode: joinCodeSchema.optional(),
+  hostelName: hostelDetailsSchema.shape.name.optional(),
+  hostelSlug: hostelDetailsSchema.shape.slug.optional(),
+  supportEmail: hostelDetailsSchema.shape.supportEmail.optional(),
+  supportPhone: hostelDetailsSchema.shape.supportPhone.optional(),
+  hostelAddress: hostelDetailsSchema.shape.address.optional(),
+  hostelLogo: hostelDetailsSchema.shape.logo.optional(),
+  hostelLogoUrl: hostelDetailsSchema.shape.logoUrl.optional(),
+  hostelLogoKey: hostelDetailsSchema.shape.logoKey.optional(),
+  joinCode: hostelDetailsSchema.shape.joinCode.optional(),
 }).superRefine((data, ctx) => {
   if (data.createHostelNow) {
     if (!data.hostelName || data.hostelName.trim().length < 2) {
@@ -849,6 +863,7 @@ export {
   emailInvoiceSchema,
   emailSchema,
   emailVerificationSchema,
+  hostelDetailsSchema,
   imageFileSchema,
   joinCodeSchema,
   linkSchema,

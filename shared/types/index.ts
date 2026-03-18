@@ -21,6 +21,10 @@ import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
 
 import type { ComplaintStatusResponseSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
 
+export type DeepNonNullable<T> = {
+  [K in keyof T]: NonNullable<T[K]>;
+};
+
 export type DateRange = {
   start: DateValue;
   end: DateValue;
@@ -167,15 +171,11 @@ export type Room = RoomType;
 
 export type RoomInsert = typeof room.$inferInsert;
 
-export type Hostel = {
-  id: number;
-  name: string;
-  address: string;
-  contactNumber: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-  status: "active" | "inactive" | "under renovation";
+export type Hostel = typeof hostel.$inferInsert;
+
+export type HostelFormData = DeepNonNullable<Omit<Hostel, "companyId">> & {
+  logoFile?: File;
+  logoKey?: string;
 };
 
 export type RoomDataResponse = {
@@ -188,7 +188,7 @@ export type RoomDataResponse = {
   totalVacantRooms: number;
   totalPartiallyOccupiedRooms: number;
   totalReservedRooms: number;
-  hostels: Hostel[];
+  hostels: HostelData[];
 };
 
 export type StudentRoomData = Pick<RoomDataResponse, "rooms" | "hostels" | "totalRooms">;
@@ -268,7 +268,13 @@ export type AdminScope = {
   isPlatformAdmin: boolean;
   companyId: number | null;
   companyRole: "owner" | "admin" | "finance" | "support" | "staff" | null;
+  hostelId?: number;
+  userId: number;
+  isActiveAdmin: boolean;
+  companyMemberStatus?: "active" | "invited" | "disabled";
 };
+
+export type ScopeMode = "platform" | "company" | "hostel" | "none";
 
 // export type UserType = {
 //   student: Student | null;

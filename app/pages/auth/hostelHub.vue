@@ -137,8 +137,6 @@ async function confirmSelection() {
   isSelectingHostel.value = true;
 
   try {
-    clearNuxtData(`hostelRooms:${selectedHostel.value.slug}`);
-
     await navigateTo({
       name: "hostels-hostelSlug",
       params: { hostelSlug: selectedHostel.value.slug },

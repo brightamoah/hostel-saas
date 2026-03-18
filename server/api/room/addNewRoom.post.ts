@@ -2,7 +2,9 @@ import { roomQueries } from "~~/server/db/queries";
 import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
-  const { companyId } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
+
+  const companyId = scope.companyId;
 
   try {
     const { getExistingRoomByRoomNumberAndHostel, addNewRoom } = await roomQueries();
@@ -57,7 +59,7 @@ export default defineEventHandler(async (event) => {
       status,
       allowedGender,
       companyId,
-    });
+    }, scope);
 
     if (!newRoom) {
       throw createError({

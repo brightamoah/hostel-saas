@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const { getStudentByUserId } = await userQueries();
-    const { getAvailableRooms, getAllHostels } = await roomQueries();
+    const { getAvailableRoomsForStudent, getAllHostels } = await roomQueries();
 
     const student = await getStudentByUserId(user.id);
 
@@ -27,9 +27,12 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const rooms = await getAvailableRooms(student.gender, hostelId);
+    const rooms = await getAvailableRoomsForStudent(
+      hostelId,
+      student.gender,
+    );
 
-    const hostels = await getAllHostels();
+    const hostels = await getAllHostels(student.gender);
 
     return {
       rooms,

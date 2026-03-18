@@ -4,25 +4,15 @@ import { eq } from "drizzle-orm";
 
 import { companyMember } from "../db/schema";
 
-export async function adminSessionCheck(event: H3Event): Promise<{
-  isActiveAdmin: true;
-  adminData: AdminScope["adminData"];
-  userId: number;
-  isPlatformAdmin: AdminScope["isPlatformAdmin"];
-  companyId: AdminScope["companyId"];
-  companyRole: AdminScope["companyRole"];
-  companyMember?: {
-    role: string;
-    status: string;
-    companyId: number;
-  };
-}> {
-  const session = await requirePortalUserSession(event);
+export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
+  const {
+    user,
+  } = await requirePortalUserSession(event, {
+    message: "You must be logged in as an admin to access this resource.",
+  });
 
   if (
-    session.user.role !== "admin"
-    || !session.user.adminData
-    || session.user.adminData.status !== "active"
+    user?.adminData?.status !== "active"
   ) {
     throw createError({
       statusCode: 403,
@@ -30,25 +20,25 @@ export async function adminSessionCheck(event: H3Event): Promise<{
     });
   }
 
-  const adminData = session.user.adminData;
+  const adminData = user.adminData;
   const isPlatformAdmin = adminData.accessLevel === "super";
 
   if (isPlatformAdmin) {
     return {
       isActiveAdmin: true,
       adminData,
-      userId: session.user.id,
+      userId: user.id,
       isPlatformAdmin: true,
       companyId: null,
       companyRole: null,
-      companyMember: undefined,
+      companyMemberStatus: undefined,
     };
   }
 
   const { db } = useDB();
 
   const membership = await db.query.companyMember.findFirst({
-    where: eq(companyMember.userId, session.user.id),
+    where: eq(companyMember.userId, user.id),
     columns: {
       companyId: true,
       role: true,
@@ -66,11 +56,11 @@ export async function adminSessionCheck(event: H3Event): Promise<{
   return {
     isActiveAdmin: true,
     adminData,
-    userId: session.user.id,
+    userId: user.id,
     isPlatformAdmin: false,
     companyId: membership.companyId,
     companyRole: membership.role,
-    companyMember: membership,
+    companyMemberStatus: membership.status,
   };
 }
 

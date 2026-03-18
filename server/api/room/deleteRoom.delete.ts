@@ -3,21 +3,8 @@ import { roomQueries } from "~~/server/db/queries/room";
 import { getSpecificRoomError } from "~/utils/roomErrors";
 
 export default defineEventHandler(async (event) => {
-  const session = await getPortalUserSession(event);
+  const scope = await adminSessionCheck(event);
   const { getErrorMessage } = getSpecificRoomError();
-
-  if (
-    !session
-    || !session.user
-    || session.user.role !== "admin"
-    || !session.user.adminData
-    || session.user.adminData.status !== "active"
-  ) {
-    throw createError({
-      statusCode: 403,
-      message: "Access denied: Must be a logged in verified admin",
-    });
-  }
 
   try {
     const body = await readValidatedBody(event, body => deleteItemSchema.safeParse(body));
@@ -79,7 +66,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const deletedRooms = await deleteRoomsByIds(ids);
+    const deletedRooms = await deleteRoomsByIds(ids, scope);
 
     if (deletedRooms.length === 0) {
       throw createError({

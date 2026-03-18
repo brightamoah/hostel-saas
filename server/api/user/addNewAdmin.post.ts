@@ -6,16 +6,9 @@ import { randomUUID } from "uncrypto";
 import { getEmailTemplate, getWelcomeAdminTemplate } from "~/utils/emailTemplate";
 
 export default defineEventHandler(async (event) => {
-  const session = await getPortalUserSession(event);
-  const creator = session.user;
-  const companyId = session.user?.companyId;
+  const { adminData, userId } = await adminSessionCheck(event);
 
-  if (!creator || creator.role !== "admin" || creator.adminData?.status !== "active") {
-    throw createError({
-      statusCode: 403,
-      message: "Access Denied: You must be an admin to perform this action.",
-    });
-  }
+  const companyId = adminData.companyId;
 
   if (!companyId) {
     throw createError({
@@ -29,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const { getAdminByUserId, checkIfUserExists } = await userQueries();
 
-  const creatorAdminDetails = await getAdminByUserId(creator.id);
+  const creatorAdminDetails = await getAdminByUserId(userId);
 
   if (!creatorAdminDetails) {
     throw createError({

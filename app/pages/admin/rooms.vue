@@ -7,6 +7,8 @@ definePageMeta({
 });
 const title = ref("Rooms Management");
 
+const { user } = usePortalUserSession();
+
 const toast = useToast();
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
@@ -203,6 +205,8 @@ useSeoMeta({
               />
 
               <RoomAddModal />
+
+              <RoomCreateHostel v-if="user?.companyId && user.companyRole === 'owner'" />
 
               <DashboardConfirmationModal
                 v-if="selectedRoomsLength"

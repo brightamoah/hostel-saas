@@ -1,0 +1,1 @@
+ALTER TABLE "hostel" DROP CONSTRAINT "hostel_email_unique";

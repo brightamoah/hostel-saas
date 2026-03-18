@@ -2,10 +2,10 @@ import { roomQueries } from "~~/server/db/queries/room";
 import { handleError } from "~~/server/utils/errorHandler";
 
 export default defineEventHandler(async (event) => {
-  await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
   try {
-    const { editRoomById, getRoomById, getExistingRoomByRoomNumberAndHostel } = await roomQueries();
+    const { editRoomById, getRoomByIdScoped, getExistingRoomByRoomNumberAndHostel } = await roomQueries();
 
     const body = await readValidatedBody(event, body => editRoomSchema.safeParse(body));
 
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     const { roomId, data } = body.data;
 
     if (data.roomNumber) {
-      const originalRoom = await getRoomById(roomId);
+      const originalRoom = await getRoomByIdScoped(roomId, scope);
 
       if (!originalRoom) {
         throw createError({
@@ -38,12 +38,12 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const updatedRoom = await editRoomById(roomId, data);
+    const updatedRoom = await editRoomById(roomId, data, scope);
 
     if (!updatedRoom) {
       throw createError({
-        statusCode: 500,
-        message: "Failed to update room details.",
+        statusCode: 404,
+        message: "Room not found or unauthorized",
       });
     }
 
