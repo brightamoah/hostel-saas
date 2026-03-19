@@ -58,15 +58,15 @@ export function useMaintenanceRowColumn(
       update: async () => {
         await updateStatusAndAddResponse({
           maintenanceId: maintenance.id,
-          status: maintenanceStatusResponseState.value.status,
-          responseText: maintenanceStatusResponseState.value.responseText,
+          status: maintenanceStatusResponseState.value.status!,
+          responseText: maintenanceStatusResponseState.value.responseText!,
         });
         close();
       },
       addResponse: async () => {
         await addMaintenanceResponse({
           maintenanceId: maintenance.id,
-          responseText: maintenanceStatusResponseState.value.responseText,
+          responseText: maintenanceStatusResponseState.value.responseText!,
         });
         close();
       },

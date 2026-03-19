@@ -4,8 +4,6 @@ import { useDB } from "~~/server/utils/db";
 import { handleError } from "~~/server/utils/errorHandler";
 import { randomUUID } from "uncrypto";
 
-import { getEmailTemplate } from "~/utils/emailTemplate";
-
 export default defineEventHandler(async (event) => {
   try {
     await clearPortalUserSession(event);
@@ -76,7 +74,7 @@ export default defineEventHandler(async (event) => {
 
     const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${newUser.id}`;
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newUser);
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newUser, "KayaNest");
 
     try {
       if (import.meta.dev) {

@@ -1,9 +1,9 @@
+import { roomQueries } from "~~/server/db/queries";
 import { userQueries } from "~~/server/db/queries/user";
 import { admin, companyMember, user } from "~~/server/db/schema";
 import { generateTempPassword } from "~~/server/utils/generateTemporaryPassword";
+import { getEmailTemplate, getWelcomeAdminTemplate } from "~~/shared/utils/emailTemplate";
 import { randomUUID } from "uncrypto";
-
-import { getEmailTemplate, getWelcomeAdminTemplate } from "~/utils/emailTemplate";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
@@ -98,6 +98,24 @@ export default defineEventHandler(async (event) => {
   const verificationToken = randomUUID();
   const hashedVerificationToken = await hash(verificationToken);
 
+  if (!assignedHostelId) {
+    throw createError({
+      statusCode: 400,
+      message: "Assigned hostel not found. Please verify the hostel ID and try again.",
+    });
+  }
+
+  const { getHostelByIdScoped } = await roomQueries();
+
+  const hostel = await getHostelByIdScoped(assignedHostelId, scope);
+
+  if (!hostel) {
+    throw createError({
+      statusCode: 400,
+      message: "Assigned hostel not found. Please verify the hostel ID and try again.",
+    });
+  }
+
   try {
     const newAdminUser = await db.transaction(async (txn) => {
       const [newUser] = await txn
@@ -175,9 +193,15 @@ export default defineEventHandler(async (event) => {
 
     const userForEmail = { ...newAdminUser, companyId: newAdminUser.companyId ?? undefined };
 
-    const { html, text } = getWelcomeAdminTemplate(name, email, generatedPassword);
+    const { html, text } = getWelcomeAdminTemplate(
+      name,
+      email,
+      generatedPassword,
+      hostel.name!,
+      runtimeConfig.public.adminBaseUrl,
+    );
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, userForEmail);
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, userForEmail, hostel.name!);
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();

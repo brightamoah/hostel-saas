@@ -621,3 +621,11 @@ type GetIndexSignature<T> = {
 
 // Basic Omit but does not break if a [x:string]:unknown Index Signature is present in the type
 export type OmitWithIndexSignature<T extends Record<string, unknown>, K extends keyof RemoveIndexSignature<T>> = Prettify<Omit<RemoveIndexSignature<T>, K> & GetIndexSignature<T>>;
+
+export type TenantBranding = {
+  name: string;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  supportEmail?: string | null;
+  supportPhone?: string | null;
+};

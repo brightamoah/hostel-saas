@@ -153,7 +153,10 @@ defineExpose({
         </p>
       </slot>
 
-      <slot name="custom">
+      <slot
+        v-if="showSelectMenu && selectMenuOptions"
+        name="custom"
+      >
         <UFormField
           label="Select Academic Period"
           class="mt-4 w-[80%]"
@@ -161,7 +164,6 @@ defineExpose({
           :error="validationError"
         >
           <USelectMenu
-            v-if="showSelectMenu && selectMenuOptions"
             v-model="selectedValue"
             :items="selectMenuOptions"
             :icon="selectMenuIcon ?? 'i-lucide-calendar-days'"

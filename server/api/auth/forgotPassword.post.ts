@@ -4,8 +4,6 @@ import { handleError } from "~~/server/utils/errorHandler";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
-import { getResetPasswordTemplate } from "~/utils/emailTemplate";
-
 export default defineEventHandler(async (event) => {
   try {
     const { db } = useDB();
@@ -44,7 +42,7 @@ export default defineEventHandler(async (event) => {
 
     const resetUrl = `${event.headers.get("origin")}/auth/resetPassword?token=${resetToken}&id=${existingUser.id}`;
 
-    const { html, text } = getResetPasswordTemplate(resetUrl, existingUser.name);
+    const { html, text } = getResetPasswordTemplate(resetUrl, existingUser.name, "KayaNest");
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();

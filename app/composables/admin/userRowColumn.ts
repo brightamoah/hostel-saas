@@ -25,28 +25,28 @@ export function useUserRowColumn(
     });
   };
 
-  const openDeleteUserModal = (userId: number, userName: string) => {
-    const modal = overlay.create(ConfirmationModal);
-    const close = modal.close;
-    void modal.open({
-      title: `Delete User`,
-      confirmLabel: "Delete User",
-      isLoading,
-      description: `This action will delete user with Name ${userName} and ID ${userId}.`,
-      renderTrigger: false,
-      body: `Are you sure you want to delete user with name ${userName}? This action cannot be undone.`,
-      onConfirm: async () => {
-        try {
-          await userStore.deleteUser({ ids: [userId] });
-          close();
-        }
-        catch (error) {
-          console.warn("Delete failed:", error);
-          close();
-        }
-      },
-    });
-  };
+  // const openDeleteUserModal = (userId: number, userName: string) => {
+  //   const modal = overlay.create(ConfirmationModal);
+  //   const close = modal.close;
+  //   void modal.open({
+  //     title: `Delete User`,
+  //     confirmLabel: "Delete User",
+  //     isLoading,
+  //     description: `This action will delete user with Name ${userName} and ID ${userId}.`,
+  //     renderTrigger: false,
+  //     body: `Are you sure you want to delete user with name ${userName}? This action cannot be undone.`,
+  //     onConfirm: async () => {
+  //       try {
+  //         await userStore.deleteUser({ ids: [userId] });
+  //         close();
+  //       }
+  //       catch (error) {
+  //         console.warn("Delete failed:", error);
+  //         close();
+  //       }
+  //     },
+  //   });
+  // };
 
   const openPromoteDemoteUserModal = (user: UserWithRelations) => {
     if (user.role === "admin" && user.admin?.status === "active") {
@@ -139,13 +139,13 @@ export function useUserRowColumn(
         icon: "i-lucide-refresh-cw",
         onSelect: () => openPromoteDemoteUserModal(user),
       },
-      {
-        label: "Delete user",
-        icon: "i-lucide-trash-2",
-        color: "error",
-        onSelect: () => openDeleteUserModal(user.id, user.name),
+      // {
+      //   label: "Delete user",
+      //   icon: "i-lucide-trash-2",
+      //   color: "error",
+      //   onSelect: () => openDeleteUserModal(user.id, user.name),
 
-      },
+      // },
     ];
   };
 

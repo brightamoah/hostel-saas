@@ -1,8 +1,6 @@
 import { companyQueries } from "~~/server/db/queries/company";
 import { randomUUID } from "uncrypto";
 
-import { getEmailTemplate } from "~/utils/emailTemplate";
-
 export default defineEventHandler(async (event) => {
   try {
     const runtimeConfig = useRuntimeConfig(event);
@@ -88,7 +86,7 @@ export default defineEventHandler(async (event) => {
 
     const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${newCompanyOwner.user.id}`;
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newCompanyOwner.user);
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newCompanyOwner.user, hostelName ?? companyName);
 
     try {
       if (import.meta.dev) {

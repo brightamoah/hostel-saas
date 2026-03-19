@@ -5,6 +5,8 @@ import { handleError } from "~~/server/utils/errorHandler";
 import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
+  await clearPortalUserSession(event);
+
   try {
     const { db } = useDB();
     const { getUserById } = await userQueries();

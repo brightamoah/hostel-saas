@@ -453,6 +453,26 @@ export async function roomQueries() {
       .returning();
     return newHostel;
   };
+
+  const getHostelByIdScoped = async (id: number, scope: AdminScope) => {
+    const hostelResult = await db
+      .query
+      .hostel
+      .findFirst({
+        where: and(eq(hostel.id, id), ...applyHostelScope(scope)),
+        columns: {
+          id: true,
+          name: true,
+          address: true,
+          contactNumber: true,
+          email: true,
+          primaryColor: true,
+          logoUrl: true,
+          status: true,
+        },
+      });
+    return hostelResult;
+  };
   return {
     getAllRooms,
     getRoomByIdScoped,
@@ -479,6 +499,7 @@ export async function roomQueries() {
     getHostelBySlug,
     getGenderSpecificRoomStats,
     createNewHostel,
+    getHostelByIdScoped,
   };
 }
 

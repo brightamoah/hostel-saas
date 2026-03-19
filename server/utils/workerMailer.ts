@@ -10,7 +10,7 @@ export async function useWorkerMailer() {
     },
     authType: "plain",
     host: runtimeConfig.nodemailerHost,
-    port: runtimeConfig.nodemailerPort,
+    port: Number(runtimeConfig.nodemailerPort),
     secure: true,
   });
 

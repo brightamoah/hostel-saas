@@ -5,8 +5,6 @@ import { handleError } from "~~/server/utils/errorHandler";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
-import { getEmailTemplate } from "~/utils/emailTemplate";
-
 const TOKEN_TTL_MS = 10 * 60 * 1000;
 const COOL_DOWN_MS = 2 * 60 * 1000;
 
@@ -77,7 +75,7 @@ export default defineEventHandler(async (event) => {
 
     const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${existingUser.id}`;
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, existingUser);
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, existingUser, "KayaNest");
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();

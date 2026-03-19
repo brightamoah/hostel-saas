@@ -1,0 +1,20 @@
+<svg width="320" height="320" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- bg tile -->
+  <rect width="64" height="64" rx="14" fill="#e9f4f3"/>
+  <!-- roof / gable -->
+  <polygon points="4,34 32,8 60,34" fill="#265757"/>
+  <!-- building body -->
+  <rect x="10" y="32" width="44" height="28" rx="3" fill="#3d8582"/>
+  <!-- left window -->
+  <rect x="22" y="34" width="9" height="7" rx="1.2" fill="#96c8c5" opacity="0.5"/>
+  <!-- right window -->
+  <rect x="33" y="34" width="9" height="7" rx="1.2" fill="#96c8c5" opacity="0.5"/>
+  <!-- door -->
+  <rect x="27.5" y="44" width="9" height="16" rx="2" fill="#e9f4f3"/>
+  <!-- door handle -->
+  <circle cx="32" cy="52" r="1" fill="#3d8582"/>
+  <!-- room key badge -->
+  <circle cx="44" cy="22" r="7" fill="#265757"/>
+  <!-- plus / key cross -->
+  <path d="M41 22h6M44 19v6" stroke="#d1e8e6" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

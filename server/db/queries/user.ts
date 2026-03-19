@@ -1,6 +1,7 @@
 import type { AdminScope, FailedAttempts, UserWithRelations } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
+import { canManageAdmins, getScopeMode } from "~~/server/utils/permissionScope";
 import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 
 import { admin, allocation, billing, loginAttempts, maintenanceRequest, room, student, user, visitor, visitorLogs } from "../schema";
