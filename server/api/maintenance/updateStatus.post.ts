@@ -1,7 +1,9 @@
 import { maintenanceQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { userId, companyId } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
+
+  const { userId, companyId } = scope;
 
   try {
     const body = await readValidatedBody(event, body => maintenanceStatusResponseSchema.safeParse(body));
@@ -30,6 +32,7 @@ export default defineEventHandler(async (event) => {
     const adminMakingRequest = await getAdminByUserId(
       userId,
       true,
+      scope,
     );
 
     if (!adminMakingRequest) {

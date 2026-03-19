@@ -1,12 +1,13 @@
 import { userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
+  const { adminData } = scope;
   try {
     const { getUsers } = await userQueries();
 
-    const result = await getUsers(adminData);
+    const result = await getUsers(scope);
 
     const { users } = result;
 

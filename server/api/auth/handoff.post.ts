@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getUserById, getAdminByUserId } = await userQueries();
+    const { getUserById, getAdminByUserIdUnscoped } = await userQueries();
     const currentUser = await getUserById(consumed.userId);
 
     if (!currentUser || currentUser.role !== "admin") {
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const adminData = await getAdminByUserId(currentUser.id, true);
+    const adminData = await getAdminByUserIdUnscoped(currentUser.id, true);
     if (!adminData) {
       throw createError({
         statusCode: 403,

@@ -1,8 +1,8 @@
 import { maintenanceQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { userId } = await adminSessionCheck(event);
-
+  const scope = await adminSessionCheck(event);
+  const { userId } = scope;
   try {
     const { getAdminByUserId } = await userQueries();
     const { getAllMaintenanceRequests, getMaintenanceStatusCount } = await maintenanceQueries();
@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
     const adminMakingRequest = await getAdminByUserId(
       userId,
       true,
+      scope,
     );
 
     if (!adminMakingRequest) {

@@ -6,9 +6,9 @@ import { randomUUID } from "uncrypto";
 import { getEmailTemplate, getWelcomeAdminTemplate } from "~/utils/emailTemplate";
 
 export default defineEventHandler(async (event) => {
-  const { adminData, userId } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
-  const companyId = adminData.companyId;
+  const { userId, companyId } = scope;
 
   if (!companyId) {
     throw createError({
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const { getAdminByUserId, checkIfUserExists } = await userQueries();
 
-  const creatorAdminDetails = await getAdminByUserId(userId);
+  const creatorAdminDetails = await getAdminByUserId(userId, true, scope);
 
   if (!creatorAdminDetails) {
     throw createError({

@@ -1,19 +1,9 @@
 import { userQueries } from "~~/server/db/queries/user";
 
 export default defineEventHandler(async (event) => {
-  const session = await getPortalUserSession(event);
+  const scope = await adminSessionCheck(event);
 
-  if (
-    !session
-    || !session.user
-    || session.user.role !== "admin"
-    || session.user.adminData?.status !== "active"
-  ) {
-    throw createError({
-      statusCode: 403,
-      message: "Access denied: Must be a verified active admin",
-    });
-  }
+  const { userId: currentUserId } = scope;
 
   try {
     const body = await readValidatedBody(event, body => promoteDemoteSchema.safeParse(body));
@@ -24,8 +14,6 @@ export default defineEventHandler(async (event) => {
         message: `Invalid data: ${body.error.issues.map(i => i.message).join(", ")}`,
       });
     }
-
-    const currentUserId = session.user.id;
 
     const {
       userId,
@@ -46,6 +34,7 @@ export default defineEventHandler(async (event) => {
     const adminMakingRequest = await getAdminByUserId(
       currentUserId,
       true,
+      scope,
     );
 
     if (!adminMakingRequest) {
@@ -83,6 +72,7 @@ export default defineEventHandler(async (event) => {
         const targetAdmin = await getAdminByUserId(
           userId,
           false,
+          scope,
         );
 
         if (!targetAdmin) {
@@ -109,7 +99,7 @@ export default defineEventHandler(async (event) => {
         if (hostelId !== undefined) promotionPayload.hostelId = hostelId;
 
         if (adminMakingRequest.accessLevel === "super") {
-          const promotedAdmin = await createOrUpdateAdminForUser(userId, promotionPayload);
+          const promotedAdmin = await createOrUpdateAdminForUser(userId, promotionPayload, scope);
           return {
             message: "User successfully promoted.",
             data: promotedAdmin,
@@ -139,7 +129,7 @@ export default defineEventHandler(async (event) => {
 
         promotionPayload.hostelId = adminMakingRequest.hostelId;
 
-        const promotedAdmin = await createOrUpdateAdminForUser(userId, promotionPayload);
+        const promotedAdmin = await createOrUpdateAdminForUser(userId, promotionPayload, scope);
 
         return {
           message: `User promoted to admin for hostel ID ${adminMakingRequest.hostelId}.`,

@@ -16,21 +16,27 @@ export async function roomQueries() {
   const { db } = useDB();
 
   const applyRoomScope = (scope: AdminScope) => {
-    if (scope.isPlatformAdmin) return [];
-    if (scope.companyId && scope.companyRole === "owner") return [eq(room.companyId, scope.companyId)];
-    if (scope.hostelId) return [eq(room.hostelId, scope.hostelId)];
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return [];
+
+    if (mode === "company" && scope.companyId) return [eq(room.companyId, scope.companyId)];
+
+    if (mode === "hostel" && scope.hostelId) return [eq(room.hostelId, scope.hostelId)];
 
     return [sql`FALSE`];
   };
 
   const applyHostelScope = (scope: AdminScope) => {
-    if (scope.isPlatformAdmin) return [];
-    if (scope.companyId && scope.companyRole === "owner") {
-      return [eq(hostel.companyId, scope.companyId)];
-    }
-    if (scope.hostelId) return [eq(hostel.id, scope.hostelId)];
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return [];
+    if (mode === "company" && scope.companyId) return [eq(hostel.companyId, scope.companyId)];
+
+    if (mode === "hostel" && scope.hostelId) return [eq(hostel.id, scope.hostelId)];
+
     return [sql`FALSE`];
-  };
+  }; ;
 
   // --- STUDENT & pUBLIC QUERIES ---
   const getHostelByCode = async (joinCode: string) => {
@@ -317,9 +323,12 @@ export async function roomQueries() {
 
       if (!targetAllocation) throw new Error("Allocation not found");
 
-      if (!scope.isPlatformAdmin && targetAllocation.room.companyId !== scope.companyId) {
-        throw new Error("Unauthorized access to allocation");
-      }
+      const mode = getScopeMode(scope);
+      const isAuthorized = mode === "platform"
+        || (mode === "company" && targetAllocation.room.companyId === scope.companyId)
+        || (mode === "hostel" && targetAllocation.room.hostelId === scope.hostelId);
+
+      if (!isAuthorized) throw new Error("Unauthorized access to allocation");
 
       const [updatedAllocation] = await tx
         .update(allocation)

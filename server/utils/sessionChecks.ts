@@ -32,6 +32,7 @@ export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
       companyId: null,
       companyRole: null,
       companyMemberStatus: undefined,
+      hostelId: undefined,
     };
   }
 
@@ -61,6 +62,7 @@ export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
     companyId: membership.companyId,
     companyRole: membership.role,
     companyMemberStatus: membership.status,
+    hostelId: adminData.hostelId ?? undefined,
   };
 }
 

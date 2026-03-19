@@ -28,7 +28,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       updateUserLastLogin,
       getOnboardedStudent,
       getUserByEmail,
-      getAdminByUserId,
+      getAdminByUserIdUnscoped,
       recordLoginAttempt,
     } = await userQueries();
 
@@ -115,7 +115,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
     let hasActiveAllocation = false;
 
     if (currentUser.role === "admin") {
-      adminData = await getAdminByUserId(currentUser.id, true);
+      adminData = await getAdminByUserIdUnscoped(currentUser.id, true);
 
       if (!adminData) {
         throw createError({

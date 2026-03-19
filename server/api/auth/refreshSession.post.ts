@@ -46,7 +46,9 @@ export default defineEventHandler(async (event) => {
     let hasActiveAllocation = false;
 
     if (freshUser.role === "admin") {
-      adminData = await getAdminByUserId(freshUser.id, true);
+      const scope = await adminSessionCheck(event);
+
+      adminData = await getAdminByUserId(freshUser.id, true, scope);
 
       if (!adminData) {
         throw createError({

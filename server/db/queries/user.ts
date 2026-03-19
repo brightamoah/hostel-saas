@@ -1,7 +1,7 @@
-import type { Admin, FailedAttempts, UserWithRelations } from "~~/shared/types";
+import type { AdminScope, FailedAttempts, UserWithRelations } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, lt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 
 import { admin, allocation, billing, loginAttempts, maintenanceRequest, room, student, user, visitor, visitorLogs } from "../schema";
 
@@ -127,6 +127,35 @@ const studentWithRelations = {
 export async function userQueries() {
   const { db } = useDB();
 
+  const applyAdminTableScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return [];
+    if (mode === "company") return [eq(admin.companyId, scope.companyId!)];
+    if (mode === "hostel") return [eq(admin.hostelId, scope.hostelId!)];
+    return [sql`FALSE`];
+  };
+
+  const applyStudentTableScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return [];
+    if (mode === "company") return [eq(student.companyId, scope.companyId!)];
+    if (mode === "hostel") {
+      // Logic: Students assigned to rooms in the admin's hostel
+      return [
+        exists(
+          db.select()
+            .from(allocation)
+            .innerJoin(room, eq(allocation.roomId, room.id))
+            .where(and(
+              eq(allocation.studentId, student.id),
+              eq(room.hostelId, scope.hostelId!),
+            )),
+        ),
+      ];
+    }
+    return [sql`FALSE`];
+  };
+
   /**
    * Updates the `lastLogin` field for a user to the current date and time.
    * @async
@@ -138,6 +167,20 @@ export async function userQueries() {
       lastLogin: new Date(),
     }).where(eq(user.id, userId));
   }
+
+  const getUserByEmail = async (email: string) => {
+    const existingUser = await db.query.user.findFirst({
+      where: eq(user.email, email.toLowerCase().trim()),
+    });
+    return existingUser;
+  };
+
+  const getUserById = async (id: number) => {
+    const existingUser = await db.query.user.findFirst({
+      where: eq(user.id, id),
+    });
+    return existingUser;
+  };
 
   const getStudentIdByUserId = async (userId: number) => {
     const studentRecord = await db.query.student.findFirst({
@@ -195,20 +238,6 @@ export async function userQueries() {
       });
   };
 
-  const getUserByEmail = async (email: string) => {
-    const existingUser = await db.query.user.findFirst({
-      where: eq(user.email, email),
-    });
-    return existingUser;
-  };
-
-  const getUserById = async (id: number) => {
-    const existingUser = await db.query.user.findFirst({
-      where: eq(user.id, id),
-    });
-    return existingUser;
-  };
-
   const getStudentByUserId = async (id: number) => {
     const existingStudent = await db.query.student.findFirst({
       where: eq(student.userId, id),
@@ -223,45 +252,21 @@ export async function userQueries() {
     return existingStudent;
   };
 
-  const getUsers = async (currentAdmin: Admin): Promise<UserStats> => {
-    let targetUserIds: number[] | null = null;
+  const getUsers = async (scope: AdminScope): Promise<UserStats> => {
+    const mode = getScopeMode(scope);
 
-    const emptyStats = (): UserStats => ({
-      users: [],
-      totalUsers: 0,
-      totalStudents: 0,
-      totalAdmins: 0,
-      activeStudents: 0,
-    });
-
-    if (currentAdmin.accessLevel !== "super") {
-      if (!currentAdmin.hostelId) return emptyStats();
-
-      const [adminUserIds, studentUserIds] = await Promise.all([
-        db
-          .select({ userId: admin.userId })
-          .from(admin)
-          .where(eq(admin.hostelId, currentAdmin.hostelId))
-          .then(rows => rows.map(r => r.userId)),
-
-        db.select({ userId: student.userId })
-          .from(student)
-          .innerJoin(allocation, eq(allocation.studentId, student.id))
-          .innerJoin(room, eq(room.id, allocation.roomId))
-          .where(eq(room.hostelId, currentAdmin.hostelId))
-          .then(students => students.map(s => s.userId)),
-      ]);
-
-      targetUserIds = [...new Set([...adminUserIds, ...studentUserIds])];
-
-      if (targetUserIds.length === 0) return emptyStats();
-    }
+    const userFilter = mode === "platform"
+      ? sql`TRUE`
+      : or(
+          exists(db.select().from(admin).where(and(eq(admin.userId, user.id), ...applyAdminTableScope(scope)))),
+          exists(db.select().from(student).where(and(eq(student.userId, user.id), ...applyStudentTableScope(scope)))),
+        );
 
     const [users, [stats]] = await Promise.all([
       db.query.user.findMany({
-        ...userWithRelations,
-        where: targetUserIds ? inArray(user.id, targetUserIds) : undefined,
+        where: userFilter,
         orderBy: asc(user.id),
+        ...userWithRelations,
       }),
 
       db.select({
@@ -272,11 +277,8 @@ export async function userQueries() {
       })
         .from(user)
         .leftJoin(student, eq(student.userId, user.id))
-        .where(
-          targetUserIds ? inArray(user.id, targetUserIds) : undefined,
-        ),
+        .where(userFilter),
     ]);
-
     const result = stats || {
       totalUsers: 0,
       totalStudents: 0,
@@ -319,17 +321,23 @@ export async function userQueries() {
     return count.length;
   };
 
-  const getAdminByUserId = async (userId: number, activeOnly = false) => {
-    const whereConditions = [eq(admin.userId, userId)];
+  const getAdminByUserId = async (userId: number, activeOnly = false, scope: AdminScope) => {
+    return await db.query.admin.findFirst({
+      where: and(
+        eq(admin.userId, userId),
+        activeOnly ? eq(admin.status, "active") : sql`TRUE`,
+        ...applyAdminTableScope(scope),
+      ),
+    });
+  };
 
-    if (activeOnly) whereConditions.push(eq(admin.status, "active"));
-
-    const [result] = await db
-      .select()
-      .from(admin)
-      .where(and(...whereConditions));
-
-    return result;
+  const getAdminByUserIdUnscoped = async (userId: number, activeOnly = false) => {
+    return await db.query.admin.findFirst({
+      where: and(
+        eq(admin.userId, userId),
+        activeOnly ? eq(admin.status, "active") : sql`TRUE`,
+      ),
+    });
   };
 
   const checkIfUserExists = async (email: string): Promise<boolean> => {
@@ -386,45 +394,39 @@ export async function userQueries() {
     accessLevel?: "regular" | "super" | "support";
     hostelId?: number | null;
     companyId?: number | null;
-  }) => {
+  }, scope: AdminScope) => {
+    if (!canManageAdmins(scope)) {
+      throw createError({
+        statusCode: 403,
+        message: "Unauthorized to manage admins",
+      });
+    }
+
     return await db.transaction(async (tx) => {
       const existingAdmin = await tx.query.admin.findFirst({
         where: eq(admin.userId, userId),
       });
 
-      if (existingAdmin) {
-        const [updatedUser] = await tx
-          .update(admin)
-          .set({
-            phoneNumber: payload.phoneNumber ?? existingAdmin.phoneNumber,
-            department: payload.department ?? existingAdmin.department,
-            accessLevel: payload.accessLevel ?? existingAdmin.accessLevel,
-            hostelId: payload.hostelId === undefined ? existingAdmin.hostelId : payload.hostelId,
-            status: "active",
-          })
-          .where(eq(admin.userId, userId))
-          .returning();
-
-        await tx.update(user).set({ role: "admin" }).where(eq(user.id, userId));
-        return updatedUser;
+      if (existingAdmin && getScopeMode(scope) !== "platform" && existingAdmin.companyId !== scope.companyId) {
+        throw new Error("Target user is outside your company scope");
       }
 
-      const [insertedAdmin] = await tx
-        .insert(admin)
-        .values({
-          userId,
-          phoneNumber: payload.phoneNumber!,
-          department: payload.department!,
-          accessLevel: payload.accessLevel!,
-          hostelId: payload.hostelId,
-          companyId: payload.companyId!,
-          status: "active",
-        })
-        .returning();
+      const values = {
+        userId,
+        phoneNumber: payload.phoneNumber!,
+        department: payload.department!,
+        accessLevel: payload.accessLevel!,
+        hostelId: payload.hostelId!,
+        companyId: scope.isPlatformAdmin ? payload.companyId! : scope.companyId!,
+        status: "active" as const,
+      };
+
+      const [result] = existingAdmin
+        ? await tx.update(admin).set(values).where(eq(admin.id, existingAdmin.id)).returning()
+        : await tx.insert(admin).values(values).returning();
 
       await tx.update(user).set({ role: "admin" }).where(eq(user.id, userId));
-
-      return insertedAdmin;
+      return result;
     });
   };
 
@@ -534,6 +536,7 @@ export async function userQueries() {
     getTotalAdmins,
     getActiveStudentsCount,
     getAdminByUserId,
+    getAdminByUserIdUnscoped,
     checkIfUserExists,
     // getUsersScoped,
     deleteUsersByIds,

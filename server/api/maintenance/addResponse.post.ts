@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     const { responseText, maintenanceId } = body.data;
 
     const { addMaintenanceResponse, findMaintenanceRequestById } = await maintenanceQueries();
-    const { getAdminByUserId, getStudentByUserId } = await userQueries();
+    const { getAdminByUserIdUnscoped, getStudentByUserId } = await userQueries();
 
     const request = await findMaintenanceRequestById(maintenanceId);
 
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
     let companyId: number;
 
-    const admin = await getAdminByUserId(user.id);
+    const admin = await getAdminByUserIdUnscoped(user.id, true);
 
     if (admin) {
       if (admin.accessLevel !== "super" && admin.hostelId !== request.hostelId) {
