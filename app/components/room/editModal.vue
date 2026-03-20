@@ -325,7 +325,7 @@ async function submitUpdate() {
           class="w-full"
         >
           <UTextarea
-            v-model.trim="editRoomState.features"
+            v-model="editRoomState.features"
             placeholder="Enter room features (comma separated)"
             class="w-full"
             :size="isMobile ? 'lg' : 'xl'"

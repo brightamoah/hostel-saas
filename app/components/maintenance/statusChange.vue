@@ -112,7 +112,7 @@ onMounted(() => clearState());
           class="w-full"
         >
           <UTextarea
-            v-model.trim="maintenanceStatusResponseState.responseText"
+            v-model="maintenanceStatusResponseState.responseText"
             label="Response Message"
             placeholder="Type your response here..."
             class="w-full"

@@ -89,7 +89,7 @@ watch(
             class="w-full"
           >
             <UInput
-              v-model.trim="addRoomState.roomNumber"
+              v-model="addRoomState.roomNumber"
               placeholder="Enter room number"
               class="w-full"
               :size="isMobile ? 'lg' : 'xl'"

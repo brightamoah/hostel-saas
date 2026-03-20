@@ -32,8 +32,8 @@ export default defineEventHandler(async (event) => {
       },
     ]
       = await Promise.all([
-        getScopedVisitors(adminMakingRequest),
-        getVisitorStatusCount(adminMakingRequest),
+        getScopedVisitors(scope),
+        getVisitorStatusCount(scope),
       ]);
 
     return {

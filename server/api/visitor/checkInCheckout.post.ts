@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     const newLog = await createVisitorLog(
       visitorId,
       action,
-      adminMakingRequest,
+      scope,
       adminMakingRequest.companyId!,
     );
 

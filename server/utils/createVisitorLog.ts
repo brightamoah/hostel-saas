@@ -1,9 +1,11 @@
+import type { AdminScope } from "~~/shared/types";
+
 import { eq } from "drizzle-orm";
 
 import { visitorQueries } from "../db/queries";
 import { visitor, visitorLogs } from "../db/schema";
 
-export async function createVisitorLog(visitorId: number, action: VisitorLog["action"], admin: Admin, companyId: number) {
+export async function createVisitorLog(visitorId: number, action: VisitorLog["action"], admin: AdminScope, companyId: number) {
   const { db } = useDB();
   const { getVisitorById } = await visitorQueries();
 
@@ -17,7 +19,12 @@ export async function createVisitorLog(visitorId: number, action: VisitorLog["ac
       });
     }
 
-    if (admin.accessLevel !== "super" && visitorRecord.hostelId !== admin.hostelId) {
+    const isPlatformAdmin = admin.isPlatformAdmin;
+    const isOwner = admin.companyRole === "owner";
+    const isAssignedHostel
+      = typeof admin.hostelId === "number" && visitorRecord.hostelId === admin.hostelId;
+
+    if (!(isPlatformAdmin || isOwner || isAssignedHostel)) {
       throw createError({
         statusCode: 403,
         message: "You do not have permission to modify visitors for this hostel.",
@@ -79,7 +86,7 @@ export async function createVisitorLog(visitorId: number, action: VisitorLog["ac
       .insert(visitorLogs)
       .values({
         visitorId,
-        adminId: admin.id,
+        adminId: admin.adminData.id,
         action,
         companyId,
       })

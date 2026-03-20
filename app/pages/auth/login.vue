@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { RouteNamedMap } from "vue-router/auto-routes";
+
 definePageMeta({
   layout: "auth",
   middleware: ["auth-redirect"],
@@ -9,6 +11,12 @@ const route = useRoute();
 const authStore = useAuthStore();
 const { isLoading, errorMessage } = storeToRefs(authStore);
 const { loginFields, login, clearStateAndErrors } = authStore;
+
+const signUpRouteName = computed<keyof RouteNamedMap>(() => {
+  const portalSurface = usePortalSurface();
+  if (portalSurface === "admin") return "auth-registerCompany";
+  return "auth-signup";
+});
 
 onMounted(() => {
   clearStateAndErrors();
@@ -35,7 +43,7 @@ onMounted(() => {
       <template #description>
         Don't have an account?
         <ULink
-          :to="{ name: 'auth-registerCompany' }"
+          :to="{ name: signUpRouteName }"
           class="font-medium text-primary"
         >
           Sign up.

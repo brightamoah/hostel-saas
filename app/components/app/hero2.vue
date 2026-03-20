@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const { loggedIn, user } = usePortalUserSession();
-const config = useRuntimeConfig();
 
 const dashboardRoute = computed(() => {
   if (!loggedIn.value || !user.value) return "auth-login";
@@ -11,12 +10,7 @@ const dashboardRoute = computed(() => {
   }
 });
 
-const isAdminDomain = computed(() => {
-  const adminUrl = config.public.adminBaseUrl;
-  if (!adminUrl) return false;
-  const currentUrl = useRequestURL().href;
-  return currentUrl.startsWith(adminUrl) || currentUrl.includes("admin.");
-});
+const isAdminDomain = computed(() => usePortalSurface() === "admin");
 
 const features = ref([
   {

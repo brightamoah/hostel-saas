@@ -206,6 +206,7 @@ const roomStatusSchema = z.union([
 
 const roomNumberSchema = z
   .string()
+  .trim()
   .nonempty("Room number is required")
   .min(4, "Room number must be at least 4 characters long (e.g., A100)")
   .max(10, "Room number cannot exceed 10 characters")
@@ -217,6 +218,7 @@ const roomNumberSchema = z
 
 const roomFeatureSchema = z.union([
   z.string("Features is required")
+  .trim()
     .nonempty("Features is required")
     .refine(s => s.split(",").map(item => item.trim()).filter(Boolean).length > 0, "Features is required")
     .transform(s => s.split(",").map(item => item.trim()).filter(Boolean)),
@@ -490,6 +492,7 @@ const createComplaintSchema = z.object({
   roomId: createIdSchema("Room").optional().nullable(),
   studentId: createIdSchema("Student"),
   description: z.string()
+  .trim()
     .nonempty("Description is required")
     .min(10, "Description must be at least 10 characters long")
     .max(200, "Description cannot exceed 200 characters"),

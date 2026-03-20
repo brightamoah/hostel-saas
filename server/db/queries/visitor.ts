@@ -1,4 +1,4 @@
-import type { Admin, InsertEditVisitor, VisitorCreate } from "~~/shared/types";
+import type { AdminScope, InsertEditVisitor, VisitorCreate } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
@@ -80,62 +80,34 @@ const visitorWithRelations = {
 export async function visitorQueries() {
   const { db } = useDB();
 
-  const getVisitorsForSuperAdmin = async () => {
-    return await db.query.visitor.findMany({
-      ...visitorWithRelations,
-      orderBy: desc(visitor.visitDate),
-    });
-  };
-
-  const getVisitorsForRegularAdmin = async (admin: Admin) => {
-    if (!admin.hostelId) return [];
-
-    return await db.query.visitor.findMany({
-      ...visitorWithRelations,
-      where: eq(visitor.hostelId, admin.hostelId),
-      orderBy: desc(visitor.visitDate),
-    });
-  };
-
-  const getScopedVisitors = async (admin: Admin) => {
-    if (admin.accessLevel === "super") {
-      return await db.query.visitor.findMany({
-        ...visitorWithRelations,
-        orderBy: desc(visitor.visitDate),
-      });
+  const applyVisitorScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return [];
+    if (mode === "company" && scope.companyId) {
+      return [eq(visitor.companyId, scope.companyId)];
     }
+    if (mode === "hostel" && scope.hostelId) {
+      return [eq(visitor.hostelId, scope.hostelId)];
+    }
+    return [sql`FALSE`];
+  };
 
-    if (!admin.hostelId) return [];
-
+  const getScopedVisitors = async (scope: AdminScope) => {
     return await db.query.visitor.findMany({
       ...visitorWithRelations,
-      where: eq(visitor.hostelId, admin.hostelId),
+      where: and(...applyVisitorScope(scope)),
       orderBy: desc(visitor.visitDate),
     });
   };
 
-  const getVisitorById = async (visitorId: number, admin: Admin) => {
-    const whereConditions = [eq(visitor.id, visitorId)];
-
-    if (admin.accessLevel !== "super") whereConditions.push(eq(visitor.hostelId, admin.hostelId!));
-
-    const visitorRecord = await db.query.visitor.findFirst({
+  const getVisitorById = async (visitorId: number, scope: AdminScope) => {
+    return await db.query.visitor.findFirst({
       ...visitorWithRelations,
-      where: and(...whereConditions),
+      where: and(eq(visitor.id, visitorId), ...applyVisitorScope(scope)),
     });
-
-    return visitorRecord;
   };
 
-  const getVisitorStatusCount = async (admin: Admin) => {
-    const whereConditions = [];
-
-    if (admin.accessLevel !== "super") {
-      if (!admin.hostelId) return { approved: 0, checkedIn: 0, pending: 0 };
-
-      whereConditions.push(eq(visitor.hostelId, admin.hostelId));
-    }
-
+  const getVisitorStatusCount = async (scope: AdminScope) => {
     const [result] = await db
       .select({
         totalVisitors: count(visitor.id),
@@ -144,33 +116,33 @@ export async function visitorQueries() {
         pending: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
       })
       .from(visitor)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+      .where(and(...applyVisitorScope(scope)));
 
     return {
-      totalVisitors: result?.totalVisitors,
-      approved: result?.approved,
-      checkedIn: result?.checkedIn,
-      pending: result?.pending,
+      totalVisitors: result?.totalVisitors ?? 0,
+      approved: result?.approved ?? 0,
+      checkedIn: result?.checkedIn ?? 0,
+      pending: result?.pending ?? 0,
     };
   };
 
-  const getVisitorByIds = async (visitorIds: number[]) => {
+  const getVisitorByIds = async (visitorIds: number[], scope: AdminScope) => {
     const visitors = await db
       .query
       .visitor
       .findMany({
-        where: inArray(visitor.id, visitorIds),
+        where: and(inArray(visitor.id, visitorIds), ...applyVisitorScope(scope)),
         ...visitorWithRelations,
       });
     return visitors;
   };
 
-  const deleteVisitorsByIds = async (visitorIds: number[]) => {
+  const deleteVisitorsByIds = async (visitorIds: number[], scope: AdminScope) => {
     if (visitorIds.length === 0) return [];
 
     const deleteResult = await db
       .delete(visitor)
-      .where(inArray(visitor.id, visitorIds))
+      .where(and(inArray(visitor.id, visitorIds), ...applyVisitorScope(scope)))
       .returning();
     return deleteResult;
   };
@@ -217,7 +189,7 @@ export async function visitorQueries() {
     return newVisitor;
   };
 
-  const updateVisitor = async (visitorId: number, data: InsertEditVisitor) => {
+  const updateVisitorForStudent = async (visitorId: number, data: InsertEditVisitor) => {
     const [updatedVisitor] = await db
       .update(visitor)
       .set(data)
@@ -231,14 +203,12 @@ export async function visitorQueries() {
     getVisitorById,
     getVisitorByIds,
     getVisitorStatusCount,
-    getVisitorsForSuperAdmin,
-    getVisitorsForRegularAdmin,
     deleteVisitorsByIds,
     getVisitorsForStudent,
     getVisitorStatusCountForStudent,
     getVisitorForStudentById,
     createVisitor,
-    updateVisitor,
+    updateVisitorForStudent,
   };
 }
 

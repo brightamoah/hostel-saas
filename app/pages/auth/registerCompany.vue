@@ -104,7 +104,15 @@ async function nextTab() {
       </div>
     </template>
 
-    <div class="flex flex-col sm:justify-between sm:items-center md:-mt-6">
+    <UAlert
+      title="Only register here if you are the owner of a company or hostel."
+      description="If you are a staff member or manager, please ask your company owner or admin to create an account for you from the admin dashboard."
+      class="mx-auto md:-mt-8 max-w-4xl"
+      variant="subtle"
+      color="info"
+    />
+
+    <div class="flex flex-col sm:justify-between sm:items-center md:-mt-8">
       <UForm
         :schema="registerCompanySchema"
         :state="createCompanyState"

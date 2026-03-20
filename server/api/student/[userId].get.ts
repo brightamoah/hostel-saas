@@ -29,16 +29,14 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const hostelId = student.studentRecord.allocation?.room?.hostelId;
+    const hostelId = student.studentRecordWithBestAllocation.allocation?.room?.hostelId;
 
     let rooms: RoomInHostel[] = [];
 
-    if (hostelId) {
-      rooms = await getRoomsInHostel(hostelId);
-    }
+    if (hostelId) rooms = await getRoomsInHostel(hostelId);
 
     return {
-      student: student.studentRecord,
+      student: student?.studentRecordWithBestAllocation,
       totalBilled: student.totalBilled,
       totalPaid: student.totalPaid,
       balance: student.outstandingBalance,

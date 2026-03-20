@@ -1,7 +1,8 @@
 import { visitorQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
+  const { adminData } = scope;
 
   try {
     const body = await readValidatedBody(event, body => deleteItemSchema.safeParse(body));
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
 
     const { getVisitorByIds, deleteVisitorsByIds } = await visitorQueries();
 
-    const visitorsToDelete = await getVisitorByIds(ids);
+    const visitorsToDelete = await getVisitorByIds(ids, scope);
 
     if (visitorsToDelete.length !== ids.length) {
       const foundIds = new Set(visitorsToDelete.map(v => v.id));
@@ -36,7 +37,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (adminData.accessLevel !== "super") {
+    if (scope.companyRole !== "owner") {
       const unauthorizedVisitors = visitorsToDelete.filter(v => v.hostelId !== adminData.hostelId);
 
       if (unauthorizedVisitors.length > 0) {
@@ -72,7 +73,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const deletedVisitors = await deleteVisitorsByIds(ids);
+    const deletedVisitors = await deleteVisitorsByIds(ids, scope);
 
     const message = deletedVisitors.length > 1
       ? `Successfully deleted ${deletedVisitors.length} visitors.`

@@ -53,9 +53,9 @@ export default defineEventHandler(async (event) => {
       Object.assign(payload, { visitDate: visitDate.toString() });
     }
 
-    const { updateVisitor, getVisitorForStudentById } = await visitorQueries();
+    const { updateVisitorForStudent, getVisitorForStudentById } = await visitorQueries();
 
-    const updatedVisitor = await updateVisitor(visitorId, payload);
+    const updatedVisitor = await updateVisitorForStudent(visitorId, payload);
 
     if (!updatedVisitor) {
       const existingVisitor = await getVisitorForStudentById(visitorId);

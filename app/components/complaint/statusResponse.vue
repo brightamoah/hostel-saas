@@ -108,7 +108,7 @@ const {
           class="w-full"
         >
           <UTextarea
-            v-model.trim="complaintStatusResponseState.responseText"
+            v-model="complaintStatusResponseState.responseText"
             label="Response Message"
             placeholder="Type your response here..."
             class="w-full"
