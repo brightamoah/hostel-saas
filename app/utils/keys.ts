@@ -3,7 +3,7 @@ import type { CookieRef } from "#app";
 type IsMobileContext = ComputedRef<boolean>;
 type DashboardContext = {
   roommates: ComputedRef<Roommate[]>;
-  room: ComputedRef<StudentRoom>;
+  room: ComputedRef<StudentRoom | null>;
   visitors: ComputedRef<StudentVisitor[]>;
 };
 

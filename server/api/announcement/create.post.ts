@@ -1,7 +1,13 @@
 import { announcementQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { adminData, companyId } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
+  const {
+    companyId,
+    adminData,
+    hostelId,
+    isPlatformAdmin,
+  } = scope;
 
   try {
     const body = await readValidatedBody(event, body => createAnnouncementSchema.safeParse(body));
@@ -15,30 +21,78 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!companyId) {
+    if (!isPlatformAdmin && !companyId) {
       throw createError({
         statusCode: 403,
-        message: "You do not have permission to create announcements. Please contact support if you believe this is an error.",
+        message: "Your account is not linked to a company. Access denied.",
       });
     }
 
-    const { createAnnouncement } = await announcementQueries();
-
-    const { content, priority, targetAudience, title, targetHostelId, targetRoomId, targetUserId } = body.data;
-
-    const cleanContent = sanitizeHtmlContent(content);
-
-    const newAnnouncement = await createAnnouncement({
-      content: cleanContent,
+    const {
+      content,
       priority,
       targetAudience,
       title,
       targetHostelId,
       targetRoomId,
       targetUserId,
+    } = body.data;
+
+    const mode = getScopeMode(scope);
+
+    if (mode === "hostel") {
+      if (targetAudience === "hostel" && targetHostelId !== hostelId) {
+        throw createError({
+          statusCode: 403,
+          message: "Permission denied: You can only post announcements to your assigned hostel.",
+        });
+      }
+    }
+
+    if (targetAudience === "hostel" && !targetHostelId) {
+      throw createError({
+        statusCode: 400,
+        message: "Target Hostel is required for this audience.",
+      });
+    }
+
+    if (targetAudience === "room" && !targetRoomId) {
+      throw createError({
+        statusCode: 400,
+        message: "Target Room is required for this audience.",
+      });
+    }
+
+    if (targetAudience === "user" && !targetUserId) {
+      throw createError({
+        statusCode: 400,
+        message: "Target User is required for direct announcements.",
+      });
+    }
+
+    const cleanContent = sanitizeHtmlContent(content);
+    const { createAnnouncement } = await announcementQueries();
+
+    const targetCompanyId = isPlatformAdmin ? body.data.companyId : companyId;
+
+    if (!targetCompanyId && targetAudience !== "all") {
+      throw createError({
+        statusCode: 400,
+        message: "A Company ID is required for targeted announcements.",
+      });
+    }
+
+    const newAnnouncement = await createAnnouncement({
+      content: cleanContent,
+      priority,
+      targetAudience,
+      title,
+      targetHostelId: targetAudience === "hostel" ? targetHostelId : null,
+      targetRoomId: targetAudience === "room" ? targetRoomId : null,
+      targetUserId: targetAudience === "user" ? targetUserId : null,
       postedBy: adminData.id,
-      companyId,
-    });
+      companyId: targetCompanyId,
+    }, scope);
 
     return {
       success: true,

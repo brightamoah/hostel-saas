@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const announcements = await getAllAnnouncementsForAdmin(adminMakingRequest, userId);
+    const announcements = await getAllAnnouncementsForAdmin(scope);
 
     if (!announcements?.length) return [];
 

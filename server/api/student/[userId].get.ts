@@ -3,7 +3,7 @@ import type { RoomInHostel } from "~~/shared/types";
 import { roomQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  await requirePortalUserSession(event, {
+  const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
 
@@ -12,6 +12,13 @@ export default defineEventHandler(async (event) => {
     const { getRoomsInHostel } = await roomQueries();
 
     const userId = Number(getRouterParam(event, "userId"));
+
+    if (user.id !== userId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Forbidden: You do not have permission to access this student's dashboard.",
+      });
+    }
 
     if (!userId || Number.isNaN(Number(userId))) {
       throw createError({

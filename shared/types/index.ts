@@ -246,7 +246,7 @@ export type FilterOption = {
 export type Student = typeof student.$inferSelect;
 
 export type DashboardStudent = {
-  student: StudentDashboard["studentRecord"];
+  student: StudentDashboard["studentRecordWithBestAllocation"];
   totalBilled: StudentDashboard["totalBilled"];
   totalPaid: StudentDashboard["totalPaid"];
   balance: StudentDashboard["outstandingBalance"];
@@ -255,11 +255,10 @@ export type DashboardStudent = {
   rooms: RoomInHostel[];
 };
 
-export type Roommate = DashboardStudent["student"]["allocation"]["room"]["allocations"][number]["student"];
+export type StudentRoom = NonNullable<DashboardStudent["student"]["allocation"]>["room"];
+export type Roommate = NonNullable<StudentRoom>["allocations"][number]["student"];
 
-export type StudentRoom = DashboardStudent["student"]["allocation"]["room"];
-
-export type StudentVisitor = DashboardStudent["student"]["visitors"][number];
+export type StudentVisitor = DashboardStudent["student"]["visitors"][number]; ;
 
 export type Admin = Omit<typeof admin.$inferSelect, "createdAt" | "updatedAt">;
 

@@ -1,7 +1,7 @@
 import { announcementQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { adminData, userId } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
   try {
     const idFromParams = Number(getRouterParams(event).id);
@@ -34,13 +34,13 @@ export default defineEventHandler(async (event) => {
 
     const updatedAnnouncement = await editAnnouncement(
       announcementId,
-      adminData,
+      scope,
       data,
       resetReadStatus,
     );
 
     if (!updatedAnnouncement) {
-      const existingAnnouncement = await getAnnouncementById(announcementId, userId);
+      const existingAnnouncement = await getAnnouncementById(announcementId, scope);
 
       if (!existingAnnouncement) {
         throw createError({

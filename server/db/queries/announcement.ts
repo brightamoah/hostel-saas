@@ -1,8 +1,7 @@
-import type { Admin, AnnouncementInsert } from "~~/shared/types";
-import type { sql } from "drizzle-orm";
+import type { AdminScope, AnnouncementInsert } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { announcement, announcementReads } from "../schema";
 
@@ -34,42 +33,60 @@ const announcementWithRelations = {
   },
 } as const;
 
-type SQl = typeof sql;
-type AnnouncementColumns = typeof announcement._.columns;
-
 export async function announcementQueries() {
   const { db } = useDB();
 
-  const createAnnouncement = async (data: AnnouncementInsert) => {
+  const applyAnnouncementScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return [];
+
+    if (mode === "company") return [eq(announcement.companyId, scope.companyId!)];
+
+    if (mode === "hostel") {
+      return [
+        and(
+          eq(announcement.companyId, scope.companyId!),
+          or(
+            eq(announcement.targetHostelId, scope.hostelId!),
+            eq(announcement.postedBy, scope.adminData.id),
+            inArray(announcement.targetAudience, ["all", "admins"]),
+          ),
+        ),
+      ];
+    }
+
+    return [sql`FALSE`];
+  };
+
+  const createAnnouncement = async (data: AnnouncementInsert, scope: AdminScope) => {
+    const payload = {
+      ...data,
+      companyId: scope.isPlatformAdmin ? data.companyId : scope.companyId!,
+    };
+
     const [newAnnouncement] = await db
       .insert(announcement)
-      .values(data)
+      .values(payload)
       .returning();
     return newAnnouncement;
   };
 
   const editAnnouncement = async (
     announcementId: number,
-    admin: Admin,
+    scope: AdminScope,
     data: Partial<AnnouncementInsert>,
     resetReadStatus = false,
   ) => {
-    const valuesToUpdate = {
-      ...data,
-      updatedAt: new Date(),
-    };
-
-    const whereClause = admin.accessLevel === "super"
-      ? eq(announcement.id, announcementId)
-      : and(
-          eq(announcement.id, announcementId),
-          eq(announcement.postedBy, admin.id),
-        );
-
     const [updatedAnnouncement] = await db
       .update(announcement)
-      .set(valuesToUpdate)
-      .where(whereClause)
+      .set({
+        ...data,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(announcement.id, announcementId),
+        ...applyAnnouncementScope(scope),
+      ))
       .returning();
 
     if (updatedAnnouncement && resetReadStatus) {
@@ -81,51 +98,40 @@ export async function announcementQueries() {
     return updatedAnnouncement;
   };
 
-  const getAllAnnouncementsForAdmin = async (admin: Admin, userId: number) => {
-    const queryOptions = {
+  const getAllAnnouncementsForAdmin = async (scope: AdminScope) => {
+    const userId = scope.userId;
+
+    return await db.query.announcement.findMany({
       ...announcementWithRelations,
+      where: and(...applyAnnouncementScope(scope)),
       orderBy: desc(announcement.postedAt),
-      extras: (table: AnnouncementColumns, { sql }: { sql: SQl }) => ({
+      extras: {
         isRead: sql<boolean>`EXISTS (
         SELECT 1 FROM ${announcementReads} ar
-        WHERE ar.announcement_id = ${table.id}
+        WHERE ar.announcement_id = ${announcement.id}
         AND ar.user_id = ${userId}
       )`.as("is_read"),
-      }),
-    };
-
-    if (admin.accessLevel === "super") {
-      return await db
-        .query
-        .announcement
-        .findMany(queryOptions);
-    }
-
-    if (!admin.hostelId) return [];
-
-    return await db
-      .query
-      .announcement
-      .findMany({
-        ...queryOptions,
-        where: eq(announcement.postedBy, admin.id),
-      });
+      },
+    });
   };
 
-  const getAnnouncementById = async (announcementId: number, userId: number) => {
+  const getAnnouncementById = async (announcementId: number, scope: AdminScope) => {
     return await db
       .query
       .announcement
       .findFirst({
         ...announcementWithRelations,
-        where: eq(announcement.id, announcementId),
-        extras: (table, { sql }) => ({
+        where: and(
+          eq(announcement.id, announcementId),
+          ...applyAnnouncementScope(scope),
+        ),
+        extras: {
           isRead: sql<boolean>`EXISTS (
-        SELECT 1 FROM ${announcementReads} ar
-        WHERE ar.announcement_id = ${table.id}
-        AND ar.user_id = ${userId}
-      )`.as("is_read"),
-        }),
+          SELECT 1 FROM ${announcementReads} ar
+          WHERE ar.announcement_id = ${announcement.id}
+          AND ar.user_id = ${scope.userId}
+        )`.as("is_read"),
+        },
       });
   };
 
@@ -159,11 +165,21 @@ export async function announcementQueries() {
     userId: number,
     hostelId: number | null | undefined,
     roomId: number | null | undefined,
+    companyId: number,
   ) => {
     const audienceFilters = [
-      eq(announcement.targetAudience, "all"),
-      eq(announcement.targetAudience, "students"),
-      and(eq(announcement.targetAudience, "user"), eq(announcement.targetUserId, userId)),
+      and(
+        isNull(announcement.companyId),
+        eq(announcement.targetAudience, "all"),
+      ),
+      and(
+        inArray(announcement.targetAudience, ["students", "all"]),
+        eq(announcement.companyId, companyId),
+      ),
+      and(
+        eq(announcement.targetAudience, "user"),
+        eq(announcement.targetUserId, userId),
+      ),
     ];
 
     if (hostelId) {
@@ -182,13 +198,13 @@ export async function announcementQueries() {
       ...announcementWithRelations,
       where: or(...audienceFilters),
       orderBy: desc(announcement.postedAt),
-      extras: (table, { sql }) => ({
+      extras: {
         isRead: sql<boolean>`EXISTS (
         SELECT 1 FROM ${announcementReads} ar
-        WHERE ar.announcement_id = ${table.id}
+        WHERE ar.announcement_id = ${announcement.id}
         AND ar.user_id = ${userId}
       )`.as("is_read"),
-      }),
+      },
     });
 
     return result;

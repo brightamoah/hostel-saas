@@ -23,13 +23,13 @@ const {
 } = useFetchStudentDashboardData();
 
 const roommates = computed<Roommate[]>(() => {
-  return student.value?.allocation?.room?.allocations.filter(allocation => allocation.student.id !== student.value?.id)
+  return student.value?.allocation?.room?.allocations.filter(allocation => allocation.student.id !== student.value?.id && ["active", "pending"].includes(allocation.status))
     .map(allocation => allocation.student) ?? [];
 });
 
-const room = computed(() => student.value?.allocation?.room);
+const room = computed(() => student.value?.allocation?.room ?? null);
 
-const visitors = computed(() => student.value?.visitors ?? null);
+const visitors = computed(() => student.value?.visitors ?? []);
 
 provide(dashboardKey, {
   roommates,

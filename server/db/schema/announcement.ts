@@ -32,7 +32,7 @@ export const announcement = pgTable("announcement", t => ({
   targetHostelId: t.integer().references(() => hostel.id, { onDelete: "set null" }),
   targetRoomId: t.integer().references(() => room.id, { onDelete: "set null" }),
   targetUserId: t.integer().references(() => user.id, { onDelete: "set null" }),
-  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  companyId: t.integer().references(() => company.id, { onDelete: "restrict" }),
   updatedAt: t.timestamp()
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
@@ -44,7 +44,7 @@ export const announcementReads = pgTable("announcement_reads", t => ({
   announcementId: t.integer().notNull().references(() => announcement.id, { onDelete: "cascade" }),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
   readDate: t.timestamp().defaultNow().notNull(),
-  companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  companyId: t.integer().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp(),
 }), table => [

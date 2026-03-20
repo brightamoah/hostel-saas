@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { User } from "#auth-utils";
 import type { NavigationFailure, RouteLocationRaw } from "vue-router";
+import type { RouteNamedMap } from "vue-router/auto-routes";
 
 const { handleSignOut, isLoggedIn, user } = defineProps<{
   isLoggedIn: boolean;
@@ -8,10 +9,17 @@ const { handleSignOut, isLoggedIn, user } = defineProps<{
   handleSignOut: () => Promise<false | void | RouteLocationRaw | NavigationFailure>;
 }>();
 
+const portalSurface = usePortalSurface();
+
 const { userInitials, userBadgeColor, avatarBgColor } = useUseUserItems();
 
 const dashboardIcon = computed(() =>
   user?.role === "admin" ? "i-lucide-monitor" : "i-lucide-graduation-cap",
+);
+
+const signUpRouteName = computed<keyof RouteNamedMap>(() => portalSurface === "admin"
+  ? "auth-registerCompany"
+  : "auth-signup",
 );
 
 const userMenuItems = computed<UserMenuItem[][]>(() => {
@@ -128,7 +136,7 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
         label="Signup"
         color="neutral"
         variant="subtle"
-        :to="{ name: 'auth-signup' }"
+        :to="{ name: signUpRouteName }"
         block
       />
     </div>

@@ -218,7 +218,7 @@ const roomNumberSchema = z
 
 const roomFeatureSchema = z.union([
   z.string("Features is required")
-  .trim()
+    .trim()
     .nonempty("Features is required")
     .refine(s => s.split(",").map(item => item.trim()).filter(Boolean).length > 0, "Features is required")
     .transform(s => s.split(",").map(item => item.trim()).filter(Boolean)),
@@ -492,7 +492,7 @@ const createComplaintSchema = z.object({
   roomId: createIdSchema("Room").optional().nullable(),
   studentId: createIdSchema("Student"),
   description: z.string()
-  .trim()
+    .trim()
     .nonempty("Description is required")
     .min(10, "Description must be at least 10 characters long")
     .max(200, "Description cannot exceed 200 characters"),
@@ -565,6 +565,7 @@ export const createAnnouncementSchema = z.object({
   targetHostelId: createIdSchema("Target Hostel").optional(),
   targetRoomId: createIdSchema("Target Room").optional(),
   targetUserId: createIdSchema("Target User").optional(),
+  companyId: createIdSchema("Company").optional(),
 }).superRefine((data, ctx) => {
   if (data.targetAudience === "hostel" && !data.targetHostelId) {
     ctx.addIssue({
