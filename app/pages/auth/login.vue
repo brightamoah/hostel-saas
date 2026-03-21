@@ -12,8 +12,9 @@ const authStore = useAuthStore();
 const { isLoading, errorMessage } = storeToRefs(authStore);
 const { loginFields, login, clearStateAndErrors } = authStore;
 
+const portalSurface = usePortalSurface();
+
 const signUpRouteName = computed<keyof RouteNamedMap>(() => {
-  const portalSurface = usePortalSurface();
   if (portalSurface === "admin") return "auth-registerCompany";
   return "auth-signup";
 });

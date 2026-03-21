@@ -258,8 +258,7 @@ export type DashboardStudent = {
 export type StudentRoom = NonNullable<DashboardStudent["student"]["allocation"]>["room"];
 export type Roommate = NonNullable<StudentRoom>["allocations"][number]["student"];
 
-export type StudentVisitor = DashboardStudent["student"]["visitors"][number]; ;
-
+export type StudentVisitor = DashboardStudent["student"]["visitors"][number];
 export type Admin = Omit<typeof admin.$inferSelect, "createdAt" | "updatedAt">;
 
 export type AdminScope = {

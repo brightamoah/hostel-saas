@@ -74,7 +74,8 @@ export default defineEventHandler(async (event) => {
 
     const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${newUser.id}`;
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newUser, "KayaNest");
+    const BRAND = "KayaNest";
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newUser, BRAND);
 
     try {
       if (import.meta.dev) {
@@ -82,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
         await sendMail({
           to: email,
-          subject: "Verify your email address - Kings Hostel Management",
+          subject: `Verify your email address - ${BRAND}`,
           html: htmlTemplate,
           text: textTemplate,
         });
@@ -93,7 +94,7 @@ export default defineEventHandler(async (event) => {
         await mailer.send({
           from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
           to: { name: newUser.name, email },
-          subject: "Verify your email address - Kings Hostel Management",
+          subject: `Verify your email address - ${BRAND}`,
           html: htmlTemplate,
           text: textTemplate,
         });

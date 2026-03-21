@@ -7,6 +7,20 @@ export default defineEventHandler(async (event) => {
   const { getErrorMessage } = getSpecificRoomError();
 
   try {
+    if (!scope.isPlatformAdmin && !scope.companyId) {
+      throw createError({
+        statusCode: 403,
+        message: "Your account is not linked to a company. Access denied.",
+      });
+    }
+
+    if (!scope.isPlatformAdmin && scope.companyRole !== "owner") {
+      throw createError({
+        statusCode: 403,
+        message: "Only company owners can delete rooms. Access denied.",
+      });
+    }
+
     const body = await readValidatedBody(event, body => deleteItemSchema.safeParse(body));
 
     if (!body.success) {

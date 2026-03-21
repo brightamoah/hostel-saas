@@ -20,7 +20,7 @@ export async function createVisitorLog(visitorId: number, action: VisitorLog["ac
     }
 
     const isPlatformAdmin = admin.isPlatformAdmin;
-    const isOwner = admin.companyRole === "owner";
+    const isOwner = admin.companyRole === "owner" && admin.companyId === visitorRecord.companyId;
     const isAssignedHostel
       = typeof admin.hostelId === "number" && visitorRecord.hostelId === admin.hostelId;
 

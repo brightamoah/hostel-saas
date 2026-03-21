@@ -84,7 +84,7 @@ export default defineNuxtConfig({
     pageTransition: { name: "page", mode: "out-in" },
     head: {
       link: [
-        { rel: "icon", type: "image/x-icon", href: "/logo.svg" },
+        { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
       ],
     },
   },

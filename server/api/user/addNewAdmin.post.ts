@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
   if (!assignedHostelId) {
     throw createError({
       statusCode: 400,
-      message: "Assigned hostel not found. Please verify the hostel ID and try again.",
+      message: "A hostel assignment is required. Please provide a valid hostel ID.",
     });
   }
 
@@ -115,7 +115,6 @@ export default defineEventHandler(async (event) => {
       message: "Assigned hostel not found. Please verify the hostel ID and try again.",
     });
   }
-
   try {
     const newAdminUser = await db.transaction(async (txn) => {
       const [newUser] = await txn

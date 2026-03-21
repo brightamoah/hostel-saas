@@ -75,14 +75,15 @@ export default defineEventHandler(async (event) => {
 
     const verificationUrl = `${siteUrl}/auth/verifyEmail?token=${verificationToken}&id=${existingUser.id}`;
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, existingUser, "KayaNest");
+    const BRAND = "KayaNest";
+    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, existingUser, BRAND);
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();
 
       await sendMail({
         to: normalizedEmail,
-        subject: "Verify your email address - Kings Hostel Management",
+        subject: `Verify your email address - ${BRAND}`,
         html: htmlTemplate,
         text: textTemplate,
       });
@@ -93,7 +94,7 @@ export default defineEventHandler(async (event) => {
       await mailer.send({
         from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
         to: { name: existingUser.name, email: existingUser.email },
-        subject: "Verify your email address - Kings Hostel Management",
+        subject: `Verify your email address - ${BRAND}`,
         html: htmlTemplate,
         text: textTemplate,
       });

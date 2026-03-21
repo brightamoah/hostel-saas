@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
     adminData,
     hostelId,
     isPlatformAdmin,
+    companyRole,
   } = scope;
 
   try {
@@ -38,21 +39,33 @@ export default defineEventHandler(async (event) => {
       targetUserId,
     } = body.data;
 
-    const mode = getScopeMode(scope);
+    let finalCompanyId: number | null = null;
+    let finalTargetHostelId: number | null = null;
 
-    if (mode === "hostel") {
-      if (targetAudience === "hostel" && targetHostelId !== hostelId) {
+    if (isPlatformAdmin) {
+      finalCompanyId = body.data.companyId ?? null;
+      finalTargetHostelId = targetHostelId ?? null;
+    }
+    else if (companyRole === "owner") {
+      finalCompanyId = companyId!;
+      finalTargetHostelId = targetHostelId ?? null;
+    }
+    else {
+      finalCompanyId = companyId!;
+
+      if (!hostelId) {
         throw createError({
-          statusCode: 403,
-          message: "Permission denied: You can only post announcements to your assigned hostel.",
+          statusCode: 400,
+          message: "Your staff account is not linked to a hostel. Access denied.",
         });
       }
+      finalTargetHostelId = hostelId;
     }
 
-    if (targetAudience === "hostel" && !targetHostelId) {
+    if (targetAudience === "hostel" && !finalTargetHostelId) {
       throw createError({
         statusCode: 400,
-        message: "Target Hostel is required for this audience.",
+        message: "A specific Hostel must be targeted for this audience type.",
       });
     }
 
@@ -70,28 +83,30 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    let saveTargetHostelId: number | null = null;
+
+    if (isPlatformAdmin || companyRole === "owner") {
+      if (targetAudience === "hostel" || targetAudience === "room") {
+        saveTargetHostelId = finalTargetHostelId;
+      }
+    }
+    else {
+      saveTargetHostelId = finalTargetHostelId;
+    }
+
     const cleanContent = sanitizeHtmlContent(content);
     const { createAnnouncement } = await announcementQueries();
-
-    const targetCompanyId = isPlatformAdmin ? body.data.companyId : companyId;
-
-    if (!targetCompanyId && targetAudience !== "all") {
-      throw createError({
-        statusCode: 400,
-        message: "A Company ID is required for targeted announcements.",
-      });
-    }
 
     const newAnnouncement = await createAnnouncement({
       content: cleanContent,
       priority,
       targetAudience,
       title,
-      targetHostelId: targetAudience === "hostel" ? targetHostelId : null,
+      targetHostelId: saveTargetHostelId,
       targetRoomId: targetAudience === "room" ? targetRoomId : null,
       targetUserId: targetAudience === "user" ? targetUserId : null,
       postedBy: adminData.id,
-      companyId: targetCompanyId,
+      companyId: finalCompanyId,
     }, scope);
 
     return {

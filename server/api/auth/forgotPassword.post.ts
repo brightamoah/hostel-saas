@@ -1,6 +1,7 @@
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { handleError } from "~~/server/utils/errorHandler";
+import { getResetPasswordTemplate } from "~~/shared/utils/emailTemplate";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
@@ -42,14 +43,15 @@ export default defineEventHandler(async (event) => {
 
     const resetUrl = `${event.headers.get("origin")}/auth/resetPassword?token=${resetToken}&id=${existingUser.id}`;
 
-    const { html, text } = getResetPasswordTemplate(resetUrl, existingUser.name, "KayaNest");
+    const appName = "KayaNest";
+    const { html, text } = getResetPasswordTemplate(resetUrl, existingUser.name, appName);
 
     if (import.meta.dev) {
       const { sendMail } = useNodeMailer();
 
       await sendMail({
         to: normalizedEmail,
-        subject: "Reset Your Password - Kings Hostel Management",
+        subject: `Reset Your Password - ${appName}`,
         html,
         text,
       });
@@ -60,7 +62,7 @@ export default defineEventHandler(async (event) => {
       await mailer.send({
         from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
         to: { name: existingUser.name, email: normalizedEmail },
-        subject: "Reset Your Password - Kings Hostel Management",
+        subject: `Reset Your Password - ${appName}`,
         html,
         text,
       });

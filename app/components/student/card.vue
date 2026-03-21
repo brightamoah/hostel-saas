@@ -144,9 +144,9 @@ function getLabel(id: string) {
       </template>
 
       <StudentRoom
-        v-if="card.id === 'room'"
+        v-if="card.id === 'room' && roomVal"
         :room-details
-        :room-val="roomVal!"
+        :room-val
       />
 
       <StudentVisitor v-else-if="card.id === 'visitors'" />

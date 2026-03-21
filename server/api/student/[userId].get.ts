@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     if (hostelId) rooms = await getRoomsInHostel(hostelId);
 
     return {
-      student: student?.studentRecordWithBestAllocation,
+      student: student.studentRecordWithBestAllocation,
       totalBilled: student.totalBilled,
       totalPaid: student.totalPaid,
       balance: student.outstandingBalance,

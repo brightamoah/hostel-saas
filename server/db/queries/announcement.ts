@@ -44,12 +44,18 @@ export async function announcementQueries() {
 
     if (mode === "hostel") {
       return [
-        and(
-          eq(announcement.companyId, scope.companyId!),
-          or(
-            eq(announcement.targetHostelId, scope.hostelId!),
-            eq(announcement.postedBy, scope.adminData.id),
+        or(
+          eq(announcement.targetHostelId, scope.hostelId!),
+          eq(announcement.postedBy, scope.adminData.id),
+          and(
+            eq(announcement.companyId, scope.companyId!),
+            isNull(announcement.targetHostelId),
             inArray(announcement.targetAudience, ["all", "admins"]),
+          ),
+          and(
+            isNull(announcement.companyId),
+            inArray(announcement.targetAudience, ["all", "admins"],
+            ),
           ),
         ),
       ];
@@ -170,11 +176,12 @@ export async function announcementQueries() {
     const audienceFilters = [
       and(
         isNull(announcement.companyId),
-        eq(announcement.targetAudience, "all"),
+        inArray(announcement.targetAudience, ["students", "all"]),
       ),
       and(
         inArray(announcement.targetAudience, ["students", "all"]),
         eq(announcement.companyId, companyId),
+        isNull(announcement.targetHostelId),
       ),
       and(
         eq(announcement.targetAudience, "user"),
@@ -184,13 +191,20 @@ export async function announcementQueries() {
 
     if (hostelId) {
       audienceFilters.push(
-        and(eq(announcement.targetAudience, "hostel"), eq(announcement.targetHostelId, hostelId)),
+        and(
+          eq(announcement.companyId, companyId),
+          eq(announcement.targetHostelId, hostelId),
+          inArray(announcement.targetAudience, ["hostel", "all", "students"]),
+        ),
       );
     }
 
     if (roomId) {
       audienceFilters.push(
-        and(eq(announcement.targetAudience, "room"), eq(announcement.targetRoomId, roomId)),
+        and(
+          eq(announcement.targetAudience, "room"),
+          eq(announcement.targetRoomId, roomId),
+        ),
       );
     }
 

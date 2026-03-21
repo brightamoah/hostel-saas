@@ -1,4 +1,15 @@
+// Simple HTML escape utility for XSS prevention in email templates
+// Escapes &, <, >, ", and '
 import type { User } from "#auth-utils";
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 /**
  * Drake palette — hex equivalents of OKLCH values for email client compatibility.
@@ -85,10 +96,21 @@ function divider(): string {
 }
 
 function primaryButton(label: string, url: string): string {
+  // Only allow http(s) URLs, fallback to '#'
+  let safeUrl = "#";
+  try {
+    const parsed = new URL(url, "http://dummy-base");
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      // Remove dangerous characters from href
+      safeUrl = escapeHtml(url);
+    }
+  } catch {
+    // fallback to '#'
+  }
   return `<table cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
     <tr>
       <td style="background-color:#3d8582;border-radius:6px;">
-        <a href="${url}" style="display:inline-block;padding:10px 13px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.01em;">${label}</a>
+        <a href="${safeUrl}" style="display:inline-block;padding:10px 13px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.01em;">${label}</a>
       </td>
     </tr>
   </table>`;
@@ -125,9 +147,10 @@ export function getEmailTemplate(
   user: Omit<User, "lastLogin" | "role">,
   hostelName: string,
 ) {
+  const safeUserName = escapeHtml(user.name);
   const bodyContent = `
     ${heading("Verify your email address")}
-    ${subtext(`Hi <b>${user.name}</b>, thanks for signing up. Please confirm your email address to activate your account.`)}
+    ${subtext(`Hi <b>${safeUserName}</b>, thanks for signing up. Please confirm your email address to activate your account.`)}
     ${primaryButton("Verify email address", verificationUrl)}
     <p style="margin:0 0 0px;font-size:13px;color:#6b7280;">Or copy this link into your browser:</p>
     ${codeBlock(verificationUrl)}
@@ -157,9 +180,10 @@ If you didn't create an account, you can safely ignore this email.
 }
 
 export function getResetPasswordTemplate(resetUrl: string, userName: string, hostelName: string) {
+  const safeUserName = escapeHtml(userName);
   const bodyContent = `
     ${heading("Reset your password")}
-    ${subtext(`Hi <b>${userName}</b>, we received a request to reset the password for your KayaNest account.`)}
+    ${subtext(`Hi <b>${safeUserName}</b>, we received a request to reset the password for your KayaNest account.`)}
     ${primaryButton("Reset password", resetUrl)}
     <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Or copy this link into your browser:</p>
     ${codeBlock(resetUrl)}
@@ -198,11 +222,14 @@ export function getWelcomeAdminTemplate(
     infoRow("Temporary password", tempPassword, true),
   ].join("\n");
 
+  // Ensure baseurl does not end with a slash to avoid double slashes in the URL
+  const normalizedBaseUrl = baseurl.replace(/\/+$/, "");
+  const safeAdminName = escapeHtml(adminName);
   const bodyContent = `
     ${heading("Your admin account is ready")}
-    ${subtext(`Hi <b>${adminName}</b>, your administrator account for KayaNest has been created. Use the credentials below to sign in.`)}
+    ${subtext(`Hi <b>${safeAdminName}</b>, your administrator account for KayaNest has been created. Use the credentials below to sign in.`)}
     ${infoTable(rows)}
-    ${primaryButton("LogIn To Your Account", `${baseurl}/auth/login`)}
+    ${primaryButton("LogIn To Your Account", `${normalizedBaseUrl}/auth/login`)}
     ${divider()}
     ${smallNote("For security, please <strong>change your password immediately</strong> after your first sign-in. Do not share these credentials with anyone.")}
   `;

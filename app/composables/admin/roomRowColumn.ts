@@ -1,6 +1,8 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Row } from "@tanstack/table-core";
 
+import type { RowActionItem } from "~/types/rowAction";
+
 type Toast = ReturnType<typeof useToast>;
 
 const RoomDetailsModal = defineAsyncComponent(() => import("~/components/room/detailsModal.vue"));
@@ -17,6 +19,7 @@ export function useRoomRowColumn(
 ) {
   const overlay = useOverlay();
   const roomStore = useRoomStore();
+  const { user } = usePortalUserSession();
   const { isLoading } = storeToRefs(roomStore);
 
   const openDetailsModal = (room: Room) => {
@@ -59,7 +62,7 @@ export function useRoomRowColumn(
   };
 
   function getRowItems(row: Row<Room>) {
-    return [
+    const actions: RowActionItem[] = [
       {
         type: "label",
         label: "Actions",
@@ -83,15 +86,22 @@ export function useRoomRowColumn(
           openEditModal(roomForEditForm, row.original.id);
         },
       },
-      {
-        label: "Delete Room",
-        icon: "i-lucide-trash-2",
-        color: "error",
-        onSelect() {
-          openDeleteModal(row.original.id, row.original.roomNumber);
-        },
-      },
     ];
+
+    if (user.value?.companyRole === "owner") {
+      actions.push(
+        {
+          label: "Delete Room",
+          icon: "i-lucide-trash-2",
+          color: "error",
+          onSelect() {
+            openDeleteModal(row.original.id, row.original.roomNumber);
+          },
+        },
+      );
+    }
+
+    return actions;
   }
 
   const statusColorMap: Record<Room["status"], string> = {

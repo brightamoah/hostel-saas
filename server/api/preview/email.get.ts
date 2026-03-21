@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
       getWelcomeAdminTemplate(
         "Kofi Mensah",
         "kofi@kayanest.app",
-        "Tmp$ecure91!",
+        "•••••••••••",
         hostel.name!,
         config.public.adminBaseUrl,
       ).html,

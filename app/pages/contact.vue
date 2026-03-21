@@ -12,7 +12,7 @@ useHead({
     { name: "color-scheme", content: "light dark" },
   ],
   link: [
-    { rel: "icon", type: "image/x-icon", href: "/logo.svg" },
+    { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
     { rel: "canonical", href: url },
   ],
 });
