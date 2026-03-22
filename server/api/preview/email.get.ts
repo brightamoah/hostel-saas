@@ -1,5 +1,5 @@
 import { roomQueries } from "~~/server/db/queries";
-import { getEmailTemplate, getResetPasswordTemplate, getWelcomeAdminTemplate } from "~~/shared/utils/emailTemplate";
+import { getBillingTemplate, getEmailTemplate, getResetPasswordTemplate, getWelcomeAdminTemplate } from "~~/shared/utils/emailTemplate";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
@@ -48,6 +48,17 @@ export default defineEventHandler(async (event) => {
         hostel.name!,
         config.public.adminBaseUrl,
       ).html,
+
+    "invoice": () => getBillingTemplate({
+      studentName: "Bright Amoah",
+      amount: "GHS 1,200.00",
+      dueDate: "September 30, 2024",
+      purpose: "Hostel accommodation for September 2024",
+      hostelName: hostel.name!,
+      dashboardUrl: config.public.siteBaseUrl,
+      invoiceNumber: `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
+      supportEmail: "support@kayanest.app",
+    }).html,
   };
 
   type TemplateKey = keyof typeof templates;

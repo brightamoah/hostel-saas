@@ -1,38 +1,22 @@
-import { complaintQueries, userQueries } from "~~/server/db/queries";
+import { complaintQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
-  const { userId } = scope;
 
   try {
     const {
       getComplaintStatusCount,
-      getAllComplaints,
+      getAllComplaintsScoped,
     } = await complaintQueries();
 
-    const { getAdminByUserId } = await userQueries();
-
-    const adminMakingRequest = await getAdminByUserId(
-      userId,
-      true,
-      scope,
-    );
-
-    if (!adminMakingRequest) {
-      throw createError({
-        statusCode: 403,
-        message: "Account for the admin making the request not found or is inactive.",
-      });
-    }
-
-    const complaints = await getAllComplaints(adminMakingRequest);
+    const complaints = await getAllComplaintsScoped(scope);
 
     const {
       totalComplaints,
       totalInProgress,
       totalPending,
       totalResolved,
-    } = await getComplaintStatusCount(adminMakingRequest);
+    } = await getComplaintStatusCount(scope);
 
     return {
       complaints,

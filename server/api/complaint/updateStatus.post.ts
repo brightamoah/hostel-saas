@@ -35,11 +35,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const hostelId = adminMakingRequest.accessLevel === "super"
-      ? undefined
-      : adminMakingRequest.hostelId!;
-
-    const complaintToUpdate = await getComplaintById(complaintId, adminMakingRequest);
+    const complaintToUpdate = await getComplaintById(complaintId, scope);
 
     if (!complaintToUpdate) {
       throw createError({
@@ -64,6 +60,11 @@ export default defineEventHandler(async (event) => {
 
     const companyId = complaintToUpdate.companyId ?? adminMakingRequest.companyId;
 
+    const newScope = {
+      ...scope,
+      companyId,
+    };
+
     if (complaintToUpdate.companyId !== adminMakingRequest.companyId) {
       throw createError({
         statusCode: 403,
@@ -72,12 +73,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const { updatedComplaint, newResponse } = await updateStatusAndAddResponse(
-      complaintId,
-      adminMakingRequest.id,
       status,
       responseText,
-      companyId,
-      hostelId,
+      complaintId,
+      newScope,
     );
 
     return {

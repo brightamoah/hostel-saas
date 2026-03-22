@@ -389,6 +389,7 @@ export async function roomQueries() {
               hostel: {
                 columns: {
                   name: true,
+                  companyId: true,
                 },
               },
             },

@@ -1,6 +1,6 @@
-import type { Admin, BillingInsert } from "~~/shared/types";
+import type { AdminScope, BillingInsert } from "~~/shared/types";
 
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 
 import type { paymentMethod } from "../schema";
 
@@ -31,7 +31,32 @@ type PaymentMethodType = typeof paymentMethod.enumValues[number];
 export async function billingQueries() {
   const { db } = useDB();
 
-  const getBillingById = async (billingId: number) => {
+  const applyBillingScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return [];
+    if (mode === "company" && scope.companyId) return [eq(billing.companyId, scope.companyId)];
+    if (mode === "hostel" && scope.hostelId) return [eq(billing.hostelId, scope.hostelId)];
+    return [sql`FALSE`];
+  };
+
+  const getBillingById = async (billingId: number, scope: AdminScope) => {
+    return await db
+      .query
+      .billing
+      .findFirst({
+        where: and(
+          eq(billing.id, billingId),
+          ...applyBillingScope(scope),
+        ),
+        extras: {
+          invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
+        },
+        ...billingWithRelations,
+      });
+  };
+
+  const getBillingByIdStudent = async (billingId: number) => {
     return await db
       .query
       .billing
@@ -44,51 +69,24 @@ export async function billingQueries() {
       });
   };
 
-  const getScopedBillingsAdmin = async (admin: Admin) => {
-    if (admin.accessLevel === "super") {
-      return await db
-        .query
-        .billing
-        .findMany({
-          extras: {
-            invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
-          },
-          ...billingWithRelations,
-        });
-    }
-
-    if (!admin.hostelId) return [];
-
+  const getScopedBillingsAdmin = async (scope: AdminScope) => {
     return await db
       .query
       .billing
       .findMany({
-        where: eq(billing.hostelId, admin.hostelId),
+        where: and(...applyBillingScope(scope)),
         extras: {
           invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
         },
         ...billingWithRelations,
+        orderBy: desc(billing.createdAt),
       });
   };
 
-  const getBillingStatusCount = async (admin: Admin) => {
-    const whereConditions = [];
+  const getBillingStatusCount = async (scope: AdminScope) => {
+    const filters = applyBillingScope(scope);
 
-    if (admin.accessLevel !== "super") {
-      if (!admin.hostelId) {
-        return {
-          totalBillings: 0,
-          totalPaid: 0,
-          totalUnpaid: 0,
-          totalPending: 0,
-          totalOverdue: 0,
-        };
-      }
-      whereConditions.push(eq(billing.hostelId, admin.hostelId));
-    }
-
-    //  Exclude cancelled bills from calculations to keep data accurate
-    whereConditions.push(ne(billing.status, "cancelled"));
+    filters.push(ne(billing.status, "cancelled"));
 
     const [result] = await db
       .select({
@@ -96,18 +94,18 @@ export async function billingQueries() {
         totalPaid: sql<number>`coalesce(sum(${billing.paidAmount}), 0)`,
         totalUnpaid: sql<number>`coalesce(sum(${billing.amount} - ${billing.paidAmount}), 0)`,
         totalOverdue: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' 
+        CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} NOT IN ('fully paid', "cancelled")
         THEN ${billing.amount} - ${billing.paidAmount} 
         ELSE 0 END
       ), 0)`,
         totalPending: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.dueDate} >= NOW() AND ${billing.status} != 'fully paid' 
+        CASE WHEN ${billing.dueDate} >= NOW() AND ${billing.status} NOT IN ('fully paid', 'cancelled')
         THEN ${billing.amount} - ${billing.paidAmount} 
         ELSE 0 END
       ), 0)`,
       })
       .from(billing)
-      .where(and(...whereConditions));
+      .where(and(...filters));
 
     return {
       totalBillings: Number(result?.totalBillings),
@@ -128,6 +126,7 @@ export async function billingQueries() {
           invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
         },
         ...billingWithRelations,
+        orderBy: desc(billing.createdAt),
       });
   };
 
@@ -150,7 +149,12 @@ export async function billingQueries() {
 
       })
       .from(billing)
-      .where(eq(billing.studentId, studentId));
+      .where(
+        and(
+          eq(billing.studentId, studentId),
+          ne(billing.status, "cancelled"),
+        ),
+      );
 
     return {
       totalBillings: Number(result?.totalBillings),
@@ -232,6 +236,7 @@ export async function billingQueries() {
     createPaymentIntent,
     markPaymentAsFailed,
     processSuccessfulPayment,
+    getBillingByIdStudent,
   };
 }
 

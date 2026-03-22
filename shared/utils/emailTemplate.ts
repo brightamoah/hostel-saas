@@ -104,7 +104,8 @@ function primaryButton(label: string, url: string): string {
       // Remove dangerous characters from href
       safeUrl = escapeHtml(url);
     }
-  } catch {
+  }
+  catch {
     // fallback to '#'
   }
   return `<table cellpadding="0" cellspacing="0" border="0" style="margin:20px 0;">
@@ -249,6 +250,91 @@ Temporary password: ${tempPassword}
 Please sign in and change your password immediately.
 
 — The ${hostelName} Team
+  `.trim();
+
+  return { html, text };
+}
+
+export function getBillingTemplate(params: {
+  studentName: string;
+  hostelName: string;
+  amount: string;
+  purpose: string;
+  dueDate: string;
+  invoiceNumber: string;
+  dashboardUrl: string;
+  supportEmail: string;
+}) {
+  const {
+    studentName,
+    hostelName,
+    amount,
+    purpose,
+    dueDate,
+    dashboardUrl,
+    invoiceNumber = `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
+    supportEmail = "support@kayanest.app",
+  } = params;
+
+  // Standalone detail table — full background, clear label/value contrast
+  const detailTable = `
+    <table width="100%" cellpadding="0" cellspacing="0" border="0"
+      style="margin:0 0 28px;border-radius:8px;border:1px solid #d1e8e6;overflow:hidden;">
+      <thead>
+        <tr style="background-color:#265757;">
+          <th style="padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.08em;
+            text-transform:uppercase;color:#96c8c5;text-align:left;">Invoice Detail</th>
+          <th style="padding:10px 16px;font-size:11px;font-weight:600;letter-spacing:0.08em;
+            text-transform:uppercase;color:#96c8c5;text-align:right;">&nbsp;</th>
+        </tr>
+      </thead>
+      <tbody>
+      <tr style="background-color:#ffffff;">
+          <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Invoice Number</td>
+          <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#265757;text-align:right;">${invoiceNumber}</td>
+        </tr>
+       <tr style="background-color:#ffffff;">
+          <td style="padding:12px 16px;font-size:13px;color:#6b7280;">Amount</td>
+          <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#265757;text-align:right;">${amount}</td>
+        </tr>
+        <tr style="background-color:#f9fafa;">
+        <td style="padding:12px 16px;font-size:13px;color:#6b7280;border-bottom:1px solid #e9f4f3;">Purpose</td>
+        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#265757;text-align:right;border-bottom:1px solid #e9f4f3;">${purpose}</td>
+        </tr>
+        <tr style="background-color:#ffffff;">
+          <td style="padding:12px 16px;font-size:13px;color:#6b7280;border-bottom:1px solid #e9f4f3;">Hostel</td>
+          <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#265757;text-align:right;border-bottom:1px solid #e9f4f3;">${hostelName}</td>
+        </tr>
+       
+      </tbody>
+    </table>`;
+
+  const bodyContent = `
+    ${heading("You have a new invoice")}
+    ${subtext(`Hi ${studentName}, an invoice has been raised for your stay at ${hostelName}.`)}
+    ${detailTable}
+    ${primaryButton("View & pay invoice", dashboardUrl)}
+    ${divider()}
+    ${smallNote(`If you think this was raised in error, contact us at <a href="mailto:${supportEmail}" style="color:#3d8582;text-decoration:none;">${supportEmail}</a>.`)}
+  `;
+
+  const html = shell(bodyContent, `Invoice for ${amount} — ${hostelName}`, hostelName);
+
+  const text = `
+Invoice for ${amount} — ${hostelName}
+
+Hi ${studentName},
+
+Amount due: ${amount}
+Due by:     ${dueDate}
+Hostel:     ${hostelName}
+Purpose:    ${purpose}
+
+Pay online: ${dashboardUrl}
+
+Raised in error? Contact us at ${supportEmail}
+
+— ${hostelName}
   `.trim();
 
   return { html, text };
