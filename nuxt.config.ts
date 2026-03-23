@@ -313,7 +313,7 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    zeroRuntime: true,
+    zeroRuntime: false,
   },
   ogImage: {
     enabled: false,
