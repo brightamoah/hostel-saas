@@ -25,9 +25,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    let hostelId: number | null = null;
+
     const {
       amountPerYear,
-      hostelId,
+      hostelId: hostelIdFromBody,
       capacity,
       currentOccupancy,
       features,
@@ -37,6 +39,15 @@ export default defineEventHandler(async (event) => {
       status,
       allowedGender,
     } = body.data;
+
+    hostelId = hostelIdFromBody;
+
+    if (!scope.isPlatformAdmin && scope.companyRole !== "owner") {
+      if (!scope.hostelId) {
+        throw createError({ statusCode: 403, message: "No hostel assigned to your account." });
+      }
+      hostelId = scope.hostelId;
+    }
 
     const existingRoom = await getExistingRoomByRoomNumberAndHostel(roomNumber, hostelId);
 

@@ -42,11 +42,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const hostelId = adminMakingRequest.accessLevel === "super"
-      ? undefined
-      : adminMakingRequest.hostelId!;
-
-    const maintenanceToUpdate = await getMaintenanceById(maintenanceId, adminMakingRequest);
+    const maintenanceToUpdate = await getMaintenanceById(maintenanceId, scope);
 
     if (!maintenanceToUpdate) {
       throw createError({
@@ -71,11 +67,9 @@ export default defineEventHandler(async (event) => {
 
     const { updatedRequest, newResponse } = await updateStatusAndAddResponse(
       maintenanceId,
-      adminMakingRequest.id,
-      companyId,
       status,
       responseText,
-      hostelId,
+      scope,
     );
 
     return {

@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const student = studentData.studentRecord;
+    const student = studentData.studentRecordWithBestAllocation;
 
     if (studentId !== student.id) {
       throw createError({

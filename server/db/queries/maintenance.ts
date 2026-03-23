@@ -1,4 +1,4 @@
-import type { Admin, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus } from "~~/shared/types";
+import type { AdminScope, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
@@ -38,40 +38,34 @@ const maintenanceWithRelations = {
 export async function maintenanceQueries() {
   const { db } = useDB();
 
-  const getAllMaintenanceRequests = async (admin: Admin) => {
-    if (admin.accessLevel === "super") {
-      return await db
-        .query
-        .maintenanceRequest
-        .findMany({
-          ...maintenanceWithRelations,
-          orderBy: desc(maintenanceRequest.requestDate),
-        });
-    }
+  const applyMaintenanceScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
 
-    if (!admin.hostelId) return [];
+    if (mode === "platform") return [];
+    if (mode === "company" && scope.companyId) return [eq(maintenanceRequest.companyId, scope.companyId)];
+    if (mode === "hostel" && scope.hostelId) return [eq(maintenanceRequest.hostelId, scope.hostelId)];
+    return [sql`FALSE`];
+  };
 
+  const getAllMaintenanceRequests = async (scope: AdminScope) => {
     return await db
       .query
       .maintenanceRequest
       .findMany({
         ...maintenanceWithRelations,
-        where: eq(maintenanceRequest.hostelId, admin.hostelId),
+        where: and(...applyMaintenanceScope(scope)),
         orderBy: desc(maintenanceRequest.requestDate),
       });
   };
 
-  const getMaintenanceById = async (id: number, admin: Admin) => {
-    const whereConditions = [eq(maintenanceRequest.id, id)];
-
-    if (admin.accessLevel !== "super") whereConditions.push(eq(maintenanceRequest.hostelId, admin.hostelId!));
-
-    const maintenanceRecord = await db.query.maintenanceRequest.findFirst({
+  const getMaintenanceById = async (id: number, scope: AdminScope) => {
+    return await db.query.maintenanceRequest.findFirst({
       ...maintenanceWithRelations,
-      where: and(...whereConditions),
+      where: and(
+        eq(maintenanceRequest.id, id),
+        ...applyMaintenanceScope(scope),
+      ),
     });
-
-    return maintenanceRecord;
   };
 
   const findMaintenanceRequestById = async (id: number) => {
@@ -80,22 +74,8 @@ export async function maintenanceQueries() {
     });
   };
 
-  const getMaintenanceStatusCount = async (admin: Admin) => {
-    const whereConditions = [];
-
-    if (admin.accessLevel !== "super") {
-      if (!admin.hostelId) {
-        return {
-          assigned: 0,
-          inProgress: 0,
-          pending: 0,
-          completed: 0,
-          rejected: 0,
-        };
-      }
-
-      whereConditions.push(eq(maintenanceRequest.hostelId, admin.hostelId));
-    }
+  const getMaintenanceStatusCount = async (scope: AdminScope) => {
+    const filters = applyMaintenanceScope(scope);
 
     const [result] = await db
       .select({
@@ -107,7 +87,7 @@ export async function maintenanceQueries() {
         rejected: count(sql`CASE WHEN ${maintenanceRequest.status} = 'rejected' THEN 1 END`),
       })
       .from(maintenanceRequest)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+      .where(and(...filters));
 
     return {
       totalMaintenance: result?.totalMaintenance,
@@ -151,17 +131,23 @@ export async function maintenanceQueries() {
 
   const updateStatusAndAddResponse = async (
     maintenanceId: number,
-    adminId: number,
-    companyId: number,
     status: MaintenanceStatus,
     responseText: string,
-    hostelId?: number,
+    scope: AdminScope,
   ) => {
     return db
       .transaction(async (tx) => {
-        const whereClause = hostelId
-          ? and(eq(maintenanceRequest.id, maintenanceId), eq(maintenanceRequest.hostelId, hostelId))
-          : eq(maintenanceRequest.id, maintenanceId);
+        const adminId = scope.adminData.id;
+        const companyId = scope.companyId!;
+
+        const target = await tx.query.maintenanceRequest.findFirst({
+          where: and(
+            eq(maintenanceRequest.id, maintenanceId),
+            ...applyMaintenanceScope(scope),
+          ),
+        });
+
+        if (!target) throw new Error("Maintenance request not found or unauthorized access.");
 
         const [updatedRequest] = await tx
           .update(maintenanceRequest)
@@ -169,7 +155,7 @@ export async function maintenanceQueries() {
             status,
             resolutionDate: status === "completed" ? new Date() : null,
           })
-          .where(whereClause)
+          .where(eq(maintenanceRequest.id, maintenanceId))
           .returning();
 
         const [newResponse] = await tx

@@ -1,24 +1,27 @@
 import { room } from "~~/server/db/schema";
-import { and, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
-  if (adminData.accessLevel !== "super") {
-    throw createError({
-      statusCode: 403,
-      message: "Forbidden: You do not have permission to perform this action.",
-    });
+  const { companyId, isPlatformAdmin } = scope;
+
+  const baseScope = [];
+  if (!isPlatformAdmin) {
+    baseScope.push(eq(room.companyId, companyId!));
+    if (scope.hostelId) baseScope.push(eq(room.hostelId, scope.hostelId));
   }
 
   try {
     const { db } = useDB();
+
     await db.update(room)
       .set({ allowedGender: "male" })
       .where(
         and(
+          ...baseScope,
           sql`${room.capacity} > ${room.currentOccupancy}`,
-          sql`${room.floor} % 2 != 0`, // odd floors are male
+          sql`${room.floor} % 2 != 0`,
         ),
       )
       .returning();
@@ -27,8 +30,9 @@ export default defineEventHandler(async (event) => {
       .set({ allowedGender: "female" })
       .where(
         and(
+          ...baseScope,
           sql`${room.capacity} > ${room.currentOccupancy}`,
-          sql`${room.floor} % 2 = 0`, // even floors are female
+          sql`${room.floor} % 2 = 0`,
         ),
       )
       .returning();

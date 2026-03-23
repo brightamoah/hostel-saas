@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const maintenanceRequests = await getAllMaintenanceRequests(adminMakingRequest);
+    const maintenanceRequests = await getAllMaintenanceRequests(scope);
 
     const {
       totalMaintenance,
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       pending,
       completed,
       rejected,
-    } = await getMaintenanceStatusCount(adminMakingRequest);
+    } = await getMaintenanceStatusCount(scope);
 
     return {
       maintenanceRequests,
