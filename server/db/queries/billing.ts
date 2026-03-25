@@ -84,35 +84,71 @@ export async function billingQueries() {
   };
 
   const getBillingStatusCount = async (scope: AdminScope) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const filters = applyBillingScope(scope);
 
-    filters.push(ne(billing.status, "cancelled"));
+    const activeFilters = [...filters, ne(billing.status, "cancelled")];
 
     const [result] = await db
       .select({
-        totalBillings: sql<number>`coalesce(sum(${billing.amount}), 0)`,
-        totalPaid: sql<number>`coalesce(sum(${billing.paidAmount}), 0)`,
-        totalUnpaid: sql<number>`coalesce(sum(${billing.amount} - ${billing.paidAmount}), 0)`,
-        totalOverdue: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} NOT IN ('fully paid', "cancelled")
-        THEN ${billing.amount} - ${billing.paidAmount} 
-        ELSE 0 END
+
+        totalBilledAbs: sql<number>`coalesce(sum(${billing.amount}), 0)`,
+        totalPaidAbs: sql<number>`coalesce(sum(${billing.paidAmount}), 0)`,
+
+        pendingAbs: sql<number>`coalesce(sum(
+        CASE WHEN ${billing.dueDate} >= NOW() AND ${billing.status} != 'fully paid' 
+        THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
       ), 0)`,
-        totalPending: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.dueDate} >= NOW() AND ${billing.status} NOT IN ('fully paid', 'cancelled')
-        THEN ${billing.amount} - ${billing.paidAmount} 
-        ELSE 0 END
+
+        overdueAbs: sql<number>`coalesce(sum(
+        CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' 
+        THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
       ), 0)`,
+
+        billedThisMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
+        billedLastMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfLastMonth} AND ${billing.createdAt} < ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
+
+        paidThisMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.updatedAt} >= ${startOfThisMonth} THEN ${billing.paidAmount} ELSE 0 END), 0)`,
+        paidLastMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.updatedAt} >= ${startOfLastMonth} AND ${billing.updatedAt} < ${startOfThisMonth} THEN ${billing.paidAmount} ELSE 0 END), 0)`,
+
+        pendingThisWeek: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} >= ${startOfThisWeek} AND ${billing.status} != 'fully paid' THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
+        pendingLastWeek: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} >= ${startOfLastWeek} AND ${billing.dueDate} < ${startOfThisWeek} AND ${billing.status} != 'fully paid' THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
+
+        overdueToday: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' AND ${billing.updatedAt} >= ${startOfToday} THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
+        overdueYesterday: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' AND ${billing.updatedAt} >= ${startOfYesterday} AND ${billing.updatedAt} < ${startOfToday} THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
       })
       .from(billing)
-      .where(and(...filters));
+      .where(and(...activeFilters));
 
     return {
-      totalBillings: Number(result?.totalBillings),
-      totalPaid: Number(result?.totalPaid || 0),
-      totalUnpaid: Number(result?.totalUnpaid || 0),
-      totalPending: Number(result?.totalPending || 0),
-      totalOverdue: Number(result?.totalOverdue || 0),
+      totalBillings: {
+        value: Number(result?.totalBilledAbs || 0),
+        percentage: calcChange(Number(result?.billedThisMonth || 0), Number(result?.billedLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      totalPaid: {
+        value: Number(result?.totalPaidAbs || 0),
+        percentage: calcChange(Number(result?.paidThisMonth || 0), Number(result?.paidLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      totalPending: {
+        value: Number(result?.pendingAbs || 0),
+        percentage: calcChange(Number(result?.pendingThisWeek || 0), Number(result?.pendingLastWeek || 0)),
+        period: "weekly" as Period,
+      },
+      totalOverdue: {
+        value: Number(result?.overdueAbs || 0),
+        percentage: calcChange(Number(result?.overdueToday || 0), Number(result?.overdueYesterday || 0)),
+        period: "daily" as Period,
+      },
     };
   };
 
@@ -131,24 +167,42 @@ export async function billingQueries() {
   };
 
   const getStudentBillingStatusCount = async (studentId: number) => {
+    const {
+      startOfToday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const [result] = await db
       .select({
-        totalBillings: sql<number>`coalesce(sum(${billing.amount}), 0)`,
-        totalPaid: sql<number>`coalesce(sum(${billing.paidAmount}), 0)`,
-        totalUnpaid: sql<number>`coalesce(sum(${billing.amount} - ${billing.paidAmount}), 0)`,
-        totalOverdue: sql<number>`coalesce(sum(
+        totalBilledAbs: sql<number>`coalesce(sum(${billing.amount}), 0)`,
+        totalPaidAbs: sql<number>`coalesce(sum(${billing.paidAmount}), 0)`,
+        balanceAbs: sql<number>`coalesce(sum(${billing.amount} - ${billing.paidAmount}), 0)`,
+        overdueAbs: sql<number>`coalesce(sum(
         CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' 
-        THEN ${billing.amount} - ${billing.paidAmount} 
-        ELSE 0 END
-      ), 0)`,
-        totalPending: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.dueDate} >= NOW() AND ${billing.status} != 'fully paid' 
-        THEN ${billing.amount} - ${billing.paidAmount} 
-        ELSE 0 END
+        THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
       ), 0)`,
 
+        billedThisMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
+        billedLastMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfLastMonth} AND ${billing.createdAt} < ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
+
+        paidThisWeek: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} >= ${startOfThisWeek} AND ${payment.status} = 'completed' THEN ${payment.amount} ELSE 0 END), 0)`,
+        paidLastWeek: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} >= ${startOfLastWeek} AND ${payment.paymentDate} < ${startOfThisWeek} AND ${payment.status} = 'completed' THEN ${payment.amount} ELSE 0 END), 0)`,
+
+        balanceLastMonth: sql<number>`coalesce(sum(
+        CASE WHEN ${billing.createdAt} < ${startOfThisMonth} 
+        THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
+      ), 0)`,
+
+        overdueYesterday: sql<number>`coalesce(sum(
+        CASE WHEN ${billing.dueDate} < ${startOfToday} AND ${billing.status} != 'fully paid' 
+        THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
+      ), 0)`,
       })
       .from(billing)
+      .leftJoin(payment, eq(payment.billingId, billing.id))
       .where(
         and(
           eq(billing.studentId, studentId),
@@ -157,11 +211,26 @@ export async function billingQueries() {
       );
 
     return {
-      totalBillings: Number(result?.totalBillings),
-      totalPaid: Number(result?.totalPaid || 0),
-      totalUnpaid: Number(result?.totalUnpaid || 0),
-      totalPending: Number(result?.totalPending || 0),
-      totalOverdue: Number(result?.totalOverdue || 0),
+      totalBilled: {
+        value: Number(result?.totalBilledAbs || 0),
+        percentage: calcChange(Number(result?.billedThisMonth || 0), Number(result?.billedLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      totalPaid: {
+        value: Number(result?.totalPaidAbs || 0),
+        percentage: calcChange(Number(result?.paidThisWeek || 0), Number(result?.paidLastWeek || 0)),
+        period: "weekly" as Period,
+      },
+      balance: {
+        value: Number(result?.balanceAbs || 0),
+        percentage: calcChange(Number(result?.balanceAbs || 0), Number(result?.balanceLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      overdue: {
+        value: Number(result?.overdueAbs || 0),
+        percentage: calcChange(Number(result?.overdueAbs || 0), Number(result?.overdueYesterday || 0)),
+        period: "daily" as Period,
+      },
     };
   };
 
@@ -242,3 +311,7 @@ export async function billingQueries() {
 
 type BillingWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getBillingById"]>>;
 export type BillingType = NonNullable<BillingWithRelations>;
+
+export type AdminBillingStats = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getBillingStatusCount"]>>;
+
+export type StudentBillingStats = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getStudentBillingStatusCount"]>>;

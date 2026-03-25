@@ -1,14 +1,7 @@
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
   try {
-    if (!adminData) {
-      throw createError({
-        statusCode: 403,
-        message: "Account for the admin making the request not found or is inactive.",
-      });
-    }
-
     const body = await readValidatedBody(event, body => approveDenySchema.safeParse(body));
 
     if (!body.success) {
@@ -22,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
     const { visitorId, status } = body.data;
 
-    const updatedVisitor = await updateVisitorStatus(visitorId, status, adminData);
+    const updatedVisitor = await updateVisitorStatus(visitorId, status, scope);
 
     return {
       success: true,

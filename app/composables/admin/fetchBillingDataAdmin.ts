@@ -9,11 +9,12 @@ export function useFetchBillingDataAdmin() {
     cache: "default",
     default: () => ({
       billings: [],
-      totalBillings: 0,
-      totalPaid: 0,
-      totalUnpaid: 0,
-      totalPending: 0,
-      totalOverdue: 0,
+      stats: {
+        totalBillings: { value: 0, percentage: 0, period: "monthly" as const },
+        totalPaid: { value: 0, percentage: 0, period: "monthly" as const },
+        totalPending: { value: 0, percentage: 0, period: "weekly" as const },
+        totalOverdue: { value: 0, percentage: 0, period: "daily" as const },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;

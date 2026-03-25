@@ -109,21 +109,58 @@ export async function visitorQueries() {
   };
 
   const getVisitorStatusCount = async (scope: AdminScope) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const [result] = await db
       .select({
-        totalVisitors: count(visitor.id),
-        approved: count(sql`CASE WHEN ${visitor.status} = 'approved' THEN 1 END`),
-        checkedIn: count(sql`CASE WHEN ${visitor.status} = 'checked-in' THEN 1 END`),
-        pending: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
+        totalThisMonth: count(sql`CASE WHEN ${visitor.visitDate} >= ${startOfThisMonth} THEN 1 END`),
+        totalLastMonth: count(sql`CASE WHEN ${visitor.visitDate} >= ${startOfLastMonth} AND ${visitor.visitDate} < ${startOfThisMonth} THEN 1 END`),
+
+        approvedThisMonth: count(sql`CASE WHEN ${visitor.status} = 'approved' AND ${visitor.visitDate} >= ${startOfThisMonth} THEN 1 END`),
+        approvedLastMonth: count(sql`CASE WHEN ${visitor.status} = 'approved' AND ${visitor.visitDate} >= ${startOfLastMonth} AND ${visitor.visitDate} < ${startOfThisMonth} THEN 1 END`),
+
+        checkedInThisWeek: count(sql`CASE WHEN ${visitor.status} = 'checked-in' AND ${visitor.visitDate} >= ${startOfThisWeek} THEN 1 END`),
+        checkedInLastWeek: count(sql`CASE WHEN ${visitor.status} = 'checked-in' AND ${visitor.visitDate} >= ${startOfLastWeek} AND ${visitor.visitDate} < ${startOfThisWeek} THEN 1 END`),
+
+        pendingToday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfToday} THEN 1 END`),
+        pendingYesterday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfYesterday} AND ${visitor.visitDate} < ${startOfToday} THEN 1 END`),
+
+        totalAbs: count(visitor.id),
+        approvedAbs: count(sql`CASE WHEN ${visitor.status} = 'approved' THEN 1 END`),
+        checkedInAbs: count(sql`CASE WHEN ${visitor.status} = 'checked-in' THEN 1 END`),
+        pendingAbs: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
       })
       .from(visitor)
       .where(and(...applyVisitorScope(scope)));
 
     return {
-      totalVisitors: result?.totalVisitors ?? 0,
-      approved: result?.approved ?? 0,
-      checkedIn: result?.checkedIn ?? 0,
-      pending: result?.pending ?? 0,
+      totalVisitors: {
+        value: result?.totalAbs ?? 0,
+        percentage: calcChange(result?.totalThisMonth ?? 0, result?.totalLastMonth ?? 0),
+        period: "monthly" as Period,
+      },
+      approved: {
+        value: result?.approvedAbs ?? 0,
+        percentage: calcChange(result?.approvedThisMonth ?? 0, result?.approvedLastMonth ?? 0),
+        period: "monthly" as Period,
+      },
+      checkedIn: {
+        value: result?.checkedInAbs ?? 0,
+        percentage: calcChange(result?.checkedInThisWeek ?? 0, result?.checkedInLastWeek ?? 0),
+        period: "weekly" as Period,
+      },
+      pending: {
+        value: result?.pendingAbs ?? 0,
+        percentage: calcChange(result?.pendingToday ?? 0, result?.pendingYesterday ?? 0),
+        period: "daily" as Period,
+      },
     };
   };
 
@@ -253,3 +290,5 @@ export async function visitorQueries() {
 type VisitorWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof visitorQueries>>["getVisitorById"]>>;
 export type Visitor = NonNullable<VisitorWithRelations>;
 export type StudentVisitorStats = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof visitorQueries>>["getVisitorStatusCountForStudent"]>>>;
+
+export type VisitorStats = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof visitorQueries>>["getVisitorStatusCount"]>>>;

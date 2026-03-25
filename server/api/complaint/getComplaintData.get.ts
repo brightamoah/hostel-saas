@@ -11,19 +11,11 @@ export default defineEventHandler(async (event) => {
 
     const complaints = await getAllComplaintsScoped(scope);
 
-    const {
-      totalComplaints,
-      totalInProgress,
-      totalPending,
-      totalResolved,
-    } = await getComplaintStatusCount(scope);
+    const stats = await getComplaintStatusCount(scope);
 
     return {
       complaints,
-      totalComplaints,
-      totalInProgress,
-      totalPending,
-      totalResolved,
+      stats,
     };
   }
   catch (error) {

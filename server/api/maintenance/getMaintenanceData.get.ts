@@ -22,23 +22,11 @@ export default defineEventHandler(async (event) => {
 
     const maintenanceRequests = await getAllMaintenanceRequests(scope);
 
-    const {
-      totalMaintenance,
-      inProgress,
-      assigned,
-      pending,
-      completed,
-      rejected,
-    } = await getMaintenanceStatusCount(scope);
+    const stats = await getMaintenanceStatusCount(scope);
 
     return {
       maintenanceRequests,
-      totalMaintenance,
-      inProgress,
-      assigned,
-      pending,
-      completed,
-      rejected,
+      stats,
     };
   }
   catch (error) {

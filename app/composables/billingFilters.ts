@@ -2,7 +2,7 @@ import { capitalize } from "vue";
 
 export function useBillingFilters(
   table: TableType<Billing>,
-  data: DataType<BillingResponse>,
+  data: DataType<BillingResponse | BillingDataResponseStudent>,
 ) {
   const statusFilter = ref("");
   const statusFilterOptions = computed(() => billingStatusSchema.options.map(status => ({

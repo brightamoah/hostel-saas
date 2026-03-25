@@ -72,24 +72,61 @@ export async function complaintQueries() {
   };
 
   const getComplaintStatusCount = async (scope: AdminScope) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const filters = applyComplaintScope(scope);
 
     const [result] = await db
       .select({
-        totalComplaints: countDistinct(complaint.id),
-        pending: countDistinct(sql`CASE WHEN ${complaint.status} = 'pending' THEN ${complaint.id} END`),
-        inProgress: countDistinct(sql`CASE WHEN ${complaint.status} = 'in-progress' THEN ${complaint.id} END`),
-        resolved: countDistinct(sql`CASE WHEN ${complaint.status} = 'resolved' THEN ${complaint.id} END`),
+        totalAbs: countDistinct(complaint.id),
+        pendingAbs: count(sql`CASE WHEN ${complaint.status} = 'pending' THEN 1 END`),
+        inProgressAbs: count(sql`CASE WHEN ${complaint.status} = 'in-progress' THEN 1 END`),
+        resolvedAbs: count(sql`CASE WHEN ${complaint.status} = 'resolved' THEN 1 END`),
+
+        totalThisMonth: count(sql`CASE WHEN ${complaint.createdAt} >= ${startOfThisMonth} THEN 1 END`),
+        totalLastMonth: count(sql`CASE WHEN ${complaint.createdAt} >= ${startOfLastMonth} AND ${complaint.createdAt} < ${startOfThisMonth} THEN 1 END`),
+
+        pendingToday: count(sql`CASE WHEN ${complaint.status} = 'pending' AND ${complaint.createdAt} >= ${startOfToday} THEN 1 END`),
+        pendingYesterday: count(sql`CASE WHEN ${complaint.status} = 'pending' AND ${complaint.createdAt} >= ${startOfYesterday} AND ${complaint.createdAt} < ${startOfToday} THEN 1 END`),
+
+        inProgressThisWeek: count(sql`CASE WHEN ${complaint.status} = 'in-progress' AND ${complaint.updatedAt} >= ${startOfThisWeek} THEN 1 END`),
+        inProgressLastWeek: count(sql`CASE WHEN ${complaint.status} = 'in-progress' AND ${complaint.updatedAt} >= ${startOfLastWeek} AND ${complaint.updatedAt} < ${startOfThisWeek} THEN 1 END`),
+
+        resolvedThisMonth: count(sql`CASE WHEN ${complaint.status} = 'resolved' AND ${complaint.resolvedAt} >= ${startOfThisMonth} THEN 1 END`),
+        resolvedLastMonth: count(sql`CASE WHEN ${complaint.status} = 'resolved' AND ${complaint.resolvedAt} >= ${startOfLastMonth} AND ${complaint.resolvedAt} < ${startOfThisMonth} THEN 1 END`),
 
       })
       .from(complaint)
       .where(and(...filters));
 
     return {
-      totalComplaints: result?.totalComplaints ?? 0,
-      totalPending: result?.pending ?? 0,
-      totalInProgress: result?.inProgress ?? 0,
-      totalResolved: result?.resolved ?? 0,
+      total: {
+        value: Number(result?.totalAbs || 0),
+        percentage: calcChange(Number(result?.totalThisMonth || 0), Number(result?.totalLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      pending: {
+        value: Number(result?.pendingAbs || 0),
+        percentage: calcChange(Number(result?.pendingToday || 0), Number(result?.pendingYesterday || 0)),
+        period: "daily" as Period,
+      },
+      inProgress: {
+        value: Number(result?.inProgressAbs || 0),
+        percentage: calcChange(Number(result?.inProgressThisWeek || 0), Number(result?.inProgressLastWeek || 0)),
+        period: "weekly" as Period,
+      },
+      resolved: {
+        value: Number(result?.resolvedAbs || 0),
+        percentage: calcChange(Number(result?.resolvedThisMonth || 0), Number(result?.resolvedLastMonth || 0)),
+        period: "monthly" as Period,
+      },
     };
   };
 
@@ -319,3 +356,5 @@ type ComplaintWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof compl
 export type ComplaintType = NonNullable<ComplaintWithRelations>;
 
 export type ComplaintData = Awaited<ReturnType<Awaited<ReturnType<typeof complaintQueries>>["getStudentComplaints"]>>;
+
+export type AdminComplaintStats = Awaited<ReturnType<Awaited<ReturnType<typeof complaintQueries>>["getComplaintStatusCount"]>>;

@@ -24,12 +24,7 @@ export default defineEventHandler(async (event) => {
 
     const [
       visitors,
-      {
-        approved,
-        checkedIn,
-        pending,
-        totalVisitors,
-      },
+      stats,
     ]
       = await Promise.all([
         getScopedVisitors(scope),
@@ -38,11 +33,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       visitors,
-      approved,
-      checkedIn,
-      pending,
-      totalVisitors,
-      message: `Fetched visitor data for ${adminMakingRequest.accessLevel} admin`,
+      stats,
     };
   }
   catch (error) {

@@ -9,23 +9,13 @@ export default defineEventHandler(async (event) => {
       getStudentBillingStatusCount,
     } = await billingQueries();
 
-    const {
-      totalPaid,
-      totalUnpaid,
-      totalPending,
-      totalOverdue,
-      totalBillings,
-    } = await getStudentBillingStatusCount(studentId);
+    const stats = await getStudentBillingStatusCount(studentId);
 
     const billings = await getStudentScopedBillings(studentId);
 
     return {
       billings,
-      totalBillings,
-      totalPaid,
-      totalUnpaid,
-      totalPending,
-      totalOverdue,
+      stats,
     };
   }
   catch (error) {

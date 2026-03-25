@@ -1,4 +1,5 @@
 import type { CalendarDate } from "@internationalized/date";
+import type { AdminScope } from "~~/shared/types";
 
 import { getLocalTimeZone, parseAbsolute, parseDate, toCalendarDate, today } from "@internationalized/date";
 import { eq } from "drizzle-orm";
@@ -6,11 +7,11 @@ import { eq } from "drizzle-orm";
 import { visitorQueries } from "../db/queries";
 import { visitor } from "../db/schema";
 
-export async function updateVisitorStatus(visitorId: number, status: "approved" | "denied", admin: Admin) {
+export async function updateVisitorStatus(visitorId: number, status: "approved" | "denied", scope: AdminScope) {
   const { db } = useDB();
   const { getVisitorById } = await visitorQueries();
 
-  const visitorToUpdate = await getVisitorById(visitorId, admin);
+  const visitorToUpdate = await getVisitorById(visitorId, scope);
 
   if (!visitorToUpdate) {
     throw createError({
@@ -48,7 +49,7 @@ export async function updateVisitorStatus(visitorId: number, status: "approved" 
 
   const [updatedVisitor] = await db
     .update(visitor)
-    .set({ status, adminId: admin.id })
+    .set({ status, adminId: scope.adminData.id })
     .where(eq(visitor.id, visitorId))
     .returning();
 

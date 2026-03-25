@@ -7,10 +7,12 @@ export function useFetchComplaintData() {
     lazy: true,
     default: () => ({
       complaints: [],
-      totalComplaints: 0,
-      totalInProgress: 0,
-      totalPending: 0,
-      totalResolved: 0,
+      stats: {
+        total: { value: 0, percentage: 0, period: "daily" as const },
+        pending: { value: 0, percentage: 0, period: "daily" as const },
+        inProgress: { value: 0, percentage: 0, period: "weekly" as const },
+        resolved: { value: 0, percentage: 0, period: "monthly" as const },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;

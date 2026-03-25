@@ -6,12 +6,12 @@ import type { Table } from "@tanstack/vue-table";
 import type { useEditor } from "@tiptap/vue-3";
 import type { User } from "#auth-utils";
 import type { AnnouncementType } from "~~/server/db/queries/announcement";
-import type { BillingType } from "~~/server/db/queries/billing";
+import type { AdminBillingStats, BillingType, StudentBillingStats } from "~~/server/db/queries/billing";
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
-import type { Maintenance, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
+import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
 import type { AdminRoomStats, HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard, UserStats } from "~~/server/db/queries/user";
-import type { StudentVisitorStats, Visitor } from "~~/server/db/queries/visitor";
+import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
 import type { useSession } from "h3";
@@ -191,7 +191,7 @@ export type UserDataResponse = {
 
 export type VisitorDataResponse = {
   visitors: Visitor[];
-  stats: StudentVisitorStats;
+  stats: VisitorStats;
 
 };
 
@@ -293,6 +293,10 @@ export type MaintenanceEdit = {
   data: Partial<MaintenanceCreate>;
 };
 export type MaintenanceType = Maintenance;
+export type AdminMaintenanceDataResponse = {
+  maintenanceRequests: Maintenance[];
+  stats: MaintenanceStats;
+};
 export type MaintenanceDataResponse = {
   maintenanceRequests: StudentMaintenanceData["requests"];
   stats: StudentMaintenanceData["summary"];
@@ -378,11 +382,11 @@ export type BillingState = Partial<Omit<BillingInsert, "amount">> & { amount?: n
 export type Billing = BillingType;
 export type BillingResponse = {
   billings: Billing[];
-  totalBillings: number;
-  totalPaid: number;
-  totalUnpaid: number;
-  totalPending: number;
-  totalOverdue: number;
+  stats: AdminBillingStats;
+};
+
+export type BillingDataResponseStudent = Omit<BillingResponse, "stats"> & {
+  stats: StudentBillingStats;
 };
 
 export type PaystackStatus

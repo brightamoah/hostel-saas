@@ -3,18 +3,19 @@ export function useFetchBillingDataStudent() {
 
   const billingKey = computed(() => `billingData:${user.value?.id}`);
 
-  const { data, status, error, refresh } = useFetch<BillingResponse>("/api/billing/student/billings", {
+  const { data, status, error, refresh } = useFetch<BillingDataResponseStudent>("/api/billing/student/billings", {
     method: "GET",
     key: billingKey,
     lazy: true,
     cache: "default",
     default: () => ({
       billings: [],
-      totalBillings: 0,
-      totalPaid: 0,
-      totalUnpaid: 0,
-      totalPending: 0,
-      totalOverdue: 0,
+      stats: {
+        totalBilled: { value: 0, percentage: 0, period: "monthly" as const },
+        totalPaid: { value: 0, percentage: 0, period: "monthly" as const },
+        balance: { value: 0, percentage: 0, period: "weekly" as const },
+        overdue: { value: 0, percentage: 0, period: "daily" as const },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;

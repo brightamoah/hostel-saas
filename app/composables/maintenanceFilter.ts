@@ -1,4 +1,4 @@
-export function useMaintenanceFilter(table: TableType<MaintenanceType>, data: DataType<MaintenanceDataResponse>) {
+export function useMaintenanceFilter(table: TableType<MaintenanceType>, data: DataType<MaintenanceDataResponse | AdminMaintenanceDataResponse>) {
   const statusFilter = ref("");
   const statusFilterOptions = ref<FilterOption[]>([
     {

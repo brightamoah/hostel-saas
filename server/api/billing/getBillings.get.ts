@@ -1,7 +1,7 @@
 import { billingQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { adminData } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
   try {
     const {
@@ -9,23 +9,13 @@ export default defineEventHandler(async (event) => {
       getBillingStatusCount,
     } = await billingQueries();
 
-    const {
-      totalPaid,
-      totalUnpaid,
-      totalPending,
-      totalOverdue,
-      totalBillings,
-    } = await getBillingStatusCount(adminData);
+    const stats = await getBillingStatusCount(scope);
 
-    const billings = await getScopedBillingsAdmin(adminData);
+    const billings = await getScopedBillingsAdmin(scope);
 
     return {
       billings,
-      totalBillings,
-      totalPaid,
-      totalUnpaid,
-      totalPending,
-      totalOverdue,
+      stats,
     };
   }
   catch (error) {

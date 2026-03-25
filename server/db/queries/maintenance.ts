@@ -76,27 +76,64 @@ export async function maintenanceQueries() {
   };
 
   const getMaintenanceStatusCount = async (scope: AdminScope) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const filters = applyMaintenanceScope(scope);
 
     const [result] = await db
       .select({
-        totalMaintenance: countDistinct(maintenanceRequest.id),
-        inProgress: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' THEN 1 END`),
-        assigned: count(sql`CASE WHEN ${maintenanceRequest.status} = 'assigned' THEN 1 END`),
-        pending: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' THEN 1 END`),
-        completed: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' THEN 1 END`),
-        rejected: count(sql`CASE WHEN ${maintenanceRequest.status} = 'rejected' THEN 1 END`),
+        totalAbs: countDistinct(maintenanceRequest.id),
+        pendingAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' THEN 1 END`),
+        completedAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' THEN 1 END`),
+        inProgressAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' THEN 1 END`),
+        assignedAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'assigned' THEN 1 END`),
+        rejectedAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'rejected' THEN 1 END`),
+
+        totalThisMonth: count(sql`CASE WHEN ${maintenanceRequest.requestDate} >= ${startOfThisMonth} THEN 1 END`),
+        totalLastMonth: count(sql`CASE WHEN ${maintenanceRequest.requestDate} >= ${startOfLastMonth} AND ${maintenanceRequest.requestDate} < ${startOfThisMonth} THEN 1 END`),
+
+        pendingToday: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' AND ${maintenanceRequest.requestDate} >= ${startOfToday} THEN 1 END`),
+        pendingYesterday: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' AND ${maintenanceRequest.requestDate} >= ${startOfYesterday} AND ${maintenanceRequest.requestDate} < ${startOfToday} THEN 1 END`),
+
+        resolvedThisMonth: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' AND ${maintenanceRequest.resolutionDate} >= ${startOfThisMonth} THEN 1 END`),
+        resolvedLastMonth: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' AND ${maintenanceRequest.resolutionDate} >= ${startOfLastMonth} AND ${maintenanceRequest.resolutionDate} < ${startOfThisMonth} THEN 1 END`),
+
+        inProgressThisWeek: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' AND ${maintenanceRequest.updatedAt} >= ${startOfThisWeek} THEN 1 END`),
+        inProgressLastWeek: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' AND ${maintenanceRequest.updatedAt} >= ${startOfLastWeek} AND ${maintenanceRequest.updatedAt} < ${startOfThisWeek} THEN 1 END`),
       })
       .from(maintenanceRequest)
       .where(and(...filters));
 
     return {
-      totalMaintenance: result?.totalMaintenance,
-      inProgress: result?.inProgress,
-      assigned: result?.assigned,
-      pending: result?.pending,
-      completed: result?.completed,
-      rejected: result?.rejected,
+      totalMaintenance: {
+        value: Number(result?.totalAbs ?? 0),
+        percentage: calcChange(Number(result?.totalThisMonth || 0), Number(result?.totalLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      inProgress: {
+        value: Number(result?.inProgressAbs ?? 0),
+        percentage: calcChange(Number(result?.inProgressThisWeek || 0), Number(result?.inProgressLastWeek || 0)),
+        period: "weekly" as Period,
+      },
+      pending: {
+        value: Number(result?.pendingAbs ?? 0),
+        percentage: calcChange(Number(result?.pendingToday || 0), Number(result?.pendingYesterday || 0)),
+        period: "daily" as Period,
+      },
+      completed: {
+        value: Number(result?.completedAbs ?? 0),
+        percentage: calcChange(Number(result?.resolvedThisMonth || 0), Number(result?.resolvedLastMonth || 0)),
+        period: "monthly" as Period,
+      },
+      assigned: Number(result?.assignedAbs ?? 0),
+      rejected: Number(result?.rejectedAbs ?? 0),
     };
   };
 
@@ -293,5 +330,7 @@ export async function maintenanceQueries() {
 
 type MaintenanceWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof maintenanceQueries>>["getMaintenanceById"]>>;
 export type Maintenance = NonNullable<MaintenanceWithRelations>;
+
+export type MaintenanceStats = Awaited<ReturnType<Awaited<ReturnType<typeof maintenanceQueries>>["getMaintenanceStatusCount"]>>;
 
 export type StudentMaintenanceData = Awaited<ReturnType<Awaited<ReturnType<typeof maintenanceQueries>>["getStudentMaintenanceRequests"]>>;

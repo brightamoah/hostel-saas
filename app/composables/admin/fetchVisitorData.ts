@@ -2,15 +2,33 @@ export function useFetchVisitorData() {
   const { user } = usePortalUserSession();
 
   const { data, status, refresh } = useFetch<VisitorDataResponse>("/api/visitor/getVisitorData", {
-    method: "get",
+    method: "GET",
     key: computed(() => `visitorData:${user.value?.adminData?.accessLevel}`),
     lazy: true,
     default: () => ({
       visitors: [],
-      approved: 0,
-      checkedIn: 0,
-      pending: 0,
-      totalVisitors: 0,
+      stats: {
+        approved: {
+          value: 0,
+          percentage: 0,
+          period: "monthly" as const,
+        },
+        checkedIn: {
+          value: 0,
+          percentage: 0,
+          period: "weekly" as const,
+        },
+        pending: {
+          value: 0,
+          percentage: 0,
+          period: "daily" as const,
+        },
+        totalVisitors: {
+          value: 0,
+          percentage: 0,
+          period: "monthly" as const,
+        },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
