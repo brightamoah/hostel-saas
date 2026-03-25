@@ -26,12 +26,7 @@ export default defineEventHandler(async (event) => {
 
     const [
       visitors,
-      {
-        approved,
-        checkedIn,
-        pending,
-        totalVisitors,
-      },
+      stats,
     ] = await Promise.all([
       getVisitorsForStudent(student.id),
       getVisitorStatusCountForStudent(student.id),
@@ -39,10 +34,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       visitors,
-      approved,
-      checkedIn,
-      pending,
-      totalVisitors,
+      stats,
     };
   }
   catch (error) {

@@ -89,7 +89,7 @@ const cards = computed<StatsCard[]>(() => [
                 :color="card.color"
               >
                 <template #status>
-                  <span class="font-medium text-muted text-sm">
+                  <span class="font-medium text-muted text-xs">
                     {{ cardStats?.occupancyRate.totalOccupied || 0 }} of {{ cardStats?.occupancyRate.totalCapacity || 0 }} beds occupied
                   </span>
                 </template>
@@ -102,7 +102,7 @@ const cards = computed<StatsCard[]>(() => [
                 :color="card.color"
               >
                 <template #status>
-                  <span class="font-medium text-muted text-sm">
+                  <span class="font-medium text-muted text-xs">
                     {{ cardStats?.availableBeds.value || 0 }} of {{ cardStats?.availableBeds.totalCapacity || 0 }} beds available
                   </span>
                 </template>

@@ -5,12 +5,14 @@ export function useFetchStudentVisitorData() {
     method: "get",
     key: computed(() => `visitorData:${user.value?.id}`),
     lazy: true,
-    default: () => ({
+    default: (): VisitorDataResponse => ({
       visitors: [],
-      totalVisitors: 0,
-      pending: 0,
-      approved: 0,
-      checkedIn: 0,
+      stats: {
+        total: { value: 0, percentage: 0, period: "monthly" as const },
+        approved: { value: 0, percentage: 0, period: "monthly" as const },
+        checkedIn: { value: 0, percentage: 0, period: "weekly" as const },
+        pending: { value: 0, percentage: 0, period: "daily" as const },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;

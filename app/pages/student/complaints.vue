@@ -28,44 +28,47 @@ const {
   handleRefresh,
 } = useFetchStudentComplaintData();
 
-const cards = computed<StatsCard[]>(() => [
-  {
-    id: 1,
-    title: "Total Complaints",
-    icon: "i-lucide-message-square-quote",
-    color: "primary",
-    value: data.value.totalComplaints,
-    percentage: 5.2,
-    period: "monthly",
-  },
-  {
-    id: 2,
-    title: "Pending Complaints",
-    icon: "i-lucide-clock",
-    color: "warning",
-    value: data.value.totalPending,
-    percentage: 8.1,
-    period: "monthly",
-  },
-  {
-    id: 3,
-    title: "In-progress",
-    icon: "i-lucide-loader",
-    color: "info",
-    value: data.value.totalInProgress,
-    percentage: 10.0,
-    period: "daily",
-  },
-  {
-    id: 4,
-    title: "Resolved Complaints",
-    icon: "i-lucide-circle-check-big",
-    color: "success",
-    value: data.value.totalResolved,
-    percentage: -3.4,
-    period: "weekly",
-  },
-]);
+const cards = computed<StatsCard[]>(() => {
+  const stats = data.value?.stats;
+  return [
+    {
+      id: 1,
+      title: "Total Complaints",
+      icon: "i-lucide-message-square-quote",
+      color: "primary",
+      value: stats?.total?.value,
+      percentage: stats?.total?.percentage,
+      period: stats?.total?.period,
+    },
+    {
+      id: 2,
+      title: "Pending Complaints",
+      icon: "i-lucide-clock",
+      color: "warning",
+      value: stats?.pending?.value,
+      percentage: stats?.pending?.percentage,
+      period: stats?.pending?.period,
+    },
+    {
+      id: 3,
+      title: "In-progress",
+      icon: "i-lucide-loader",
+      color: "info",
+      value: stats?.inProgress?.value,
+      percentage: stats?.inProgress?.percentage,
+      period: stats?.inProgress?.period,
+    },
+    {
+      id: 4,
+      title: "Resolved Complaints",
+      icon: "i-lucide-circle-check-big",
+      color: "success",
+      value: stats?.resolved?.value,
+      percentage: stats?.resolved?.percentage,
+      period: stats?.resolved?.period,
+    },
+  ];
+});
 
 const {
   statusFilterOptions,

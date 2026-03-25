@@ -1,109 +1,70 @@
 <script setup lang="ts">
-const { period, range } = defineProps<{
-  period: Period;
-  range: RangeType;
+const { cards, pretty = true } = defineProps<{
+  cards: StatsCard[];
+  pretty?: boolean;
 }>();
-
-function formatCurrency(value: number): string {
-  return value.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
-
-const baseStats = [{
-  title: "Customers",
-  icon: "i-lucide-users",
-  minValue: 400,
-  maxValue: 1000,
-  minVariation: -15,
-  maxVariation: 25,
-  color: "primary",
-}, {
-  title: "Conversions",
-  icon: "i-lucide-chart-pie",
-  minValue: 1000,
-  maxValue: 2000,
-  minVariation: -10,
-  maxVariation: 20,
-  color: "info",
-}, {
-  title: "Revenue",
-  icon: "i-lucide-circle-dollar-sign",
-  minValue: 200000,
-  maxValue: 500000,
-  minVariation: -20,
-  maxVariation: 30,
-  color: "success",
-  formatter: formatCurrency,
-}, {
-  title: "Orders",
-  icon: "i-lucide-shopping-cart",
-  minValue: 100,
-  maxValue: 300,
-  minVariation: -5,
-  maxVariation: 15,
-  color: "warning",
-}];
-
-const { data: stats } = await useAsyncData<Stat[]>("stats", async () => {
-  return baseStats.map((stat) => {
-    const value = randomInt(stat.minValue, stat.maxValue);
-    const variation = randomInt(stat.minVariation, stat.maxVariation);
-
-    return {
-      title: stat.title,
-      icon: stat.icon,
-      value: stat.formatter ? stat.formatter(value) : value,
-      variation,
-      color: stat.color,
-    };
-  });
-}, {
-  watch: [() => period, () => range],
-  default: () => [],
-});
 </script>
 
 <template>
   <UPageGrid class="gap-4 sm:gap-6 lg:gap-6 lg:grid-cols-4">
-    <UPageCard
-      v-for="(stat, index) in stats"
-      :key="index"
-      :icon="stat.icon"
-      :title="stat.title"
-      :to="{ name: 'admin-rooms' }"
-      variant="subtle"
-      :ui="{
-        container: 'gap-y-1.5',
-        wrapper: 'items-start',
-        leading: 'p-2.5 rounded-full bg-primary/10 ring ring-inset ring-primary/25 flex-col',
-        title: 'font-normal text-muted text-xs uppercase',
-      }"
-      class="hover:z-1 border-b hover:border-b-3 first:border-b-error rounded-lg transition-all duration-300 ease-in-out"
-      :class="{
-        'border-b-primary': stat.color === 'primary',
-        'border-b-error': stat.color === 'error',
-        'border-b-warning': stat.color === 'warning',
-        'border-b-info': stat.color === 'info',
-        'border-b-success': stat.color === 'success',
-        'border-b-neutral': stat.color === 'neutral',
-      }"
+    <UCard
+      v-for="card in cards"
+      :key="card.id"
+      :variant="pretty ? 'subtle' : 'outline'"
+      class="transition-all duration-300 ease-in-out cursor-pointer"
+      :class="[
+        pretty
+          ? `border-b hover:border-b-[2.5px] ${getColorClass(card.color, 'border-b', 10)}`
+          : 'border-[2.5px] border-muted bg-elevated',
+      ]"
     >
-      <div class="flex items-center gap-2">
-        <span class="font-semibold text-highlighted text-2xl">
-          {{ stat.value }}
-        </span>
+      <div class="flex justify-between items-center">
+        <div class="space-y-2">
+          <slot
+            name="title"
+            :card
+          >
+            <h3 class="font-semibold text-toned text-base capitalize">
+              {{ card.title }}
+            </h3>
+          </slot>
 
-        <UBadge
-          :color="stat.variation > 0 ? 'success' : 'error'"
-          variant="subtle"
-          class="text-xs"
+          <slot
+            name="value"
+            :card
+          >
+            <p class="font-bold text-highlighted text-2xl">
+              {{ card.value }}
+            </p>
+          </slot>
+
+          <slot
+            name="description"
+            :card
+          >
+            <UBadge
+              v-if="card.percentage"
+              color="neutral"
+              variant="outline"
+              class="text-sm"
+              :class="card.percentage > 0 ? 'text-green-600' : 'text-red-600'"
+            >
+              {{ card.percentage > 0 ? '+' : '' }}{{ card.percentage }}% from last {{ card.period?.split(' ').map(word => word.replace(/ly$/, '')).join("") || "period" }}
+            </UBadge>
+          </slot>
+        </div>
+
+        <slot
+          name="icon"
+          :card
         >
-          {{ stat.variation > 0 ? '+' : '' }}{{ stat.variation }}%
-        </UBadge>
+          <UIcon
+            :name="card.icon"
+            class="size-7"
+            :class="getColorClass(card.color, 'text')"
+          />
+        </slot>
       </div>
-    </UPageCard>
+    </UCard>
   </UPageGrid>
 </template>

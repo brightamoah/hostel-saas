@@ -1,7 +1,8 @@
-import type { AdminScope, ComplaintActionTaken, ComplaintInsert, ComplaintStatus } from "~~/shared/types";
+import type { AdminScope, ComplaintActionTaken, ComplaintInsert, ComplaintStatus, Period } from "~~/shared/types";
 
+import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
-import { and, countDistinct, desc, eq, sql } from "drizzle-orm";
+import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
 
 import { complaint, complaintResponse } from "../schema";
 
@@ -170,6 +171,15 @@ export async function complaintQueries() {
   };
 
   const getStudentComplaints = async (studentId: number) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const [list, [stats]] = await Promise.all([
       db.query.complaint.findMany({
         ...complaintWithRelations,
@@ -179,10 +189,25 @@ export async function complaintQueries() {
 
       db
         .select({
-          total: countDistinct(complaint.id),
-          pending: countDistinct(sql`CASE WHEN ${complaint.status} = 'pending' THEN ${complaint.id} END`),
-          resolved: countDistinct(sql`CASE WHEN ${complaint.status} = 'resolved' THEN ${complaint.id} END`),
-          inProgress: countDistinct(sql`CASE WHEN ${complaint.status} = 'in-progress' THEN ${complaint.id} END`),
+          totalThisMonth: count(sql`CASE WHEN ${complaint.createdAt} >= ${startOfThisMonth} THEN 1 END`),
+          totalLastMonth: count(sql`CASE WHEN ${complaint.createdAt} >= ${startOfLastMonth} AND ${complaint.createdAt} < ${startOfThisMonth} THEN 1 END`),
+
+          //  Pending comparison (Daily) - Are we ignoring new complaints?
+          pendingToday: count(sql`CASE WHEN ${complaint.status} = 'pending' AND ${complaint.createdAt} >= ${startOfToday} THEN 1 END`),
+          pendingYesterday: count(sql`CASE WHEN ${complaint.status} = 'pending' AND ${complaint.createdAt} >= ${startOfYesterday} AND ${complaint.createdAt} < ${startOfToday} THEN 1 END`),
+
+          //  Resolved comparison (Monthly) - The resolution velocity
+          resolvedThisMonth: count(sql`CASE WHEN ${complaint.status} = 'resolved' AND ${complaint.resolvedAt} >= ${startOfThisMonth} THEN 1 END`),
+          resolvedLastMonth: count(sql`CASE WHEN ${complaint.status} = 'resolved' AND ${complaint.resolvedAt} >= ${startOfLastMonth} AND ${complaint.resolvedAt} < ${startOfThisMonth} THEN 1 END`),
+
+          // In-progress comparison (Weekly)
+          inProgressThisWeek: count(sql`CASE WHEN ${complaint.status} = 'in-progress' AND ${complaint.updatedAt} >= ${startOfThisWeek} THEN 1 END`),
+          inProgressLastWeek: count(sql`CASE WHEN ${complaint.status} = 'in-progress' AND ${complaint.updatedAt} >= ${startOfLastWeek} AND ${complaint.updatedAt} < ${startOfThisWeek} THEN 1 END`),
+
+          totalAbs: count(complaint.id),
+          pendingAbs: count(sql`CASE WHEN ${complaint.status} = 'pending' THEN 1 END`),
+          resolvedAbs: count(sql`CASE WHEN ${complaint.status} = 'resolved' THEN 1 END`),
+          inProgressAbs: count(sql`CASE WHEN ${complaint.status} = 'in-progress' THEN 1 END`),
         })
         .from(complaint)
         .where(eq(complaint.studentId, studentId)),
@@ -190,10 +215,29 @@ export async function complaintQueries() {
 
     return {
       complaints: list,
-      totalComplaints: stats?.total,
-      totalPending: stats?.pending,
-      totalInProgress: stats?.inProgress,
-      totalResolved: stats?.resolved,
+      summary: {
+        total: {
+          value: stats?.totalAbs ?? 0,
+          percentage: calcChange(stats?.totalThisMonth ?? 0, stats?.totalLastMonth ?? 0),
+          period: "monthly" as Period,
+        },
+        pending: {
+          value: stats?.pendingAbs ?? 0,
+          percentage: calcChange(stats?.pendingToday ?? 0, stats?.pendingYesterday ?? 0),
+          period: "daily" as Period,
+
+        },
+        resolved: {
+          value: stats?.resolvedAbs ?? 0,
+          percentage: calcChange(stats?.resolvedThisMonth ?? 0, stats?.resolvedLastMonth ?? 0),
+          period: "monthly" as Period,
+        },
+        inProgress: {
+          value: stats?.inProgressAbs ?? 0,
+          percentage: calcChange(stats?.inProgressThisWeek ?? 0, stats?.inProgressLastWeek ?? 0),
+          period: "weekly" as Period,
+        },
+      },
     };
   };
 
@@ -273,3 +317,5 @@ export async function complaintQueries() {
 type ComplaintWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof complaintQueries>>["getComplaintById"]>>;
 
 export type ComplaintType = NonNullable<ComplaintWithRelations>;
+
+export type ComplaintData = Awaited<ReturnType<Awaited<ReturnType<typeof complaintQueries>>["getStudentComplaints"]>>;

@@ -1,5 +1,6 @@
-import type { AdminScope, InsertEditVisitor, VisitorCreate } from "~~/shared/types";
+import type { AdminScope, InsertEditVisitor, Period, VisitorCreate } from "~~/shared/types";
 
+import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 
@@ -156,21 +157,56 @@ export async function visitorQueries() {
   };
 
   const getVisitorStatusCountForStudent = async (studentId: number) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
     const [result] = await db
       .select({
-        totalVisitors: count(visitor.id),
-        approved: count(sql`CASE WHEN ${visitor.status} = 'approved' THEN 1 END`),
-        checkedIn: count(sql`CASE WHEN ${visitor.status} = 'checked-in' THEN 1 END`),
-        pending: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
+        totalThisMonth: count(sql`CASE WHEN ${visitor.visitDate} >= ${startOfThisMonth} THEN 1 END`),
+        totalLastMonth: count(sql`CASE WHEN ${visitor.visitDate} >= ${startOfLastMonth} AND ${visitor.visitDate} < ${startOfThisMonth} THEN 1 END`),
+
+        approvedThisMonth: count(sql`CASE WHEN ${visitor.status} = 'approved' AND ${visitor.visitDate} >= ${startOfThisMonth} THEN 1 END`),
+        approvedLastMonth: count(sql`CASE WHEN ${visitor.status} = 'approved' AND ${visitor.visitDate} >= ${startOfLastMonth} AND ${visitor.visitDate} < ${startOfThisMonth} THEN 1 END`),
+
+        checkedInThisWeek: count(sql`CASE WHEN ${visitor.status} = 'checked-in' AND ${visitor.visitDate} >= ${startOfThisWeek} THEN 1 END`),
+        checkedInLastWeek: count(sql`CASE WHEN ${visitor.status} = 'checked-in' AND ${visitor.visitDate} >= ${startOfLastWeek} AND ${visitor.visitDate} < ${startOfThisWeek} THEN 1 END`),
+
+        pendingToday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfToday} THEN 1 END`),
+        pendingYesterday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfYesterday} AND ${visitor.visitDate} < ${startOfToday} THEN 1 END`),
+
+        // Keep static absolute totals for general info
+        totalAllTime: count(visitor.id),
       })
       .from(visitor)
       .where(eq(visitor.studentId, studentId));
 
     return {
-      totalVisitors: result?.totalVisitors,
-      approved: result?.approved,
-      checkedIn: result?.checkedIn,
-      pending: result?.pending,
+      total: {
+        value: result?.totalThisMonth,
+        percentage: calcChange(result?.totalThisMonth ?? 0, result?.totalLastMonth ?? 0),
+        period: "monthly" as Period,
+      },
+      approved: {
+        value: result?.approvedThisMonth,
+        percentage: calcChange(result?.approvedThisMonth ?? 0, result?.approvedLastMonth ?? 0),
+        period: "monthly" as Period,
+      },
+      checkedIn: {
+        value: result?.checkedInThisWeek,
+        percentage: calcChange(result?.checkedInThisWeek ?? 0, result?.checkedInLastWeek ?? 0),
+        period: "weekly" as Period,
+      },
+      pending: {
+        value: result?.pendingToday,
+        percentage: calcChange(result?.pendingToday ?? 0, result?.pendingYesterday ?? 0),
+        period: "daily" as Period,
+      },
     };
   };
 
@@ -216,3 +252,4 @@ export async function visitorQueries() {
 
 type VisitorWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof visitorQueries>>["getVisitorById"]>>;
 export type Visitor = NonNullable<VisitorWithRelations>;
+export type StudentVisitorStats = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof visitorQueries>>["getVisitorStatusCountForStudent"]>>>;

@@ -28,44 +28,47 @@ const {
   handleRefresh,
 } = useFetchMaintenance();
 
-const cards = computed<StatsCard[]>(() => [
-  {
-    id: 1,
-    title: "Total Requests",
-    icon: "i-heroicons-wrench-screwdriver",
-    color: "primary",
-    value: data.value.totalMaintenance,
-    percentage: 5.2,
-    period: "monthly",
-  },
-  {
-    id: 2,
-    title: "Pending Requests",
-    icon: "i-lucide-clock",
-    color: "warning",
-    value: data.value.pending,
-    percentage: 8.1,
-    period: "monthly",
-  },
-  {
-    id: 3,
-    title: "Completed Requests",
-    icon: "i-lucide-circle-check-big",
-    color: "success",
-    value: data.value.completed,
-    percentage: -3.4,
-    period: "weekly",
-  },
-  {
-    id: 4,
-    title: "In-progress",
-    icon: "i-lucide-loader",
-    color: "info",
-    value: data.value.inProgress,
-    percentage: 10.0,
-    period: "daily",
-  },
-]);
+const cards = computed<StatsCard[]>(() => {
+  const stats = data.value?.stats;
+  return [
+    {
+      id: 1,
+      title: "Total Requests",
+      icon: "i-heroicons-wrench-screwdriver",
+      color: "primary",
+      value: stats?.total.value ?? 0,
+      percentage: stats?.total.percentage ?? 0,
+      period: stats?.total.period ?? "monthly",
+    },
+    {
+      id: 2,
+      title: "Pending Requests",
+      icon: "i-lucide-clock",
+      color: "warning",
+      value: stats?.pending.value ?? 0,
+      percentage: stats?.pending.percentage ?? 0,
+      period: stats?.pending.period ?? "daily",
+    },
+    {
+      id: 3,
+      title: "Completed Requests",
+      icon: "i-lucide-circle-check-big",
+      color: "success",
+      value: stats?.completed.value ?? 0,
+      percentage: stats?.completed.percentage ?? 0,
+      period: stats?.completed.period ?? "monthly",
+    },
+    {
+      id: 4,
+      title: "In-progress",
+      icon: "i-lucide-loader",
+      color: "info",
+      value: stats?.inProgress.value ?? 0,
+      percentage: stats?.inProgress.percentage ?? 0,
+      period: stats?.inProgress.period ?? "weekly",
+    },
+  ];
+});
 
 const {
   currentMaintenanceShowing,

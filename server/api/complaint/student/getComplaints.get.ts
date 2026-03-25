@@ -27,10 +27,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const complaints = await getStudentComplaints(student.id);
+    const { complaints, summary } = await getStudentComplaints(student.id);
 
     return {
-      ...complaints,
+      complaints,
+      stats: summary,
     };
   }
   catch (error) {

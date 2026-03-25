@@ -1,4 +1,4 @@
-import type { AdminScope } from "~~/shared/types";
+import type { AdminScope, Period } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
@@ -101,6 +101,11 @@ export async function roomQueries() {
   };
 
   const getRoomStatusCount = async (scope: AdminScope) => {
+    const {
+      startOfThisMonth,
+      startOfThisWeek,
+    } = getTimePeriod();
+
     const [result] = await db
       .select({
         vacant: countDistinct(sql`CASE WHEN ${room.status} = 'vacant' THEN ${room.id} END`),
@@ -111,6 +116,10 @@ export async function roomQueries() {
         available: countDistinct(sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') THEN ${room.id} END`),
         allRooms: countDistinct(room.id),
         occupied: countDistinct(sql`CASE WHEN ${room.currentOccupancy} > 0 THEN ${room.id} END`),
+        prevTotalRooms: countDistinct(sql`CASE WHEN ${room.createdAt} < ${startOfThisMonth} THEN ${room.id} END`),
+        prevOccupied: countDistinct(sql`CASE WHEN ${room.status} = 'fully occupied' AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`),
+        prevAvailable: countDistinct(sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`),
+        prevMaintenance: countDistinct(sql`CASE WHEN ${room.status} = 'under maintenance' AND ${room.updatedAt} < ${startOfThisWeek} THEN ${room.id} END`),
       })
       .from(room)
       .where(and(...applyRoomScope(scope)));
@@ -124,6 +133,26 @@ export async function roomQueries() {
       totalAvailableRooms: Number(result?.available),
       totalRooms: Number(result?.allRooms),
       totalOccupiedRooms: Number(result?.occupied),
+      totalRoomsNew: {
+        value: Number(result?.allRooms),
+        percentage: calcChange(Number(result?.allRooms), Number(result?.prevTotalRooms)),
+        period: "monthly" as Period,
+      },
+      occupiedRooms: {
+        value: Number(result?.occupied),
+        percentage: calcChange(Number(result?.occupied), Number(result?.prevOccupied)),
+        period: "monthly" as Period,
+      },
+      availableRooms: {
+        value: Number(result?.available),
+        percentage: calcChange(Number(result?.available), Number(result?.prevAvailable)),
+        period: "monthly" as Period,
+      },
+      maintenanceRooms: {
+        value: Number(result?.underMaintenance),
+        percentage: calcChange(Number(result?.underMaintenance), Number(result?.prevMaintenance)),
+        period: "weekly" as Period,
+      },
     };
   };
 
@@ -509,3 +538,5 @@ type RoomWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof roomQuerie
 export type Room = NonNullable<RoomWithRelations>[number];
 
 export type HostelRoomType = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getAvailableRoomsForStudent"]>>>[number];
+
+export type AdminRoomStats = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getRoomStatusCount"]>>;

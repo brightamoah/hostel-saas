@@ -7,11 +7,11 @@ import type { useEditor } from "@tiptap/vue-3";
 import type { User } from "#auth-utils";
 import type { AnnouncementType } from "~~/server/db/queries/announcement";
 import type { BillingType } from "~~/server/db/queries/billing";
-import type { ComplaintType } from "~~/server/db/queries/complaint";
-import type { Maintenance } from "~~/server/db/queries/maintenance";
-import type { HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
+import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
+import type { Maintenance, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
+import type { AdminRoomStats, HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard } from "~~/server/db/queries/user";
-import type { Visitor } from "~~/server/db/queries/visitor";
+import type { StudentVisitorStats, Visitor } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
 import type { useSession } from "h3";
@@ -129,8 +129,6 @@ export type AuthError = {
   icon?: string;
 };
 
-export type Period = "daily" | "weekly" | "monthly";
-
 export type RangeType = {
   start: Date;
   end: Date;
@@ -153,6 +151,7 @@ export type Stat = {
   color?: string;
 };
 
+export type Period = "daily" | "weekly" | "monthly";
 export type ColorType = "primary" | "error" | "warning" | "info" | "success" | "neutral" | "secondary";
 export type VariantType = "outline" | "soft" | "subtle" | "ghost" | "none";
 
@@ -180,16 +179,8 @@ export type HostelFormData = DeepNonNullable<Omit<Hostel, "companyId">> & {
 
 export type RoomDataResponse = {
   rooms: Room[];
-  totalRooms: number;
-  totalOccupiedRooms: number;
-  totalAvailableRooms: number;
-  totalUnderMaintenance: number;
-  totalFullyOccupiedRooms: number;
-  totalVacantRooms: number;
-  totalPartiallyOccupiedRooms: number;
-  totalReservedRooms: number;
   hostels: HostelData[];
-};
+} & AdminRoomStats;
 
 export type StudentRoomData = Pick<RoomDataResponse, "rooms" | "hostels" | "totalRooms">;
 
@@ -203,10 +194,8 @@ export type UserDataResponse = {
 
 export type VisitorDataResponse = {
   visitors: Visitor[];
-  approved: number;
-  checkedIn: number;
-  pending: number;
-  totalVisitors: number;
+  stats: StudentVisitorStats;
+
 };
 
 export type RoomDetailResponse = {
@@ -308,13 +297,8 @@ export type MaintenanceEdit = {
 };
 export type MaintenanceType = Maintenance;
 export type MaintenanceDataResponse = {
-  maintenanceRequests: MaintenanceType[];
-  totalMaintenance: number;
-  assigned: number;
-  inProgress: number;
-  pending: number;
-  completed: number;
-  rejected: number;
+  maintenanceRequests: StudentMaintenanceData["requests"];
+  stats: StudentMaintenanceData["summary"];
 };
 
 export type MaintenanceStatus = typeof maintenanceStatusEnum["enumValues"][number];
@@ -336,10 +320,7 @@ export type EditComplaint = {
 
 export type ComplaintDataResponse = {
   complaints: Complaint[];
-  totalComplaints: number;
-  totalInProgress: number;
-  totalPending: number;
-  totalResolved: number;
+  stats: ComplaintData["summary"];
 };
 
 export type ComplaintAction = MaintenanceAction;

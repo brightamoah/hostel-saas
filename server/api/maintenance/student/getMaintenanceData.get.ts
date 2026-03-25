@@ -29,22 +29,12 @@ export default defineEventHandler(async (event) => {
 
     const {
       requests,
-      totalMaintenance,
-      inProgress,
-      assigned,
-      pending,
-      completed,
-      rejected,
+      summary,
     } = await getStudentMaintenanceRequests(student.id);
 
     return {
       maintenanceRequests: requests,
-      totalMaintenance,
-      inProgress,
-      assigned,
-      pending,
-      completed,
-      rejected,
+      stats: summary,
     };
   }
   catch (error) {

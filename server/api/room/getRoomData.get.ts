@@ -31,6 +31,10 @@ export default defineEventHandler(async (event) => {
       totalFullyOccupiedRooms,
       totalPartiallyOccupiedRooms,
       totalReservedRooms,
+      totalRoomsNew,
+      availableRooms,
+      maintenanceRooms,
+      occupiedRooms,
     } = await getRoomStatusCount(scope);
 
     const hostels = await getAllHostelsScoped(scope);
@@ -46,6 +50,10 @@ export default defineEventHandler(async (event) => {
       totalVacantRooms,
       totalPartiallyOccupiedRooms,
       totalReservedRooms,
+      totalRoomsNew,
+      availableRooms,
+      maintenanceRooms,
+      occupiedRooms,
       hostels,
     };
   }

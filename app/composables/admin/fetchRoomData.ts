@@ -10,6 +10,7 @@ export function useFetchRoomData() {
     cache: "default",
     default: () => ({
       rooms: [],
+      hostels: [],
       totalRooms: 0,
       totalOccupiedRooms: 0,
       totalAvailableRooms: 0,
@@ -18,7 +19,27 @@ export function useFetchRoomData() {
       totalVacantRooms: 0,
       totalPartiallyOccupiedRooms: 0,
       totalReservedRooms: 0,
-      hostels: [],
+      totalRoomsNew: {
+        value: 0,
+        percentage: 0,
+        period: "monthly" as const,
+      },
+      availableRooms: {
+        value: 0,
+        percentage: 0,
+        period: "monthly" as const,
+      },
+      maintenanceRooms: {
+        value: 0,
+        percentage: 0,
+        period: "monthly" as const,
+      },
+      occupiedRooms: {
+        value: 0,
+        percentage: 0,
+        period: "monthly" as const,
+      },
+
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;

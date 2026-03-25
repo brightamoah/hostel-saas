@@ -1,5 +1,6 @@
 import type { AdminScope, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus } from "~~/shared/types";
 
+import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
 
@@ -100,32 +101,75 @@ export async function maintenanceQueries() {
   };
 
   const getStudentMaintenanceRequests = async (studentId: number) => {
+    const {
+      startOfToday,
+      startOfYesterday,
+      startOfThisWeek,
+      startOfLastWeek,
+      startOfThisMonth,
+      startOfLastMonth,
+    } = getTimePeriod();
+
+    const [stats] = await db
+      .select({
+        totalThisMonth: count(sql`CASE WHEN ${maintenanceRequest.requestDate} >= ${startOfThisMonth} THEN 1 END`),
+        totalLastMonth: count(sql`CASE WHEN ${maintenanceRequest.requestDate} >= ${startOfLastMonth} AND ${maintenanceRequest.requestDate} < ${startOfThisMonth} THEN 1 END`),
+
+        // Pending (Daily) - Comparing backlog creation
+        pendingToday: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' AND ${maintenanceRequest.requestDate} >= ${startOfToday} THEN 1 END`),
+        pendingYesterday: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' AND ${maintenanceRequest.requestDate} >= ${startOfYesterday} AND ${maintenanceRequest.requestDate} < ${startOfToday} THEN 1 END`),
+
+        // Completed (Monthly)
+        completedThisMonth: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' AND ${maintenanceRequest.resolutionDate} >= ${startOfThisMonth} THEN 1 END`),
+        completedLastMonth: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' AND ${maintenanceRequest.resolutionDate} >= ${startOfLastMonth} AND ${maintenanceRequest.resolutionDate} < ${startOfThisMonth} THEN 1 END`),
+
+        // In Progress (Weekly)
+        inProgressThisWeek: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' AND ${maintenanceRequest.updatedAt} >= ${startOfThisWeek} THEN 1 END`),
+        inProgressLastWeek: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' AND ${maintenanceRequest.updatedAt} >= ${startOfLastWeek} AND ${maintenanceRequest.updatedAt} < ${startOfThisWeek} THEN 1 END`),
+
+        // Absolute counts for table filtering
+        totalAbs: count(maintenanceRequest.id),
+        pendingAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' THEN 1 END`),
+        completedAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' THEN 1 END`),
+        inProgressAbs: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' THEN 1 END`),
+      })
+      .from(maintenanceRequest)
+      .where(eq(maintenanceRequest.studentId, studentId));
+
     const requests = await db.query.maintenanceRequest.findMany({
       ...maintenanceWithRelations,
       where: eq(maintenanceRequest.studentId, studentId),
       orderBy: desc(maintenanceRequest.requestDate),
     });
 
-    const [result] = await db
-      .select({
-        totalMaintenance: countDistinct(maintenanceRequest.id),
-        inProgress: count(sql`CASE WHEN ${maintenanceRequest.status} = 'in-progress' THEN 1 END`),
-        assigned: count(sql`CASE WHEN ${maintenanceRequest.status} = 'assigned' THEN 1 END`),
-        pending: count(sql`CASE WHEN ${maintenanceRequest.status} = 'pending' THEN 1 END`),
-        completed: count(sql`CASE WHEN ${maintenanceRequest.status} = 'completed' THEN 1 END`),
-        rejected: count(sql`CASE WHEN ${maintenanceRequest.status} = 'rejected' THEN 1 END`),
-      })
-      .from(maintenanceRequest)
-      .where(eq(maintenanceRequest.studentId, studentId));
-
     return {
       requests,
-      totalMaintenance: result?.totalMaintenance,
-      inProgress: result?.inProgress,
-      assigned: result?.assigned,
-      pending: result?.pending,
-      completed: result?.completed,
-      rejected: result?.rejected,
+      summary: {
+        total: {
+          value: stats?.totalAbs ?? 0,
+          percentage: calcChange(stats?.totalThisMonth ?? 0, stats?.totalLastMonth ?? 0),
+          period: "monthly" as Period,
+
+        },
+        pending: {
+          value: stats?.pendingAbs ?? 0,
+          percentage: calcChange(stats?.pendingToday ?? 0, stats?.pendingYesterday ?? 0),
+          period: "daily" as Period,
+
+        },
+        completed: {
+          value: stats?.completedAbs ?? 0,
+          percentage: calcChange(stats?.completedThisMonth ?? 0, stats?.completedLastMonth ?? 0),
+          period: "monthly" as Period,
+
+        },
+        inProgress: {
+          value: stats?.inProgressAbs ?? 0,
+          percentage: calcChange(stats?.inProgressThisWeek ?? 0, stats?.inProgressLastWeek ?? 0),
+          period: "weekly" as Period,
+
+        },
+      },
     };
   };
 
@@ -137,7 +181,7 @@ export async function maintenanceQueries() {
   ) => {
     return db
       .transaction(async (tx) => {
-        const adminId = scope.adminData.id;
+        const userId = scope.userId;
         const companyId = scope.companyId!;
 
         const target = await tx.query.maintenanceRequest.findFirst({
@@ -162,7 +206,7 @@ export async function maintenanceQueries() {
           .insert(maintenanceResponse)
           .values({
             maintenanceRequestId: maintenanceId,
-            responderId: adminId,
+            responderId: userId,
             responseText,
             companyId,
           })
@@ -249,3 +293,5 @@ export async function maintenanceQueries() {
 
 type MaintenanceWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof maintenanceQueries>>["getMaintenanceById"]>>;
 export type Maintenance = NonNullable<MaintenanceWithRelations>;
+
+export type StudentMaintenanceData = Awaited<ReturnType<Awaited<ReturnType<typeof maintenanceQueries>>["getStudentMaintenanceRequests"]>>;

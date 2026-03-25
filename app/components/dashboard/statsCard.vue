@@ -1,70 +1,45 @@
 <script setup lang="ts">
-const { cards, pretty = true } = defineProps<{
-  cards: StatsCard[];
-  pretty?: boolean;
+defineProps<{ cards: StatsCard[] }>();
+
+type SlotName = "title" | "value" | "description" | "icon" | "footer" | "accent";
+
+const slots = defineSlots<{
+  title: (props: { card: StatsCard }) => void;
+  value: (props: { card: StatsCard }) => void;
+  description: (props: { card: StatsCard }) => void;
+  icon: (props: { card: StatsCard }) => void;
+  footer: (props: { card: StatsCard }) => void;
+  accent: (props: { card: StatsCard }) => void;
 }>();
+
+const slotNames = Object.keys(slots) as SlotName[];
 </script>
 
 <template>
-  <UPageGrid class="gap-4 sm:gap-6 lg:gap-6 lg:grid-cols-4">
-    <UCard
+  <div
+    class="gap-3 grid"
+    :class="[
+      cards.length === 5
+        ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5'
+        : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4',
+    ]"
+  >
+    <DashboardNewCard
       v-for="card in cards"
       :key="card.id"
-      :variant="pretty ? 'subtle' : 'outline'"
-      class="transition-all duration-300 ease-in-out cursor-pointer"
-      :class="[
-        pretty
-          ? `border-b hover:border-b-[2.5px] ${getColorClass(card.color, 'border-b', 10)}`
-          : 'border-[2.5px] border-muted bg-elevated',
-      ]"
+      :card="card"
     >
-      <div class="flex justify-between items-center">
-        <div class="space-y-2">
-          <slot
-            name="title"
-            :card
-          >
-            <h3 class="font-semibold text-toned text-base capitalize">
-              {{ card.title }}
-            </h3>
-          </slot>
-
-          <slot
-            name="value"
-            :card
-          >
-            <p class="font-bold text-highlighted text-2xl">
-              {{ card.value }}
-            </p>
-          </slot>
-
-          <slot
-            name="description"
-            :card
-          >
-            <UBadge
-              v-if="card.percentage"
-              color="neutral"
-              variant="outline"
-              class="text-sm"
-              :class="card.percentage > 0 ? 'text-green-600' : 'text-red-600'"
-            >
-              {{ card.percentage > 0 ? '+' : '' }}{{ card.percentage }}% from last {{ card.period?.split(' ').map(word => word.replace(/ly$/, '')).join("") || "period" }}
-            </UBadge>
-          </slot>
-        </div>
-
+      <template
+        v-for="name in slotNames"
+        #[name]="slotProps"
+      >
         <slot
-          name="icon"
-          :card
-        >
-          <UIcon
-            :name="card.icon"
-            class="size-7"
-            :class="getColorClass(card.color, 'text')"
-          />
-        </slot>
-      </div>
-    </UCard>
-  </UPageGrid>
+          :name
+          v-bind="slotProps ?? {}"
+        />
+      </template>
+    </DashboardNewCard>
+  </div>
 </template>
+
+<style scoped></style>

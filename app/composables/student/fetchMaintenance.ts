@@ -12,13 +12,13 @@ export function useFetchMaintenance() {
     lazy: true,
     cache: "default",
     default: () => ({
-      maintenanceRequests: [],
-      totalMaintenance: 0,
-      inProgress: 0,
-      assigned: 0,
-      pending: 0,
-      completed: 0,
-      rejected: 0,
+      maintenanceRequests: [] as MaintenanceDataResponse["maintenanceRequests"],
+      stats: {
+        total: { value: 0, percentage: 0, period: "monthly" as const },
+        pending: { value: 0, percentage: 0, period: "daily" as const },
+        completed: { value: 0, percentage: 0, period: "monthly" as const },
+        inProgress: { value: 0, percentage: 0, period: "weekly" as const },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
