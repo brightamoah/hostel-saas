@@ -1,14 +1,29 @@
 <script setup lang="ts">
 const props = defineProps<{ card: StatsCard }>();
 
-const isPositive = computed(() => (props.card.percentage ?? 0) >= 0);
+const percentageValue = computed(() => props.card.percentage ?? 0);
+
+const trendDirection = computed(() => {
+  if (percentageValue.value > 0) return "positive";
+  if (percentageValue.value < 0) return "negative";
+  if (percentageValue.value === undefined) return "neutral";
+  return "neutral";
+});
 
 const trendIcon = computed(() =>
-  isPositive.value ? "i-lucide-trending-up" : "i-lucide-trending-down",
+  trendDirection.value === "positive"
+    ? "i-lucide-trending-up"
+    : trendDirection.value === "negative"
+      ? "i-lucide-trending-down"
+      : "i-lucide-arrow-right-left",
 );
 
 const trendColor = computed(() =>
-  isPositive.value ? "text-success" : "text-error",
+  trendDirection.value === "positive"
+    ? "text-success"
+    : trendDirection.value === "negative"
+      ? "text-error"
+      : "text-dimmed",
 );
 
 const percentageDisplay = computed(() => {

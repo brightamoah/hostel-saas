@@ -10,7 +10,7 @@ import type { BillingType } from "~~/server/db/queries/billing";
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
 import type { AdminRoomStats, HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
-import type { StudentDashboard } from "~~/server/db/queries/user";
+import type { StudentDashboard, UserStats } from "~~/server/db/queries/user";
 import type { StudentVisitorStats, Visitor } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
@@ -186,10 +186,7 @@ export type StudentRoomData = Pick<RoomDataResponse, "rooms" | "hostels" | "tota
 
 export type UserDataResponse = {
   users: UserWithRelations[];
-  totalUsers: number;
-  totalStudents: number;
-  totalAdmins: number;
-  activeStudents: number;
+  stats: UserStats;
 };
 
 export type VisitorDataResponse = {

@@ -12,10 +12,7 @@ export default defineEventHandler(async (event) => {
 
     const {
       users,
-      totalUsers,
-      totalStudents,
-      totalAdmins,
-      activeStudents,
+      stats,
     } = data;
 
     const flattenUsers = users.map((u) => {
@@ -36,10 +33,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       users: flattenUsers,
-      totalUsers,
-      totalStudents,
-      totalAdmins,
-      activeStudents,
+      stats,
       message: `Fetched user data for ${adminData.accessLevel} admin`,
     };
   }

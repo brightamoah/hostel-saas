@@ -1,4 +1,4 @@
-import type { AdminScope, FailedAttempts, UserWithRelations } from "~~/shared/types";
+import type { AdminScope, FailedAttempts } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { canManageAdmins, getScopeMode } from "~~/server/utils/permissionScope";
@@ -8,14 +8,6 @@ import { admin, allocation, billing, loginAttempts, maintenanceRequest, room, st
 
 const ATTEMPT_WINDOW_MINUTES = 15;
 type Allocation = typeof allocation.$inferSelect;
-
-type UserStats = {
-  users: UserWithRelations[];
-  totalUsers: number;
-  totalStudents: number;
-  totalAdmins: number;
-  activeStudents: number;
-};
 
 const userWithRelations = {
   columns: {
@@ -284,8 +276,14 @@ export async function userQueries() {
     return existingStudent;
   };
 
-  const getUsers = async (scope: AdminScope): Promise<UserStats> => {
+  const getUsers = async (scope: AdminScope) => {
     const mode = getScopeMode(scope);
+
+    const {
+      startOfToday,
+      startOfThisWeek,
+      startOfThisMonth,
+    } = getTimePeriod();
 
     const userFilter = mode === "platform"
       ? sql`TRUE`
@@ -294,7 +292,7 @@ export async function userQueries() {
           exists(db.select().from(student).where(and(eq(student.userId, user.id), ...applyStudentTableScope(scope)))),
         );
 
-    const [users, [stats]] = await Promise.all([
+    const [users, [stat]] = await Promise.all([
       db.query.user.findMany({
         where: userFilter,
         orderBy: asc(user.id),
@@ -302,28 +300,47 @@ export async function userQueries() {
       }),
 
       db.select({
-        totalUsers: count(user.id),
-        totalStudents: count(sql`CASE WHEN ${user.role} = 'student' THEN 1 END`),
-        totalAdmins: count(sql`CASE WHEN ${user.role} = 'admin' THEN 1 END`),
-        activeStudents: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' THEN 1 END`),
+        totalNow: count(user.id),
+        totalPrevMonth: count(sql`CASE WHEN ${user.createdAt} < ${startOfThisMonth} THEN 1 END`),
+
+        studentsNow: count(sql`CASE WHEN ${user.role} = 'student' THEN 1 END`),
+        studentsPrevMonth: count(sql`CASE WHEN ${user.role} = 'student' AND ${user.createdAt} < ${startOfThisMonth} THEN 1 END`),
+
+        adminsNow: count(sql`CASE WHEN ${user.role} = 'admin' THEN 1 END`),
+        adminsPrevWeek: count(sql`CASE WHEN ${user.role} = 'admin' AND ${user.createdAt} < ${startOfThisWeek} THEN 1 END`),
+
+        activeNow: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' THEN 1 END`),
+        activeYesterday: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' AND ${student.updatedAt} < ${startOfToday} THEN 1 END`),
       })
         .from(user)
         .leftJoin(student, eq(student.userId, user.id))
         .where(userFilter),
     ]);
-    const result = stats || {
-      totalUsers: 0,
-      totalStudents: 0,
-      totalAdmins: 0,
-      activeStudents: 0,
-    };
 
     return {
       users,
-      totalUsers: result.totalUsers,
-      totalStudents: result.totalStudents,
-      totalAdmins: result.totalAdmins,
-      activeStudents: result.activeStudents,
+      stats: {
+        totalUsers: {
+          value: Number(stat?.totalNow),
+          percentage: calcChange(Number(stat?.totalNow), Number(stat?.totalPrevMonth)),
+          period: "monthly" as Period,
+        },
+        totalStudents: {
+          value: Number(stat?.studentsNow),
+          percentage: calcChange(Number(stat?.studentsNow), Number(stat?.studentsPrevMonth)),
+          period: "monthly" as Period,
+        },
+        totalAdmins: {
+          value: Number(stat?.adminsNow),
+          percentage: calcChange(Number(stat?.adminsNow), Number(stat?.adminsPrevWeek)),
+          period: "weekly" as Period,
+        },
+        activeStudents: {
+          value: Number(stat?.activeNow),
+          percentage: calcChange(Number(stat?.activeNow), Number(stat?.activeYesterday)),
+          period: "daily" as Period,
+        },
+      },
     };
   };
 
@@ -610,6 +627,8 @@ export async function userQueries() {
 
 type StudentWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getStudentForDashboardByUserId"]>>;
 export type StudentDashboard = NonNullable<StudentWithRelations>;
+
+export type UserStats = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUsers"]>>["stats"];
 
 // type UserWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUser"]>>;
 // export type UserWR = NonNullable<UserWithRelations>;

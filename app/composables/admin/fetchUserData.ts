@@ -7,10 +7,28 @@ export function useFetchUserData() {
     lazy: true,
     default: () => ({
       users: [],
-      totalUsers: 0,
-      totalStudents: 0,
-      totalAdmins: 0,
-      activeStudents: 0,
+      stats: {
+        totalUsers: {
+          value: 0,
+          percentage: 0,
+          period: "monthly" as const,
+        },
+        totalStudents: {
+          value: 0,
+          percentage: 0,
+          period: "monthly" as const,
+        },
+        totalAdmins: {
+          value: 0,
+          percentage: 0,
+          period: "monthly" as const,
+        },
+        activeStudents: {
+          value: 0,
+          percentage: 0,
+          period: "monthly" as const,
+        },
+      },
     }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
