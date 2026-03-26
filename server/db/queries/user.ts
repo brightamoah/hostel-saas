@@ -310,7 +310,7 @@ export async function userQueries() {
         adminsPrevWeek: count(sql`CASE WHEN ${user.role} = 'admin' AND ${user.createdAt} < ${startOfThisWeek} THEN 1 END`),
 
         activeNow: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' THEN 1 END`),
-        activeYesterday: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' AND ${student.updatedAt} < ${startOfToday} THEN 1 END`),
+        activeNotUpdatedToday: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' AND ${student.updatedAt} < ${startOfToday} THEN 1 END`),
       })
         .from(user)
         .leftJoin(student, eq(student.userId, user.id))
@@ -337,7 +337,7 @@ export async function userQueries() {
         },
         activeStudents: {
           value: Number(stat?.activeNow),
-          percentage: calcChange(Number(stat?.activeNow), Number(stat?.activeYesterday)),
+          percentage: calcChange(Number(stat?.activeNow), Number(stat?.activeNotUpdatedToday)),
           period: "daily" as Period,
         },
       },

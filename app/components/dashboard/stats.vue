@@ -43,13 +43,13 @@ const { cards, pretty = true } = defineProps<{
             :card
           >
             <UBadge
-              v-if="card.percentage"
+              v-if=" (card.percentage != null || card.percentage !== undefined)"
               color="neutral"
               variant="outline"
               class="text-sm"
               :class="card.percentage > 0 ? 'text-green-600' : 'text-red-600'"
             >
-              {{ card.percentage > 0 ? '+' : '' }}{{ card.percentage }}% from last {{ card.period?.split(' ').map(word => word.replace(/ly$/, '')).join("") || "period" }}
+              {{ card.percentage > 0 ? '+' : '' }}{{ card.percentage }}% from last {{ card.period?.split(' ').map(word => word.replace(/ly$/, '')).join(" ") || "period" }}
             </UBadge>
           </slot>
         </div>

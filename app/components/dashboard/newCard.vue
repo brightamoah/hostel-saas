@@ -4,9 +4,9 @@ const props = defineProps<{ card: StatsCard }>();
 const percentageValue = computed(() => props.card.percentage ?? 0);
 
 const trendDirection = computed(() => {
+  if (props.card.percentage === undefined) return "neutral";
   if (percentageValue.value > 0) return "positive";
   if (percentageValue.value < 0) return "negative";
-  if (percentageValue.value === undefined) return "neutral";
   return "neutral";
 });
 

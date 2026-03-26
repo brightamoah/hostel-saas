@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
       checkExistingPayment,
       processSuccessfulPayment,
       markPaymentAsFailed,
-      getBillingById,
+      getBillingByIdStudent,
 
     } = await billingQueries();
 
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
 
     const transaction = verifyResponse.data;
 
-    const currentBilling = await getBillingById(billingId);
+    const currentBilling = await getBillingByIdStudent(billingId);
 
     if (!currentBilling) {
       throw createError({

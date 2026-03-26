@@ -1,5 +1,5 @@
 export function calcChange(curr: number, prev: number) {
-  if (prev === 0) return curr > 0 ? 100 : 0;
+  if (prev === 0) return curr > 0 ? 100 : curr < 0 ? -100 : 0;
   return Number.parseFloat((((curr - prev) / prev) * 100).toFixed(1));
 }
 

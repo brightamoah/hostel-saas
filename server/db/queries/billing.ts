@@ -116,16 +116,17 @@ export async function billingQueries() {
         billedThisMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
         billedLastMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfLastMonth} AND ${billing.createdAt} < ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
 
-        paidThisMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.updatedAt} >= ${startOfThisMonth} THEN ${billing.paidAmount} ELSE 0 END), 0)`,
-        paidLastMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.updatedAt} >= ${startOfLastMonth} AND ${billing.updatedAt} < ${startOfThisMonth} THEN ${billing.paidAmount} ELSE 0 END), 0)`,
+        paidThisMonth: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} >= ${startOfThisMonth} AND ${payment.status} = 'completed' THEN ${payment.amount} ELSE 0 END), 0)`,
+        paidLastMonth: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} >= ${startOfLastMonth} AND ${payment.paymentDate} < ${startOfThisMonth} AND ${payment.status} = 'completed' THEN ${payment.amount} ELSE 0 END), 0)`,
 
         pendingThisWeek: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} >= ${startOfThisWeek} AND ${billing.status} != 'fully paid' THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
         pendingLastWeek: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} >= ${startOfLastWeek} AND ${billing.dueDate} < ${startOfThisWeek} AND ${billing.status} != 'fully paid' THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
 
-        overdueToday: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' AND ${billing.updatedAt} >= ${startOfToday} THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
-        overdueYesterday: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' AND ${billing.updatedAt} >= ${startOfYesterday} AND ${billing.updatedAt} < ${startOfToday} THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
+        overdueToday: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} < NOW() AND ${billing.dueDate} >= ${startOfToday} AND ${billing.status} != 'fully paid' THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
+        overdueYesterday: sql<number>`coalesce(sum(CASE WHEN ${billing.dueDate} >= ${startOfYesterday} AND ${billing.dueDate} < ${startOfToday} AND ${billing.status} != 'fully paid' THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END), 0)`,
       })
       .from(billing)
+      .leftJoin(payment, eq(payment.billingId, billing.id))
       .where(and(...activeFilters));
 
     return {

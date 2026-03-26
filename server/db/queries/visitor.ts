@@ -225,22 +225,22 @@ export async function visitorQueries() {
 
     return {
       total: {
-        value: result?.totalThisMonth,
+        value: result?.totalThisMonth ?? 0,
         percentage: calcChange(result?.totalThisMonth ?? 0, result?.totalLastMonth ?? 0),
         period: "monthly" as Period,
       },
       approved: {
-        value: result?.approvedThisMonth,
+        value: result?.approvedThisMonth ?? 0,
         percentage: calcChange(result?.approvedThisMonth ?? 0, result?.approvedLastMonth ?? 0),
         period: "monthly" as Period,
       },
       checkedIn: {
-        value: result?.checkedInThisWeek,
+        value: result?.checkedInThisWeek ?? 0,
         percentage: calcChange(result?.checkedInThisWeek ?? 0, result?.checkedInLastWeek ?? 0),
         period: "weekly" as Period,
       },
       pending: {
-        value: result?.pendingToday,
+        value: result?.pendingToday ?? 0,
         percentage: calcChange(result?.pendingToday ?? 0, result?.pendingYesterday ?? 0),
         period: "daily" as Period,
       },

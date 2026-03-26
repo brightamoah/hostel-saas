@@ -25,7 +25,7 @@ const {
     size="lg"
     :variant
     :color
-    class="justify-center items-center min-w-[4ch] tabular-nums text-center cursor-pointer"
+    class="justify-center items-center min-w-[13ch] tabular-nums text-center cursor-pointer"
     @click="handleRefresh()"
   />
 </template>
