@@ -33,7 +33,17 @@ const colors = [
   "pink",
   "rose",
 ];
-const neutrals = ["slate", "gray", "zinc", "neutral", "stone"];
+const neutrals = [
+  "slate",
+  "gray",
+  "zinc",
+  "neutral",
+  "stone",
+  "mauve",
+  "taupe",
+  "mist",
+  "olive",
+];
 
 const user = ref({
   name: currentUser.value?.name,
@@ -176,7 +186,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
     :content="{ align: 'center', collisionPadding: 12 }"
     :ui="{
       content: 'w-full max-w-xs md:max-w-sm',
-      item: 'cursor-pointer rounded',
+      item: 'cursor-pointer rounded flex items-center gap-2',
     }"
   >
     <UButton
@@ -224,13 +234,15 @@ const items = computed<DropdownMenuItem[][]>(() => [
     </template>
 
     <template #chip-leading="{ item }">
-      <span
-        :style="{
-          '--chip-light': `var(--color-${(item as any).chip}-500)`,
-          '--chip-dark': `var(--color-${(item as any).chip}-400)`,
-        }"
-        class="ms-0.5 size-2 rounded-full bg-(--chip-light) dark:bg-(--chip-dark)"
-      />
+      <div class="flex items-center gap-2 text-center">
+        <span
+          :style="{
+            '--chip-light': `var(--color-${(item as any).chip}-500)`,
+            '--chip-dark': `var(--color-${(item as any).chip}-400)`,
+          }"
+          class="size-2.5 rounded-full bg-(--chip-light) dark:bg-(--chip-dark) shrink-0"
+        />
+      </div>
     </template>
   </UDropdownMenu>
 </template>

@@ -96,7 +96,7 @@ watch(filteredAnnouncements, () => {
           :actions="[
             {
               icon: 'i-lucide-loader',
-              label: 'Refresh',
+              label: isLoading ? 'Refreshing...' : 'Refresh',
               color: 'primary',
               variant: 'subtle',
               class: 'cursor-pointer',

@@ -80,7 +80,7 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
       arrow
       :items="userMenuItems"
       :ui="{
-        content: 'w-64',
+        content: 'max-w-64',
         item: 'cursor-pointer rounded',
       }"
     >
@@ -107,7 +107,9 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
           }"
         >
           <template #description>
-            <p>{{ user?.email }}</p>
+            <p class="block max-w-[85%] truncate">
+              {{ user?.email }}
+            </p>
 
             <UBadge
               :label="user?.role"
