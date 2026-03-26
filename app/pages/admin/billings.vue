@@ -10,8 +10,6 @@ const title = "Billings Management";
 
 const { user } = usePortalUserSession();
 
-const isSuperAdmin = computed(() => user.value?.role === "admin" && user.value.adminData?.accessLevel === "super");
-
 const globalFilter = ref("");
 const columnVisibility = ref<{ [key: string | number]: boolean }>({ id: false });
 const rowSelection = ref({});
@@ -148,7 +146,7 @@ const description = computed(() => hasActiveFilters.value
           <template #actions>
             <BillingNew />
 
-            <BillingVerifyPayment v-if="isSuperAdmin" />
+            <BillingVerifyPayment />
 
             <DashboardRefreshButton
               :can-resend

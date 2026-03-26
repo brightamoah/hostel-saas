@@ -98,7 +98,8 @@ export const billingStatusColorMap: Record<Billing["status"], ColorType> = {
   "cancelled": "neutral",
 };
 
-export const paymentStatusColorMap: Record<PaystackStatus, ColorType> = {
+export type PaymentStatus = PaystackStatus | Billing["payments"][number]["status"];
+export const paymentStatusColorMap: Record<PaymentStatus, ColorType> = {
   pending: "warning",
   success: "success",
   failed: "error",
@@ -107,4 +108,6 @@ export const paymentStatusColorMap: Record<PaystackStatus, ColorType> = {
   processing: "info",
   queued: "info",
   reversed: "error",
+  completed: "success",
+  refunded: "error",
 };

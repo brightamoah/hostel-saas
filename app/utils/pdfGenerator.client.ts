@@ -264,13 +264,37 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
       : [];
 
     if (historyData.length > 0) {
+      // Add status to each row and colorize it
+      const statusColorMap: Record<string, string> = {
+        completed: "#16a34a",
+        failed: "#dc2626",
+        pending: "#d97706",
+        refunded: "#6b7280",
+      };
+
+      const bodyWithStatus = billing.payments.map((p: Billing["payments"][0]) => {
+        const status = (p.status || "pending").toLowerCase();
+        return [
+          formatDate(p.paymentDate),
+          p.paymentMethod.replace("_", " ").toUpperCase(),
+          formatMoney(p.amount),
+          {
+            content: status.toUpperCase(),
+            styles: {
+              textColor: statusColorMap[status] || TEXT_COLOR,
+              fontStyle: "bold" as const,
+            },
+          },
+        ];
+      });
+
       autoTable(doc, {
         startY: y + 4,
-        head: [["Date", "Payment Method", "Amount"]],
-        body: historyData,
+        head: [["Date", "Payment Method", "Amount", "Status"]],
+        body: bodyWithStatus,
         theme: "grid",
         headStyles: { fillColor: BG_COLOR, textColor: TEXT_COLOR, fontStyle: "bold", lineColor: BORDER_COLOR, lineWidth: 0.1 },
-        columnStyles: { 2: { halign: "right" } },
+        columnStyles: { 2: { halign: "right" }, 3: { halign: "center" } },
         styles: { fontSize: 9, lineColor: BORDER_COLOR, lineWidth: 0.1 },
         margin: { left: MARGIN, right: MARGIN },
       });

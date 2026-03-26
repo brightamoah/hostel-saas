@@ -10,6 +10,9 @@ const { payments } = defineProps<{
 }>();
 
 type PaymentRow = Billing["payments"][number];
+type PaymentExtended = Omit<PaymentRow, "status"> & { status: PaymentStatus };
+
+const UBadge = resolveComponent("UBadge");
 
 const paymentDetails = [
   { label: "Bank Name", value: "Ghana Commercial Bank", icon: "i-lucide-landmark", border: true },
@@ -18,7 +21,7 @@ const paymentDetails = [
   { label: "Mobile Money", value: "+233 54 968 4848", icon: "i-lucide-smartphone", border: false },
 ];
 
-const columns = ref<TableColumn<PaymentRow>[]>([
+const columns = ref<TableColumn<PaymentExtended>[]>([
   {
     accessorKey: "paymentDate",
     header: "Date",
@@ -27,7 +30,7 @@ const columns = ref<TableColumn<PaymentRow>[]>([
 
       if (!paymentDate) return "-";
 
-      return useDateFormat(new Date(paymentDate), "DD MMM YYYY").value;
+      return useDateFormat(new Date(paymentDate), "DD-MM-YYYY").value;
     },
   },
   {
@@ -39,6 +42,18 @@ const columns = ref<TableColumn<PaymentRow>[]>([
     accessorKey: "amount",
     header: "Amount",
     cell: ({ row }) => formatCurrency(Number(row.original?.amount)),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      return h(UBadge, {
+        label: row.original.status.replace("-", " "),
+        color: paymentStatusColorMap[row.original.status],
+        variant: "subtle",
+        class: "capitalize",
+      });
+    },
   },
 ]);
 
