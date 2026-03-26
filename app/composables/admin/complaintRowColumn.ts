@@ -59,17 +59,21 @@ export function useComplaintRowColumn(
       action,
       isLoading,
       update: async () => {
+        const { status, responseText } = complaintStatusResponseState.value;
+        if (!status || !responseText) return;
         await complaintStore.updateStatusAndAddResponse({
           complaintId: complaint.id,
-          status: complaintStatusResponseState.value.status!,
-          responseText: complaintStatusResponseState.value.responseText!,
+          status,
+          responseText,
         });
         close();
       },
       addResponse: async () => {
+        const { responseText } = complaintStatusResponseState.value;
+        if (!responseText) return;
         await complaintStore.addComplaintResponse({
           complaintId: complaint.id,
-          responseText: complaintStatusResponseState.value.responseText!,
+          responseText,
         });
         close();
       },
@@ -165,6 +169,7 @@ export function useComplaintRowColumn(
           label: "Delete Complaint",
           icon: "i-lucide-trash-2",
           color: "error",
+          disabled: true,
           onSelect: () => { },
         },
       );

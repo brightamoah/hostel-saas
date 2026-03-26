@@ -1,5 +1,4 @@
 import { useDateFormat } from "@vueuse/core";
-// app/utils/pdfGenerator.client.ts
 import { jsPDF as JSPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -17,6 +16,13 @@ const STATUS_COLORS: Record<string, string> = {
   "cancelled": "#6b7280",
 };
 
+const paymentStatusColorMap: Record<string, string> = {
+  completed: "#16a34a",
+  failed: "#dc2626",
+  pending: "#d97706",
+  refunded: "#6b7280",
+};
+
 // --- Helpers ---
 function formatMoney(amount: number | string) {
   return new Intl.NumberFormat("en-GH", {
@@ -32,11 +38,12 @@ function formatDate(date: Date | string | null) {
 }
 
 function getDaysDifference(start: Date | string, end: Date | string) {
+  if (start == null || end == null) return 30;
   const date1 = new Date(start);
   const date2 = new Date(end);
+  if (Number.isNaN(date1.getTime()) || Number.isNaN(date2.getTime())) return 30;
   const diffTime = Math.abs(date2.getTime() - date1.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays > 0 ? diffDays : 30; // Default to 30 if invalid
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 export function generateInvoicePDF(billing: Billing): Promise<Blob> {
@@ -51,7 +58,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(PRIMARY_COLOR);
-    doc.text("Kings Hostel Management", PAGE_WIDTH / 2, y, { align: "center" });
+    doc.text(billing.hostel?.name || "Kayanest Hostels", PAGE_WIDTH / 2, y, { align: "center" });
 
     y += 6;
     doc.setFont("helvetica", "normal");
@@ -109,16 +116,16 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.setFont("helvetica", "bold");
     doc.text("Period:", col2X, y);
     doc.setFont("helvetica", "normal");
-    doc.text(billing.academicPeriod || "N/A", col2X + labelOffset, y);
+    doc.text(capitalizeWords(billing.academicPeriod || "N/A"), col2X + labelOffset, y);
 
     y += 6;
     doc.setFont("helvetica", "bold");
     doc.text("Purpose:", col2X, y);
     doc.setFont("helvetica", "normal");
-    doc.text(billing.type || "Hostel Fee", col2X + labelOffset, y);
+    doc.text(capitalizeWords(billing.type || "Hostel Fee"), col2X + labelOffset, y);
 
     // --- 3. Billed To ---
-    y += 12;
+    y += 8;
     const boxHeight = 42;
     doc.setFillColor(BG_COLOR);
     doc.setDrawColor(PRIMARY_COLOR);
@@ -145,8 +152,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.text(`Student ID: ${billing.student?.id || "N/A"}`, boxX, boxY);
 
     boxY += 5;
-    doc.text(`Email: ${billing.student?.user?.email}`, boxX, boxY);
-
+    doc.text(`Email: ${billing.student?.user?.email || "N/A"}`, boxX, boxY);
     boxY += 5;
     doc.text(`Phone: ${billing.student?.phoneNumber || "N/A"}`, boxX, boxY);
 
@@ -208,7 +214,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     addRow("Balance Due:", formatMoney(balance), true, STATUS_COLORS.overdue);
 
     // --- 6. Payment Info ---
-    y += 8;
+    y += 6;
     doc.setFillColor(BG_COLOR);
     doc.setDrawColor(BORDER_COLOR);
     doc.rect(MARGIN, y, PAGE_WIDTH - (MARGIN * 2), 28, "FD");
@@ -250,29 +256,12 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
 
     // --- 7. Transaction History ---
     doc.setTextColor(PRIMARY_COLOR);
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("Transaction History", MARGIN, y);
-    y += 2;
 
-    const historyData = billing.payments && billing.payments.length > 0
-      ? billing.payments.map((p: Billing["payments"][0]) => [
-          formatDate(p.paymentDate),
-          p.paymentMethod.replace("_", " ").toUpperCase(),
-          formatMoney(p.amount),
-        ])
-      : [];
-
-    if (historyData.length > 0) {
-      // Add status to each row and colorize it
-      const statusColorMap: Record<string, string> = {
-        completed: "#16a34a",
-        failed: "#dc2626",
-        pending: "#d97706",
-        refunded: "#6b7280",
-      };
-
-      const bodyWithStatus = billing.payments.map((p: Billing["payments"][0]) => {
+    if (billing.payments && billing.payments.length > 0) {
+      const paymentRows = billing.payments.map((p: Billing["payments"][0]) => {
         const status = (p.status || "pending").toLowerCase();
         return [
           formatDate(p.paymentDate),
@@ -281,7 +270,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
           {
             content: status.toUpperCase(),
             styles: {
-              textColor: statusColorMap[status] || TEXT_COLOR,
+              textColor: paymentStatusColorMap[status] || TEXT_COLOR,
               fontStyle: "bold" as const,
             },
           },
@@ -291,7 +280,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
       autoTable(doc, {
         startY: y + 4,
         head: [["Date", "Payment Method", "Amount", "Status"]],
-        body: bodyWithStatus,
+        body: paymentRows,
         theme: "grid",
         headStyles: { fillColor: BG_COLOR, textColor: TEXT_COLOR, fontStyle: "bold", lineColor: BORDER_COLOR, lineWidth: 0.1 },
         columnStyles: { 2: { halign: "right" }, 3: { halign: "center" } },
@@ -341,6 +330,8 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     terms.forEach((term) => {
       doc.text(term, MARGIN + 5, y += 4.5);
     });
+
+    y += 10;
 
     // --- 8. Output ---
     resolve(doc.output("blob"));

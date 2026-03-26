@@ -48,7 +48,7 @@ const columns = ref<TableColumn<PaymentExtended>[]>([
     header: "Status",
     cell: ({ row }) => {
       return h(UBadge, {
-        label: row.original.status.replace("-", " "),
+        label: row.original.status.replaceAll("-", " "),
         color: paymentStatusColorMap[row.original.status],
         variant: "subtle",
         class: "capitalize",

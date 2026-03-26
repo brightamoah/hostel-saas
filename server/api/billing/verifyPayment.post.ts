@@ -80,10 +80,7 @@ export default defineEventHandler(async (event) => {
       reference,
       paymentMethod,
       verifiedAmount,
-      // newPaidTotal,
-      // newStatus,
     );
-
     return {
       success: true,
       message: `Payment of ${formatCurrency(verifiedAmount)} verified successfully. ${newStatus === "fully paid" ? "Invoice fully paid!" : `Balance remaining: ${formatCurrency(totalDue - newPaidTotal)}`}`,
