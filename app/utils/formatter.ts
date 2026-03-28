@@ -52,9 +52,14 @@ export function capitalizeWords(
         .map(part =>
           part
             .split("'")
-            .map(p =>
-              p.charAt(0).toUpperCase() + p.slice(1),
-            )
+            .map((p, i, arr) => {
+              // Capitalize after apostrophe only for name patterns (e.g., O'Brien)
+              // Single char before apostrophe suggests a name prefix
+              const shouldCapitalize = i === 0 || (arr[i - 1]?.length === 1);
+              return shouldCapitalize
+                ? p.charAt(0).toUpperCase() + p.slice(1)
+                : p;
+            })
             .join("'"),
         )
         .join("-");

@@ -86,7 +86,28 @@ watch(filteredAnnouncements, () => {
 
       <template #body>
         <UEmpty
-          v-if="status === 'pending' || status === 'error' || filteredAnnouncements.length === 0"
+          v-if="status === 'error'"
+          class="flex flex-1 justify-center items-center"
+          variant="naked"
+          icon="i-lucide-megaphone"
+          title="Failed to load announcements"
+          description="There was a problem loading announcements. Please check your connection and try again."
+          :size="isMobile ? 'md' : 'lg'"
+          :actions="[
+            {
+              icon: 'i-lucide-loader',
+              label: isLoading ? 'Refreshing...' : 'Retry',
+              color: 'primary',
+              variant: 'subtle',
+              class: 'cursor-pointer',
+              loading: isLoading,
+              onClick: handleRefresh,
+            },
+          ]"
+        />
+
+        <UEmpty
+          v-else-if="status === 'pending' || filteredAnnouncements.length === 0"
           class="flex flex-1 justify-center items-center"
           variant="naked"
           icon="i-lucide-megaphone"

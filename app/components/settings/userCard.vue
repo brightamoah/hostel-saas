@@ -58,11 +58,14 @@ const userItems = computed<UserItem[]>(() => {
 <template>
   <UCard
     variant="subtle"
-    class="flex flex-col md:col-span-1 md:row-span-2 shadow-md w-fit max-w-80"
+    class="flex flex-col shadow-md w-fit min-w-64 max-w-80"
+    :ui="{
+      body: 'p-3 sm:p-4',
+    }"
   >
     <div class="flex flex-col items-center gap-3 py-4">
       <UAvatar
-        :src="user?.image!"
+        :src="user?.image ?? ''"
         :alt="user?.name"
         :text="userInitials"
         :ui="{
@@ -100,12 +103,12 @@ const userItems = computed<UserItem[]>(() => {
         class="mt-4"
       />
 
-      <div class="flex flex-col gap-3 py-4 text-sm">
+      <div class="flex flex-col gap-3 py-4 w-full text-sm">
         <DashboardDetailItem
           v-for="item in userItems"
           :key="item.id"
           :label="item.label"
-          :value="item.value!"
+          :value="item.value ?? ''"
           class="gap-3 w-full"
           label-class="font-medium text-muted shrink-0"
         >
@@ -118,6 +121,8 @@ const userItems = computed<UserItem[]>(() => {
             >
               {{ item.value }}
             </UBadge>
+
+            <span v-else>{{ item.value }}</span>
           </template>
         </DashboardDetailItem>
       </div>
