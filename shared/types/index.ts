@@ -10,7 +10,7 @@ import type { AdminBillingStats, BillingType, StudentBillingStats } from "~~/ser
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
 import type { AdminRoomStats, HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
-import type { StudentDashboard, UserStats } from "~~/server/db/queries/user";
+import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/queries/user";
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
@@ -29,6 +29,8 @@ export type DateRange = {
   start: DateValue;
   end: DateValue;
 };
+
+export type UserProfile = UserProfileType;
 
 export type DateModel = DateValue | DateRange | null;
 
@@ -86,6 +88,14 @@ interface AsyncDataExecuteOptions {
   signal?: AbortSignal;
 }
 
+export type ProfileSettingsItem = {
+  id: string | number;
+  title: string;
+  icon: string;
+  description: string;
+  buttonLabel: string;
+  link: RouteLocationRaw;
+};
 export type Refresh = (opts?: AsyncDataExecuteOptions) => Promise<void>;
 export type Status = AsyncDataRequestStatus;
 

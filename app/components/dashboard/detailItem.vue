@@ -3,12 +3,16 @@ defineProps<{
   label: string;
   value?: string | number;
   valueClass?: string;
+  labelClass?: string;
 }>();
 </script>
 
 <template>
   <div>
-    <p class="text-muted text-sm">
+    <p
+      class="text-muted text-sm"
+      :class="[labelClass]"
+    >
       <slot name="label">
         {{ label }}
       </slot>

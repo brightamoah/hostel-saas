@@ -21,3 +21,4 @@ export const roomsInHostelKey = Symbol("roomsInHostel") as InjectionKey<Computed
 export const refreshKey = Symbol("refreshContext") as InjectionKey<RefreshContext>;
 
 export const isMobileKey = Symbol("isMobile") as InjectionKey<IsMobileContext>;
+export const userProfileKey = Symbol("userProfile") as InjectionKey<ComputedRef<UserProfile | null>>;

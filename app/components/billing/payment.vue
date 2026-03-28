@@ -55,6 +55,11 @@ const columns = ref<TableColumn<PaymentExtended>[]>([
       });
     },
   },
+  {
+    accessorKey: "reference",
+    header: "Reference",
+    cell: ({ row }) => row.original?.transactionReference || "-",
+  },
 ]);
 
 const tableRef = useTemplateRef<{ tableApi?: Table<PaymentRow> }>("tableRef");

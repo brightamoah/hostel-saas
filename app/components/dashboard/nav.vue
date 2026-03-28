@@ -3,8 +3,11 @@
 
 import { useDashboard } from "~/composables/useDashboard";
 
-defineProps<{
+const {
+  showToggle = true,
+} = defineProps<{
   title: string;
+  showToggle?: boolean;
 }>();
 
 const { isNotificationsSlideoverOpen } = useDashboard();
@@ -24,8 +27,18 @@ const unreadCount = computed(() => {
     :title
     :ui="{ right: 'gap-3' }"
   >
-    <template #leading>
+    <template
+      v-if="showToggle"
+      #leading
+    >
       <UDashboardSidebarCollapse class="cursor-pointer" />
+    </template>
+
+    <template
+      v-if="$slots.title"
+      #title
+    >
+      <slot name="title" />
     </template>
 
     <template #right>

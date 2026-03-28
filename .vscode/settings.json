@@ -12,7 +12,7 @@
   "debug.console.fontSize": 13,
   "window.commandCenter": false,
   "workbench.preferredDarkColorTheme": "Anysphere",
-  "workbench.preferredLightColorTheme": "Default Dark Modern",
+  "workbench.preferredLightColorTheme": "Dark Modern",
   "workbench.iconTheme": "material-icon-theme",
   "window.autoDetectColorScheme": true,
   "workbench.layoutControl.enabled": false,

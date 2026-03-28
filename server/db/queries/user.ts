@@ -596,6 +596,29 @@ export async function userQueries() {
     return gender;
   };
 
+  const getUserProfile = async (userId: number) => {
+    const userRecord = await db.query.user.findFirst({
+      where: eq(user.id, userId),
+      columns: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        emailVerified: true,
+        createdAt: true,
+      },
+      extras: {
+        hostel: sql<string>`COALESCE(
+          (SELECT h.name FROM admin a JOIN hostel h ON a.hostel_id = h.id WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1),
+          (SELECT h2.name FROM student s JOIN hostel h2 ON s.hostel_id = h2.id WHERE s.user_id = ${userId} LIMIT 1)
+        )`.as("hostel"),
+
+        company: sql<string>`(SELECT c.name FROM admin a JOIN company c ON a.company_id = c.id WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1)`.as("company"),
+      },
+    });
+    return userRecord;
+  };
+
   return {
     updateUserLastLogin,
     cleanupExpiredVerificationTokens,
@@ -622,6 +645,7 @@ export async function userQueries() {
     getStudentWithRelations,
     getStudentGenderByUserId,
     getStudentIdByUserId,
+    getUserProfile,
   };
 }
 
@@ -629,6 +653,8 @@ type StudentWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof userQue
 export type StudentDashboard = NonNullable<StudentWithRelations>;
 
 export type UserStats = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUsers"]>>["stats"];
+
+export type UserProfileType = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUserProfile"]>>;
 
 // type UserWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUser"]>>;
 // export type UserWR = NonNullable<UserWithRelations>;

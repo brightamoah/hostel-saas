@@ -1,6 +1,6 @@
 import type { AdminScope, BillingInsert } from "~~/shared/types";
 
-import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, ne, sql } from "drizzle-orm";
 
 import type { paymentMethod } from "../schema";
 
@@ -176,26 +176,19 @@ export async function billingQueries() {
       startOfLastMonth,
     } = getTimePeriod();
 
-    const [result] = await db
+    const [billingResult] = await db
       .select({
         totalBilledAbs: sql<number>`coalesce(sum(${billing.amount}), 0)`,
         totalPaidAbs: sql<number>`coalesce(sum(${billing.paidAmount}), 0)`,
         balanceAbs: sql<number>`coalesce(sum(${billing.amount} - ${billing.paidAmount}), 0)`,
+
         overdueAbs: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.dueDate} < NOW() AND ${billing.status} != 'fully paid' 
+        CASE WHEN ${billing.dueDate} < CURRENT_DATE AND ${billing.status} != 'fully paid' 
         THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
       ), 0)`,
 
         billedThisMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
         billedLastMonth: sql<number>`coalesce(sum(CASE WHEN ${billing.createdAt} >= ${startOfLastMonth} AND ${billing.createdAt} < ${startOfThisMonth} THEN ${billing.amount} ELSE 0 END), 0)`,
-
-        paidThisWeek: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} >= ${startOfThisWeek} AND ${payment.status} = 'completed' THEN ${payment.amount} ELSE 0 END), 0)`,
-        paidLastWeek: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} >= ${startOfLastWeek} AND ${payment.paymentDate} < ${startOfThisWeek} AND ${payment.status} = 'completed' THEN ${payment.amount} ELSE 0 END), 0)`,
-
-        balanceLastMonth: sql<number>`coalesce(sum(
-        CASE WHEN ${billing.createdAt} < ${startOfThisMonth} 
-        THEN ${billing.amount} - ${billing.paidAmount} ELSE 0 END
-      ), 0)`,
 
         overdueYesterday: sql<number>`coalesce(sum(
         CASE WHEN ${billing.dueDate} < ${startOfToday} AND ${billing.status} != 'fully paid' 
@@ -203,33 +196,39 @@ export async function billingQueries() {
       ), 0)`,
       })
       .from(billing)
-      .leftJoin(payment, eq(payment.billingId, billing.id))
-      .where(
-        and(
-          eq(billing.studentId, studentId),
-          ne(billing.status, "cancelled"),
-        ),
-      );
+      .where(and(eq(billing.studentId, studentId), ne(billing.status, "cancelled")));
+
+    const [paymentResult] = await db
+      .select({
+        paidThisWeek: sql<number>`coalesce(sum(${payment.amount}), 0)`,
+        paidLastWeek: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} < ${startOfThisWeek} THEN ${payment.amount} ELSE 0 END), 0)`,
+      })
+      .from(payment)
+      .where(and(
+        eq(payment.studentId, studentId),
+        eq(payment.status, "completed"),
+        gt(payment.paymentDate, startOfLastWeek),
+      ));
 
     return {
       totalBilled: {
-        value: Number(result?.totalBilledAbs || 0),
-        percentage: calcChange(Number(result?.billedThisMonth || 0), Number(result?.billedLastMonth || 0)),
+        value: Number(billingResult?.totalBilledAbs || 0),
+        percentage: calcChange(Number(billingResult?.billedThisMonth || 0), Number(billingResult?.billedLastMonth || 0)),
         period: "monthly" as Period,
       },
       totalPaid: {
-        value: Number(result?.totalPaidAbs || 0),
-        percentage: calcChange(Number(result?.paidThisWeek || 0), Number(result?.paidLastWeek || 0)),
+        value: Number(billingResult?.totalPaidAbs || 0),
+        percentage: calcChange(Number(paymentResult?.paidThisWeek || 0), Number(paymentResult?.paidLastWeek || 0)),
         period: "weekly" as Period,
       },
       balance: {
-        value: Number(result?.balanceAbs || 0),
-        percentage: calcChange(Number(result?.balanceAbs || 0), Number(result?.balanceLastMonth || 0)),
+        value: Number(billingResult?.balanceAbs || 0),
+        percentage: calcChange(Number(billingResult?.balanceAbs || 0), Number(billingResult?.totalBilledAbs || 0)),
         period: "monthly" as Period,
       },
       overdue: {
-        value: Number(result?.overdueAbs || 0),
-        percentage: calcChange(Number(result?.overdueAbs || 0), Number(result?.overdueYesterday || 0)),
+        value: Number(billingResult?.overdueAbs || 0),
+        percentage: calcChange(Number(billingResult?.overdueAbs || 0), Number(billingResult?.overdueYesterday || 0)),
         period: "daily" as Period,
       },
     };

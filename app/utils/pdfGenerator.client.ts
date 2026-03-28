@@ -23,7 +23,6 @@ const paymentStatusColorMap: Record<string, string> = {
   refunded: "#6b7280",
 };
 
-// --- Helpers ---
 function formatMoney(amount: number | string) {
   return new Intl.NumberFormat("en-GH", {
     style: "currency",
@@ -54,7 +53,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     const MARGIN = 15;
     let y = 20;
 
-    // --- 1. Header ---
+    // --- 1. Header
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(PRIMARY_COLOR);
@@ -74,7 +73,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.setLineWidth(0.5);
     doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
 
-    // --- 2. Meta Data ---
+    // 2. Meta Data
     y += 10;
     const col2X = PAGE_WIDTH / 2 + 10;
     const labelOffset = 18;
@@ -124,7 +123,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.setFont("helvetica", "normal");
     doc.text(capitalizeWords(billing.type || "Hostel Fee"), col2X + labelOffset, y);
 
-    // --- 3. Billed To ---
+    // 3. Billed To
     y += 8;
     const boxHeight = 42;
     doc.setFillColor(BG_COLOR);
@@ -158,7 +157,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
 
     y += boxHeight + 8;
 
-    // --- 4. Table ---
+    // 4. Table
     const subtotal = Number(billing.amount);
     const lateFee = Number(billing.lateFee || 0);
     const total = subtotal + lateFee;
@@ -184,7 +183,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     // @ts-expect-error: lastAutoTable is added by jspdf-autotable at runtime, not typed in jsPDF
     y = doc.lastAutoTable.finalY + 8;
 
-    // --- 5. Totals ---
+    // 5. Totals
     const rightColLabelX = 140;
     const rightColValueX = 195;
 
@@ -213,7 +212,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     addRow("Amount Paid:", formatMoney(paid), true, STATUS_COLORS["fully paid"]);
     addRow("Balance Due:", formatMoney(balance), true, STATUS_COLORS.overdue);
 
-    // --- 6. Payment Info ---
+    // 6. Payment Info
     y += 6;
     doc.setFillColor(BG_COLOR);
     doc.setDrawColor(BORDER_COLOR);
@@ -254,7 +253,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
 
     y += 38;
 
-    // --- 7. Transaction History ---
+    // 7. Transaction History
     doc.setTextColor(PRIMARY_COLOR);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
@@ -272,14 +271,16 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
             styles: {
               textColor: paymentStatusColorMap[status] || TEXT_COLOR,
               fontStyle: "bold" as const,
+              halign: "left" as const,
             },
           },
+          p.transactionReference || "-",
         ];
       });
 
       autoTable(doc, {
         startY: y + 4,
-        head: [["Date", "Payment Method", "Amount", "Status"]],
+        head: [["Date", "Payment Method", "Amount", "Status", "Reference"]],
         body: paymentRows,
         theme: "grid",
         headStyles: { fillColor: BG_COLOR, textColor: TEXT_COLOR, fontStyle: "bold", lineColor: BORDER_COLOR, lineWidth: 0.1 },
@@ -301,21 +302,14 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
       y += 20;
     }
 
-    // --- 8. Terms & Conditions (With Dynamic Calculation) ---
-    doc.setFillColor(BG_COLOR);
-    doc.setDrawColor(BORDER_COLOR);
-    doc.rect(MARGIN, y, PAGE_WIDTH - (MARGIN * 2), 35, "FD");
+    // Terms & Conditions
 
-    y += 7;
-    doc.setTextColor(PRIMARY_COLOR);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Terms & Conditions", MARGIN + 5, y);
+    const PAGE_HEIGHT = doc.internal.pageSize.height;
+    const BOTTOM_MARGIN = 15;
 
-    y += 5;
-    doc.setTextColor(TEXT_COLOR);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
+    const TERMS_LINE_HEIGHT = 4.5;
+    const TERMS_PADDING_TOP = 7;
+    const TERMS_PADDING_BOTTOM = 6;
 
     // CALCULATE DAYS
     const dueInDays = getDaysDifference(billing.dateIssued, billing.dueDate);
@@ -327,13 +321,48 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
       "4. For any payment inquiries, please contact our billing department.",
     ];
 
-    terms.forEach((term) => {
-      doc.text(term, MARGIN + 5, y += 4.5);
+    // Split long text safely (future-proof)
+    const wrappedTerms = terms.map(term =>
+      doc.splitTextToSize(term, PAGE_WIDTH - (MARGIN * 2) - 10),
+    );
+
+    // Calculate dynamic height
+    const contentHeight
+      = TERMS_PADDING_TOP
+        + 6
+        + wrappedTerms.flat().length * TERMS_LINE_HEIGHT
+        + TERMS_PADDING_BOTTOM;
+
+    if (y + contentHeight > PAGE_HEIGHT - BOTTOM_MARGIN) {
+      doc.addPage();
+      y = 20;
+    }
+
+    // Draw Box
+    doc.setFillColor(BG_COLOR);
+    doc.setDrawColor(BORDER_COLOR);
+    doc.rect(MARGIN, y, PAGE_WIDTH - (MARGIN * 2), contentHeight, "FD");
+
+    y += TERMS_PADDING_TOP;
+    doc.setTextColor(PRIMARY_COLOR);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Terms & Conditions", MARGIN + 5, y);
+
+    y += 6;
+    doc.setTextColor(TEXT_COLOR);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+
+    wrappedTerms.forEach((lines) => {
+      lines.forEach((line: string) => {
+        y += TERMS_LINE_HEIGHT;
+        doc.text(line, MARGIN + 5, y);
+      });
     });
 
     y += 10;
 
-    // --- 8. Output ---
     resolve(doc.output("blob"));
   });
 }
