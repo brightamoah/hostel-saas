@@ -209,7 +209,7 @@ export const useAltAuth = defineStore("altAuth", () => {
       });
 
       toast.add({
-        title: "Password Reset Successful",
+        title: "Password Changed Successfully",
         description: response.message,
         color: "success",
         icon: "i-lucide-circle-check-big",

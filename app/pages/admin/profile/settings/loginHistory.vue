@@ -37,10 +37,13 @@ const isUploading = ref(false);
 function onFileChange(file: File | null) {
   if (!file) return;
   uploadedFile.value = file;
+  // Revoke previous object URL to prevent memory leak
+  if (avatarSrc.value && avatarSrc.value.startsWith("blob:")) {
+    URL.revokeObjectURL(avatarSrc.value);
+  }
   // Preview immediately
   avatarSrc.value = URL.createObjectURL(file);
 }
-
 async function confirmUpload() {
   if (!uploadedFile.value) return;
   isUploading.value = true;

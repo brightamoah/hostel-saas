@@ -187,13 +187,18 @@ const passwordResetSchema = z.object({
 });
 
 const changePasswordSchema = z.object({
-  currentPassword: passwordSchema,
+  currentPassword: z.string().min(1, "Current password is required"),
   newPassword: passwordSchema,
   confirmPassword: confirmPasswordSchema,
-}).refine(data => data.newPassword === data.confirmPassword, {
-  error: "New passwords don't match",
-  path: ["confirmPassword"],
-});
+})
+  .refine(data => data.newPassword !== data.currentPassword, {
+    error: "New password must be different from current password",
+    path: ["newPassword"],
+  })
+  .refine(data => data.newPassword === data.confirmPassword, {
+    error: "New passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export type ChangePasswordSchema = z.output<typeof changePasswordSchema>;
 
