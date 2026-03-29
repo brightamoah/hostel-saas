@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   label: string;
-  value?: string | number;
+  value?: string | number | boolean;
   valueClass?: string;
   labelClass?: string;
 }>();
@@ -13,17 +13,22 @@ defineProps<{
       class="text-muted text-sm"
       :class="[labelClass]"
     >
-      <slot name="label">
+      <slot
+        name="label"
+        :label
+      >
         {{ label }}
       </slot>
     </p>
 
-    <div
+    <p
       class="font-medium text-base"
       :class="[valueClass]"
     >
-      <slot>{{ value }}</slot>
-    </div>
+      <slot :value>
+        {{ value }}
+      </slot>
+    </p>
   </div>
 </template>
 

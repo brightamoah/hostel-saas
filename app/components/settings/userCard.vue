@@ -37,7 +37,7 @@ const userItems = computed<UserItem[]>(() => {
     {
       id: "hostel",
       label: "Hostel:",
-      value: userProfile?.value?.hostel,
+      value: userProfile?.value?.hostel ?? "N/A",
     },
   ];
 
@@ -46,7 +46,7 @@ const userItems = computed<UserItem[]>(() => {
       {
         id: "company",
         label: "Company:",
-        value: userProfile?.value?.company,
+        value: userProfile?.value?.company ?? "N/A",
       },
     );
   }
@@ -71,6 +71,7 @@ const userItems = computed<UserItem[]>(() => {
         :ui="{
           fallback: `text-white text-4xl`,
         }"
+
         :style=" `background-color: ${avatarBgColor}`"
         class="size-30"
       />

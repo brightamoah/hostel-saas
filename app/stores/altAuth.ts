@@ -176,6 +176,67 @@ export const useAltAuth = defineStore("altAuth", () => {
     }
   }
 
+  const changePasswordFields = ref<AuthFormField[]>([
+    {
+      name: "currentPassword",
+      type: "password",
+      label: "Current Password",
+      placeholder: "Enter your current password",
+      required: true,
+    },
+    {
+      name: "newPassword",
+      type: "password",
+      label: "New Password",
+      placeholder: "Enter your new password",
+      required: true,
+    },
+    {
+      name: "confirmPassword",
+      type: "password",
+      label: "Confirm Password",
+      placeholder: "Re-enter your new password",
+      required: true,
+    },
+  ]);
+
+  const changePassword = async (payload: FormSubmitEvent<ChangePasswordSchema>) => {
+    isLoading.value = true;
+    try {
+      const response = await $apiFetch("/api/user/changePassword", {
+        method: "POST",
+        body: payload.data,
+      });
+
+      toast.add({
+        title: "Password Reset Successful",
+        description: response.message,
+        color: "success",
+        icon: "i-lucide-circle-check-big",
+      });
+
+      errorMessage.value = null;
+
+      response.userRole === "admin"
+        ? await navigateTo({ name: "admin-profile" })
+        : await navigateTo({ name: "student-profile" });
+    }
+    catch (error: any) {
+      const message = error?.data?.message || "Failed to change password. Please try again.";
+      errorMessage.value = message;
+      toast.add({
+        title: "Failed to Change",
+        description: message,
+        color: "error",
+        icon: "i-lucide-circle-alert",
+        duration: 8000,
+      });
+    }
+    finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     isLoading,
     coolDownTime,
@@ -183,10 +244,12 @@ export const useAltAuth = defineStore("altAuth", () => {
     canResend,
     fields,
     resetPasswordFields,
+    changePasswordFields,
     startCoolDown,
     requestPasswordReset,
     resendVerificationEmail,
     resetPassword,
+    changePassword,
   };
 });
 

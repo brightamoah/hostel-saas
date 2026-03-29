@@ -188,7 +188,7 @@ onMounted(async () => {
       resizable
       class="bg-elevated/25"
       :menu="{
-        transition: true,
+        transition: false,
       }"
       :ui="{
         footer: 'lg:border-t lg:border-default',

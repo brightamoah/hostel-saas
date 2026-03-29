@@ -96,6 +96,15 @@ export type ProfileSettingsItem = {
   buttonLabel: string;
   link: RouteLocationRaw;
 };
+
+export type SecuritySettingsItem = {
+  id: string | number;
+  label: string;
+  value: string | number | boolean;
+  icon: string;
+  edit: boolean;
+  link?: RouteLocationRaw;
+};
 export type Refresh = (opts?: AsyncDataExecuteOptions) => Promise<void>;
 export type Status = AsyncDataRequestStatus;
 

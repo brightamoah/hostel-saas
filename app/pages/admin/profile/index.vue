@@ -2,14 +2,12 @@
 definePageMeta({
   middleware: ["requires-auth", "admin"],
   layout: {
-    name: "admin-dashboard",
+    name: "settings",
     props: {
-      sidebar: false,
+      title: "Admin Profile",
     },
   },
 });
-
-const title = ref("Admin Profile");
 
 const settingsItems: ProfileSettingsItem[] = [
   {
@@ -48,44 +46,27 @@ const settingsItems: ProfileSettingsItem[] = [
 </script>
 
 <template>
-  <div class="flex flex-1">
-    <UDashboardPanel id="admin-profile">
-      <template #header>
-        <DashboardNav
-          :title
-          :show-toggle="false"
-        >
-          <template #title>
-            <NuxtLink
-              :to="{ name: 'admin-dashboard' }"
-              class="flex items-center gap-2"
-            >
-              <AppLogo class="size-6 md:size-8" />
+  <div class="px-6">
+    <UButton
+      label="Back to Dashboard"
+      icon="i-lucide-arrow-left"
+      variant="link"
+      color="neutral"
+      :to="{ name: 'admin-dashboard' }"
+      class="mb-6"
+    />
 
-              <h2 class="hidden md:block font-newsreader font-semibold text-2xl">
-                KayaNest
-              </h2>
-            </NuxtLink>
-          </template>
-        </DashboardNav>
-      </template>
+    <div class="flex gap-8">
+      <SettingsUserCard />
 
-      <template #body>
-        <div class="p-4 sm:p-6 lg:p-8">
-          <div class="flex gap-8">
-            <SettingsUserCard class="lg:row-span-2" />
-
-            <div class="flex-1 gap-8 grid grid-cols-3">
-              <SettingsCard
-                v-for="item in settingsItems"
-                :key="item.id"
-                v-bind="item"
-              />
-            </div>
-          </div>
-        </div>
-      </template>
-    </UDashboardPanel>
+      <div class="flex-1 gap-8 grid grid-cols-3">
+        <SettingsCard
+          v-for="item in settingsItems"
+          :key="item.id"
+          v-bind="item"
+        />
+      </div>
+    </div>
   </div>
 </template>
 

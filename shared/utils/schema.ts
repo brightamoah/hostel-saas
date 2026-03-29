@@ -64,6 +64,7 @@ export function createIdSchema(name: string) {
 
 const passwordSchema = z
   .string({ error: "Password is required" })
+  .trim()
   .min(8, "Must be at least 8 characters")
   .max(20, "Must be at most 20 characters")
   .refine(val => /[A-Z]/.test(val), "Must include an uppercase letter")
@@ -184,6 +185,17 @@ const passwordResetSchema = z.object({
   token: z.string({ error: "Token is required" }),
   newPassword: passwordSchema,
 });
+
+const changePasswordSchema = z.object({
+  currentPassword: passwordSchema,
+  newPassword: passwordSchema,
+  confirmPassword: confirmPasswordSchema,
+}).refine(data => data.newPassword === data.confirmPassword, {
+  error: "New passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export type ChangePasswordSchema = z.output<typeof changePasswordSchema>;
 
 const emailVerificationSchema = z.object({
   id: idSchema,
@@ -852,6 +864,7 @@ export {
   baseSignupSchema,
   billingStatusSchema,
   bookRoomSchema,
+  changePasswordSchema,
   companySchema,
   complaintStatusResponseSchema,
   confirmPasswordSchema,

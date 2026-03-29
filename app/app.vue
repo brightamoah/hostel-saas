@@ -52,7 +52,7 @@ const appLocale = useState("appLocale", () => en_gb);
 </template>
 
 <style scoped>
-/* .page-enter-active,
+ /* .page-enter-active,
 .page-leave-active {
   transition:
     opacity 0.5s ease,
@@ -63,9 +63,9 @@ const appLocale = useState("appLocale", () => en_gb);
 .page-leave-to {
   opacity: 0;
   transform: translateY(20px);
-} */
+}
 
-/* .page-enter-active,
+.page-enter-active,
 .page-leave-active {
   transition:
     opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),

@@ -614,9 +614,41 @@ export async function userQueries() {
         )`.as("hostel"),
 
         company: sql<string>`(SELECT c.name FROM admin a JOIN company c ON a.company_id = c.id WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1)`.as("company"),
+        phoneNumber: sql<string>`COALESCE(
+          (SELECT a.phone_number FROM admin a WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1),
+          (SELECT s.phone_number FROM student s WHERE s.user_id = ${userId} LIMIT 1)
+        )`.as("phoneNumber"),
       },
     });
     return userRecord;
+  };
+
+  const updateUserProfile = async (userId: number, payload: Partial<typeof user.$inferInsert>) => {
+    const updateData: Partial<typeof user.$inferInsert> = {};
+
+    if (payload.name !== undefined) updateData.name = payload.name;
+
+    if (payload.email !== undefined) updateData.email = payload.email.toLowerCase().trim();
+
+    if (payload.image !== undefined) updateData.image = payload.image;
+
+    if (payload.password !== undefined) updateData.password = payload.password;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new Error("No valid fields provided for update");
+    }
+
+    const [updatedUser] = await db
+      .update(user)
+      .set(updateData)
+      .where(eq(user.id, userId))
+      .returning();
+
+    if (!updatedUser) {
+      throw new Error("User not found");
+    }
+
+    return updatedUser;
   };
 
   return {
@@ -646,6 +678,7 @@ export async function userQueries() {
     getStudentGenderByUserId,
     getStudentIdByUserId,
     getUserProfile,
+    updateUserProfile,
   };
 }
 

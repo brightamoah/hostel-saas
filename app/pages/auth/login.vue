@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RouteNamedMap } from "vue-router/auto-routes";
+import type { RouteLocationRaw } from "vue-router";
 
 definePageMeta({
   layout: "auth",
@@ -14,9 +14,9 @@ const { loginFields, login, clearStateAndErrors } = authStore;
 
 const portalSurface = usePortalSurface();
 
-const signUpRouteName = computed<keyof RouteNamedMap>(() => {
-  if (portalSurface === "admin") return "auth-registerCompany";
-  return "auth-signup";
+const signUpRouteName = computed<RouteLocationRaw>(() => {
+  if (portalSurface === "admin") return { name: "auth-registerCompany" };
+  return { name: "auth-signup" };
 });
 
 onMounted(() => {
@@ -44,7 +44,7 @@ onMounted(() => {
       <template #description>
         Don't have an account?
         <ULink
-          :to="{ name: signUpRouteName }"
+          :to="signUpRouteName"
           class="font-medium text-primary"
         >
           Sign up.
