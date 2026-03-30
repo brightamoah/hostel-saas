@@ -2,22 +2,12 @@
 definePageMeta({
   middleware: ["requires-auth"],
   layout: {
-    name: "student-dashboard",
+    name: "settings",
     props: {
-      sidebar: false,
+      title: "Student Profile",
     },
   },
 });
-
-const title = ref("Student Profile");
-
-// type SettingItem = {
-//   id: string;
-//   label: string;
-//   icon: string;
-//   description: string;
-//   link: string;
-// };
 
 const settingsItems: ProfileSettingsItem[] = [
   {
@@ -29,71 +19,54 @@ const settingsItems: ProfileSettingsItem[] = [
     link: { name: "student-profile-settings-security" },
   },
   {
-    id: "security-info" as const,
-    title: "Security Information",
-    icon: "i-lucide-shield-check",
-    buttonLabel: "Manage Security Info",
-    description: "Keep your verification methods and security info up to date.",
-    link: { name: "student-profile-settings-security" },
+    id: "password" as const,
+    title: "Password",
+    icon: "i-lucide-lock",
+    buttonLabel: "Change Password",
+    description: "Update your password regularly for security.",
+    link: { name: "student-profile-settings-changePassword" },
   },
   {
-    id: "security-info" as const,
-    title: "Security Information",
-    icon: "i-lucide-shield-check",
-    buttonLabel: "Manage Security Info",
-    description: "Keep your verification methods and security info up to date.",
-    link: { name: "student-profile-settings-security" },
+    id: "privacy" as const,
+    title: "Privacy",
+    icon: "i-lucide-file-lock",
+    buttonLabel: "Manage Privacy",
+    description: "View our privacy policy and terms of service.",
+    link: { name: "student-profile-settings-privacy" },
   },
   {
-    id: "security-info" as const,
-    title: "Security Information",
-    icon: "i-lucide-shield-check",
-    buttonLabel: "Manage Security Info",
-    description: "Keep your verification methods and security info up to date.",
-    link: { name: "student-profile-settings-security" },
+    id: "loginHistory" as const,
+    title: "Login History",
+    icon: "i-lucide-clock",
+    buttonLabel: "View Login History",
+    description: "Review your recent login activities.",
+    link: { name: "student-profile-settings-loginHistory" },
   },
 ];
 </script>
 
 <template>
-  <div class="flex flex-1">
-    <UDashboardPanel id="student-profile">
-      <template #header>
-        <DashboardNav
-          :title
-          :show-toggle="false"
-        >
-          <template #title>
-            <NuxtLink
-              :to="{ name: 'student-dashboard' }"
-              class="flex items-center gap-2"
-            >
-              <AppLogo class="size-6 md:size-8" />
+  <div class="px-6">
+    <UButton
+      label="Back to Dashboard"
+      icon="i-lucide-arrow-left"
+      variant="link"
+      color="neutral"
+      :to="{ name: 'student-dashboard' }"
+      class="mb-6"
+    />
 
-              <h2 class="hidden md:block font-newsreader font-semibold text-2xl">
-                KayaNest
-              </h2>
-            </NuxtLink>
-          </template>
-        </DashboardNav>
-      </template>
+    <div class="flex gap-8">
+      <SettingsUserCard class="lg:row-span-2" />
 
-      <template #body>
-        <div class="p-4 sm:p-6 lg:p-8">
-          <div class="flex gap-8">
-            <SettingsUserCard class="lg:row-span-2" />
-
-            <div class="flex-1 gap-8 grid grid-cols-3">
-              <SettingsCard
-                v-for="item in settingsItems"
-                :key="item.id"
-                v-bind="item"
-              />
-            </div>
-          </div>
-        </div>
-      </template>
-    </UDashboardPanel>
+      <div class="flex-1 gap-8 grid grid-cols-3">
+        <SettingsCard
+          v-for="item in settingsItems"
+          :key="item.id"
+          v-bind="item"
+        />
+      </div>
+    </div>
   </div>
 </template>
 

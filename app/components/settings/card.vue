@@ -23,7 +23,7 @@ const {
 
     <UIcon
       :name="icon"
-      class="size-15 text-default"
+      class="size-15 text-primary"
     />
 
     <p>{{ description }}</p>
