@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { $handleFormError } = useNuxtApp();
+
 const companyStore = useCompanyStore();
 
 const {
@@ -45,7 +47,7 @@ const hostelFormRef = useTemplateRef("hostelFormRef");
         :state="createHostelState"
         :schema="hostelDetailsSchema"
         @submit.prevent="createHostel"
-        @error="useHandleFormError"
+        @error="$handleFormError"
       >
         <CompanyHostelForm
           v-model:name="createHostelState.name"

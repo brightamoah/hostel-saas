@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 const isOpen = ref(false);
 
+const { $handleFormError } = useNuxtApp();
+
 const state = ref<Partial<VerifyPaymentSchema>>({
   reference: "",
 });
@@ -81,7 +83,7 @@ async function proceedToVerification() {
           :state
           :schema="verifyPaymentSchema"
           @submit="proceedToVerification"
-          @error="useHandleFormError"
+          @error="$handleFormError"
         >
           <UFormField
             required

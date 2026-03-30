@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { FormErrorEvent, RadioGroupItem } from "@nuxt/ui";
+import type { RadioGroupItem } from "@nuxt/ui";
 
 import { capitalize } from "vue";
 
@@ -8,6 +8,8 @@ const { billing } = defineProps<{
 }>();
 
 const emit = defineEmits<{ close: [boolean] }>();
+
+const { $handleFormError } = useNuxtApp();
 
 const billingStore = useBillingStore();
 const {
@@ -76,10 +78,6 @@ onMounted(() => {
 
 const paymentForm = useTemplateRef("paymentForm");
 
-function handleFormError(event: FormErrorEvent) {
-  useHandleFormError(event);
-}
-
 async function submitPayment() {
   const { amount, billingId, email, phoneNumber, totalAmount } = paymentState.value;
 
@@ -126,7 +124,7 @@ function closeModal() {
         v-auto-animate
         :schema="paymentSchema"
         :state="paymentState"
-        @error="handleFormError"
+        @error="$handleFormError"
         @submit="submitPayment"
       >
         <UCard>

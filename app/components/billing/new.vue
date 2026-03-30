@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 const billingStore = useBillingStore();
 
+const { $handleFormError } = useNuxtApp();
+
 const {
   createBillingState,
   isLoading,
@@ -42,7 +44,7 @@ watch(isModalOpen, (open) => {
         ref="billingForm"
         :schema="createBillingSchema"
         :billing-state="createBillingState as CreateBillingSchema"
-        @error="useHandleFormError"
+        @error="$handleFormError"
         @submit="billingStore.createBilling"
       />
     </template>

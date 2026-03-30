@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
+const { $handleFormError } = useNuxtApp();
+
 const roomStore = useRoomStore();
 const {
   addRoomState,
@@ -79,7 +81,7 @@ watch(
         :state="addRoomState"
         :schema="addRoomSchema"
         @submit="roomStore.addNewRoom"
-        @error="useHandleFormError"
+        @error="$handleFormError"
       >
         <div class="flex md:flex-row flex-col justify-between gap-5 mb-4 px-4">
           <UFormField

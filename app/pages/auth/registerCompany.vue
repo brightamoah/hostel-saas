@@ -6,6 +6,8 @@ definePageMeta({
   middleware: ["auth-redirect"],
 });
 
+const { $handleFormError } = useNuxtApp();
+
 const toast = useToast();
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
@@ -118,7 +120,7 @@ async function nextTab() {
         :state="createCompanyState"
         class="bg-transparent shadow-md backdrop-blur-xl p-2 md:p-4 border border-muted rounded-lg w-full max-w-4xl"
         @submit.prevent="submitRegistration"
-        @error="useHandleFormError"
+        @error="$handleFormError"
       >
         <UTabs
           v-model="activeTab"

@@ -8,6 +8,8 @@ definePageMeta({
   },
 });
 
+const { $handleFormError } = useNuxtApp();
+
 const altAuthStore = useAltAuth();
 const { changePasswordFields, isLoading } = storeToRefs(altAuthStore);
 const { changePassword } = altAuthStore;
@@ -54,7 +56,7 @@ const { changePassword } = altAuthStore;
           disabled: isLoading,
         }"
         @submit="changePassword($event)"
-        @error="useHandleFormError"
+        @error="$handleFormError"
       />
     </UCard>
   </div>
