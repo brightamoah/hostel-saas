@@ -1,5 +1,5 @@
 import { CalendarDate, getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import * as z from "zod";
+import { z } from "zod";
 
 import { formatBytes } from "@/utils/formatBytes";
 
@@ -62,18 +62,62 @@ export function createIdSchema(name: string) {
     .min(1, `Invalid ${name} ID`);
 }
 
-const passwordSchema = z
-  .string({ error: "Password is required" })
-  .trim()
-  .min(8, "Must be at least 8 characters")
-  .max(20, "Must be at most 20 characters")
-  .refine(val => /[A-Z]/.test(val), "Must include an uppercase letter")
-  .refine(val => /[a-z]/.test(val), "Must include a lowercase letter")
-  .refine(val => /\d/.test(val), "Must include a number")
-  .refine(
-    val => /[^A-Z0-9]/i.test(val),
-    "Must include a special character",
-  );
+const passwordSchema = z.string().superRefine((val, ctx) => {
+  if (!val?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Password is required",
+    });
+    return;
+  }
+
+  if (val.length < 8) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Must be at least 8 characters",
+    });
+    return;
+  }
+
+  if (val.length > 20) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Must be at most 20 characters",
+    });
+    return;
+  }
+
+  if (!/[A-Z]/.test(val)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Must include an uppercase letter",
+    });
+    return;
+  }
+
+  if (!/[a-z]/.test(val)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Must include a lowercase letter",
+    });
+    return;
+  }
+
+  if (!/\d/.test(val)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Must include a number",
+    });
+    return;
+  }
+
+  if (!/[^A-Z0-9]/i.test(val)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Must include a special character",
+    });
+  }
+});
 
 const nameSchema = z
   .string({ error: "Name is required" })
@@ -129,13 +173,22 @@ const verifyEmailSchema = z.object({
 });
 export type VerifyEmailSchema = z.output<typeof verifyEmailSchema>;
 
-const phoneNumberSchema = z.string({ error: "Phone Number is required" })
-  .regex(/^(?:\d{10}|\+\d{12})$/, "Phone number must be 10 digits (e.g., 0234567890) or 13 digits starting with + (e.g., +233234567890)")
-  .min(1, "Phone Number is required")
-  .refine(
-    val => /^(?:\+233\d{9}|0\d{9})$/.test(val),
-    "Phone number must be in the format +233XXXXXXXXX or 0XXXXXXXXXX",
-  );
+const phoneNumberSchema = z.string().superRefine((val, ctx) => {
+  if (!val?.trim()) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Phone Number is required",
+    });
+    return;
+  }
+
+  if (!/^(?:\+233\d{9}|0\d{9})$/.test(val)) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Phone number must be in the format +233XXXXXXXXX or 0XXXXXXXXXX",
+    });
+  }
+});
 
 const genderSchema = z.union([
   z.enum(["male", "female"], {
@@ -863,6 +916,13 @@ const registerCompanySchema = ownerSchema.and(companySchema);
 
 export type RegisterCompanySchema = z.output<typeof registerCompanySchema>;
 
+const updatePhoneNumberSchema = z.object({
+  phoneNumber: phoneNumberSchema,
+  password: passwordSchema,
+});
+
+export type UpdatePhoneNumberSchema = z.output<typeof updatePhoneNumberSchema>;
+
 export {
   addAdminSchema,
   approveDenySchema,
@@ -907,6 +967,7 @@ export {
   roleSchema,
   roomFeatureSchema,
   signupSchema,
+  updatePhoneNumberSchema,
   verifyEmailSchema,
   verifyPaymentSchema,
 };

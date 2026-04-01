@@ -47,8 +47,8 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
         label: "Settings",
         icon: "i-lucide-settings",
         to: (user.role === "admin"
-          ? { name: "admin-settings" }
-          : { name: "student-settings" }),
+          ? { name: "admin-profile-settings-security" }
+          : { name: "student-profile-settings-security" }),
       },
     ],
     [

@@ -98,7 +98,7 @@ export type ProfileSettingsItem = {
 };
 
 export type SecuritySettingsItem = {
-  id: string | number;
+  id: string;
   label: string;
   value: string | number | boolean;
   icon: string;

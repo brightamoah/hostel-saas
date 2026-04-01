@@ -86,6 +86,7 @@ export default defineNuxtConfig({
       link: [
         { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
       ],
+      titleTemplate: `%s - ${env.NUXT_EMAIL_FROM_NAME}`,
     },
   },
 

@@ -102,7 +102,7 @@ const securityItems = computed<SecuritySettingsItem[]>(() => [
           </DashboardDetailItem>
 
           <UButton
-            v-if="item.edit"
+            v-if="item.edit && item.id !== 'phone'"
             icon="i-lucide-notebook-pen"
             variant="link"
             color="neutral"
@@ -110,14 +110,26 @@ const securityItems = computed<SecuritySettingsItem[]>(() => [
             :to="item.link"
           />
 
-          <UButton
+          <!-- TODO: Implement 2FA enable functionality -->
+          <!-- <UButton
             v-if="item.id === '2fa' && item.value === 'Disabled'"
             label="Enable 2FA"
             :icon="item.icon"
             variant="subtle"
             color="primary"
             class="cursor-pointer"
+          /> -->
+
+          <UBadge
+            v-if="item.id === '2fa' && item.value === 'Disabled'"
+            label="Coming Soon"
+            icon="i-lucide-clock"
+            color="info"
+            variant="subtle"
+            size="lg"
           />
+
+          <SettingsEditPhoneNumber v-if="item.id === 'phone'" />
         </div>
 
         <USeparator

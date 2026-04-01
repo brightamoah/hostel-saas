@@ -21,7 +21,7 @@ const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const userOptions = computed(() => {
   return users.value.map(user => ({
-    label: `${user.name} (${user.email})`,
+    label: `${user.name} (${user.email}) — ${user.role}`,
     value: user.id,
   }));
 });

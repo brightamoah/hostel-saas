@@ -651,6 +651,58 @@ export async function userQueries() {
     return updatedUser;
   };
 
+  const getUserExtended = async (userId: number) => {
+    const userRecord = await db.query.user.findFirst({
+      columns: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,
+        role: true,
+      },
+      extras: {
+        phoneNumber: sql<string>`COALESCE(
+          (SELECT a.phone_number FROM admin a WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1),
+          (SELECT s.phone_number FROM student s WHERE s.user_id = ${userId} LIMIT 1)
+        )`.as("phoneNumber"),
+      },
+      where: eq(user.id, userId),
+    });
+    return userRecord;
+  };
+
+  /**
+   * Updates the phone number for a user, either as a student or admin.
+   * @param userId The user's ID.
+   * @param phoneNumber The new phone number.
+   * @param role The user's role: "student" or "admin".
+   */
+  const updatePhoneNumber = async (
+    userId: number,
+    phoneNumber: string,
+    role: "student" | "admin",
+  ) => {
+    if (role === "student") {
+      const [updatedStudent] = await db
+        .update(student)
+        .set({ phoneNumber })
+        .where(eq(student.userId, userId))
+        .returning();
+      return updatedStudent;
+    }
+    else if (role === "admin") {
+      const [updatedAdmin] = await db
+        .update(admin)
+        .set({ phoneNumber })
+        .where(eq(admin.userId, userId))
+        .returning();
+      return updatedAdmin;
+    }
+    else {
+      throw new Error("Invalid role for phone number update");
+    }
+  };
+
   return {
     updateUserLastLogin,
     cleanupExpiredVerificationTokens,
@@ -679,6 +731,8 @@ export async function userQueries() {
     getStudentIdByUserId,
     getUserProfile,
     updateUserProfile,
+    updatePhoneNumber,
+    getUserExtended,
   };
 }
 
