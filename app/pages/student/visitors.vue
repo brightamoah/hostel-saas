@@ -39,9 +39,9 @@ const cards = computed<StatsCard[]>(() => [
     title: "Total Visitors",
     icon: "i-lucide-users",
     color: "primary",
-    value: data.value?.stats?.totalVisitors?.value ?? 0,
-    percentage: data.value?.stats?.totalVisitors?.percentage,
-    period: data.value?.stats?.totalVisitors?.period,
+    value: data.value?.stats?.total?.value ?? 0,
+    percentage: data.value?.stats?.total?.percentage,
+    period: data.value?.stats?.total?.period,
   },
   {
     id: 2,

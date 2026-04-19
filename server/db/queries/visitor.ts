@@ -132,7 +132,6 @@ export async function visitorQueries() {
         pendingToday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfToday} THEN 1 END`),
         pendingYesterday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfYesterday} AND ${visitor.visitDate} < ${startOfToday} THEN 1 END`),
 
-        totalAbs: count(visitor.id),
         approvedAbs: count(sql`CASE WHEN ${visitor.status} = 'approved' THEN 1 END`),
         checkedInAbs: count(sql`CASE WHEN ${visitor.status} = 'checked-in' THEN 1 END`),
         pendingAbs: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
@@ -142,7 +141,7 @@ export async function visitorQueries() {
 
     return {
       totalVisitors: {
-        value: result?.totalAbs ?? 0,
+        value: result?.totalThisMonth ?? 0,
         percentage: calcChange(result?.totalThisMonth ?? 0, result?.totalLastMonth ?? 0),
         period: "monthly" as Period,
       },
@@ -217,8 +216,6 @@ export async function visitorQueries() {
         pendingToday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfToday} THEN 1 END`),
         pendingYesterday: count(sql`CASE WHEN ${visitor.status} = 'pending' AND ${visitor.visitDate} >= ${startOfYesterday} AND ${visitor.visitDate} < ${startOfToday} THEN 1 END`),
 
-        // Keep static absolute totals for general info
-        totalAllTime: count(visitor.id),
       })
       .from(visitor)
       .where(eq(visitor.studentId, studentId));
