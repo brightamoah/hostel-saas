@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-import type { FormErrorEvent } from "@nuxt/ui";
+import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 
-const { editMaintenanceState, clearState } = defineProps<{
-  editMaintenanceState: MaintenanceEdit["data"];
+import z from "zod";
+
+const { editMaintenanceState, clearState, editMaintenance } = defineProps<{
+  editMaintenanceState: EditFormState;
   isLoading: boolean | Ref<boolean>;
-  editMaintenance: () => Promise<void>;
+  editMaintenance: (payload: FormSubmitEvent<EditFormState>) => Promise<void>;
   handleFormError: (event: FormErrorEvent) => void;
   clearState: () => void;
 }>();
@@ -15,7 +17,21 @@ const {
 
 const editMaintenanceFormRef = useTemplateRef("editMaintenanceFormRef");
 
-const editState = ref<MaintenanceEdit["data"]>(editMaintenanceState);
+const editState = ref<EditFormState>({
+  ...editMaintenanceState,
+  existingMedia: editMaintenanceState.existingMedia
+    ? JSON.parse(JSON.stringify(editMaintenanceState.existingMedia))
+    : [],
+  mediaAttachments: undefined as File[] | undefined,
+});
+
+const frontendEditSchema = createMaintenanceSchema.extend({
+  existingMedia: z.array(mediaAttachmentSchema).optional(),
+});
+
+async function handleEditMaintenance(payload: FormSubmitEvent<unknown>) {
+  await editMaintenance(payload as FormSubmitEvent<EditFormState>);
+}
 
 onUnmounted(() => {
   clearState();
@@ -39,9 +55,9 @@ onUnmounted(() => {
       <MaintenanceForm
         ref="editMaintenanceFormRef"
         v-model:state="editState"
-        :schema="editMaintenanceSchema.shape.data"
+        :schema="frontendEditSchema"
         :student
-        @submit="editMaintenance"
+        @submit="handleEditMaintenance"
         @error="handleFormError"
       />
     </template>

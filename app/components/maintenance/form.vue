@@ -13,7 +13,7 @@ const emit = defineEmits<{
   submit: [payload: FormSubmitEvent<T>];
 }>();
 
-const state = defineModel<Partial<CreateMaintenanceSchema>>("state", { required: true });
+const state = defineModel<Partial<CreateMaintenanceSchema> & { existingMedia?: MediaAttachment[] }>("state", { required: true });
 
 const issueTypes = computed(() => {
   const types = createMaintenanceSchema.shape.issueType.def.options[0].options.map(type => ({
@@ -26,13 +26,13 @@ const issueTypes = computed(() => {
 const rooms = computed(() => student?.allocation?.room);
 
 const roomOptions = computed(() => {
-  const room = [rooms.value];
+  const room = rooms.value;
 
-  return room[0]
-    ? room.map(r => ({
-        label: `${capitalize(r.hostel.name)} - Room ${r.roomNumber} (${getOrdinalString(r.floor)} Floor)`,
-        value: r.id,
-      }))
+  return room
+    ? [{
+        label: `${capitalize(room.hostel.name)} - Room ${room.roomNumber} (${getOrdinalString(room.floor)} Floor)`,
+        value: room.id,
+      }]
     : [];
 });
 
@@ -46,6 +46,12 @@ const hostelOptions = computed(() => {
       }))
     : [];
 });
+
+function removeExistingMedia(index: number) {
+  if (state.value.existingMedia) {
+    state.value.existingMedia.splice(index, 1);
+  }
+}
 
 const priorityOptions = [
   { label: "Low", value: "low" },
@@ -152,7 +158,7 @@ defineExpose({
       required
       label="Description"
       name="description"
-      class="gap-5 mb-2 px-4 w-full"
+      class="gap-5 mb-4 px-4 w-full"
     >
       <UTextarea
         v-model="state.description"
@@ -160,6 +166,63 @@ defineExpose({
         class="w-full"
         size="xl"
         :rows="4"
+      />
+    </UFormField>
+
+    <div
+      v-if="state.existingMedia?.length"
+      class="mb-4 px-4"
+    >
+      <p class="mb-2 font-medium text-highlighted text-sm">
+        Existing Attachments
+      </p>
+
+      <div class="flex flex-wrap gap-4">
+        <div
+          v-for="(media, index) in state.existingMedia"
+          :key="media.url"
+          class="group relative flex-none p-0 border border-default rounded-lg size-24 overflow-hidden"
+        >
+          <img
+            v-if="media.type === 'image'"
+            :src="media.url"
+            class="w-full h-full object-cover"
+          >
+
+          <video
+            v-else-if="media.type === 'video'"
+            :src="media.url"
+            class="w-full h-full object-cover"
+            autoplay
+            muted
+            loop
+            playsinline
+          />
+
+          <div class="bottom-0 absolute inset-x-0 bg-black/60 backdrop-blur-sm py-0.5 font-medium text-[10px] text-white text-center uppercase tracking-wider">
+            {{ media.name.split('.').pop() }}
+          </div>
+
+          <UButton
+            icon="i-lucide-x"
+            size="xs"
+            color="error"
+            variant="solid"
+            class="top-1 right-1 z-20 absolute flex justify-center items-center opacity-0 group-hover:opacity-100 shadow-sm p-0 rounded-full size-6 transition-opacity cursor-pointer"
+            @click.stop.prevent="removeExistingMedia(index)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <UFormField
+      label="Media Attachments"
+      name="mediaAttachments"
+      class="gap-5 mb-2 px-4 w-full"
+    >
+      <AppMediaUpload
+        v-model="state.mediaAttachments"
+        :max-files="3 - (state.existingMedia?.length || 0)"
       />
     </UFormField>
   </UForm>

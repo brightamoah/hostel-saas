@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const body = await readValidatedBody(event, body =>
-      createMaintenanceSchema.safeParse(body));
+      apiCreateMaintenanceSchema.safeParse(body));
 
     if (!body.success) {
       throw createError({
@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
       issueType,
       priority,
       roomId,
+      mediaAttachments,
     } = body.data;
 
     const { getStudentForDashboardByUserId } = await userQueries();
@@ -84,6 +85,7 @@ export default defineEventHandler(async (event) => {
       priority,
       roomId,
       companyId,
+      mediaAttachments,
     });
 
     return {

@@ -1,3 +1,5 @@
+import type { MediaAttachment } from "~~/shared/types";
+
 import { relations, sql } from "drizzle-orm";
 import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
@@ -45,6 +47,7 @@ export const maintenanceRequest = pgTable("maintenance_request", t => ({
   assignedTo: t.integer(),
   resolutionDate: t.timestamp(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  mediaAttachments: t.jsonb().$type<MediaAttachment[]>().default([]),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()

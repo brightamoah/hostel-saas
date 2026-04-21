@@ -32,6 +32,7 @@ const fullSchema = z.object({
   NUXT_R2_ENDPOINT: z.string(),
   NUXT_R2_ACCESS_KEY_ID: z.string(),
   NUXT_R2_SECRET_ACCESS_KEY: z.string(),
+  NUXT_R2_URL: z.url(),
 });
 
 tryParseEnv(fullSchema);

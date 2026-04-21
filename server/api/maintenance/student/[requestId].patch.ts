@@ -1,4 +1,5 @@
 import { maintenanceQueries } from "~~/server/db/queries";
+import { deleteMediaByUrls } from "~~/server/utils/r2Upload";
 
 export default defineEventHandler(async (event) => {
   await studentSessionCheck(event);
@@ -33,6 +34,28 @@ export default defineEventHandler(async (event) => {
 
     const { updateMaintenance, getMaintenanceByIdForStudent } = await maintenanceQueries();
 
+    const existingMaintenance = await getMaintenanceByIdForStudent(maintenanceId, studentId);
+
+    if (!existingMaintenance) {
+      throw createError({
+        statusCode: 404,
+        message: "Maintenance Request Not Found: Unable to find the specified maintenance request.",
+      });
+    }
+
+    if (data.mediaAttachments !== undefined) {
+      const oldMedia = existingMaintenance.mediaAttachments || [];
+      const newMediaUrls = data.mediaAttachments.map(m => m.url);
+
+      const deletedMedia = oldMedia.filter(m => !newMediaUrls.includes(m.url));
+
+      if (deletedMedia.length > 0) {
+        deleteMediaByUrls(deletedMedia).catch((e) => {
+          console.error("Failed to delete orphaned media attachments:", e);
+        });
+      }
+    }
+
     const updatedMaintenance = await updateMaintenance(
       maintenanceId,
       studentId,
@@ -40,18 +63,9 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!updatedMaintenance) {
-      const existingMaintenance = await getMaintenanceByIdForStudent(maintenanceId, studentId);
-
-      if (!existingMaintenance) {
-        throw createError({
-          statusCode: 404,
-          message: "Maintenance Request Not Found: Unable to find the specified maintenance request.",
-        });
-      }
-
       throw createError({
-        statusCode: 403,
-        message: "Forbidden: You do not have permission to update this maintenance request.",
+        statusCode: 500,
+        message: "Maintenance request update failed: no record was returned.",
       });
     }
 

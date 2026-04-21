@@ -9,7 +9,6 @@ definePageMeta({
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-const UCheckbox = resolveComponent("UCheckbox");
 const UIcon = resolveComponent("UIcon");
 
 const title = ref("Maintenance Dashboard");
@@ -89,7 +88,6 @@ const { columns, getRowItems } = useMaintenanceRowColumn(
   UButton,
   UBadge,
   UDropdownMenu,
-  UCheckbox,
   UIcon,
 );
 

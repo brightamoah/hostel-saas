@@ -9,7 +9,6 @@ definePageMeta({
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-const UCheckbox = resolveComponent("UCheckbox");
 const UAvatar = resolveComponent("UAvatar");
 // const UIcon = resolveComponent("UIcon");
 
@@ -92,7 +91,6 @@ const { columns, getRowItems } = useVisitorRowColumn(
   UButton,
   UBadge,
   UDropdownMenu,
-  UCheckbox,
 );
 
 const pagination = ref({

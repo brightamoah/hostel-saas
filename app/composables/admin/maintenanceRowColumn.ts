@@ -1,4 +1,4 @@
-import type { TableColumn } from "@nuxt/ui";
+import type { FormSubmitEvent, TableColumn } from "@nuxt/ui";
 import type { Row } from "@tanstack/table-core";
 
 import { useDateFormat } from "@vueuse/core";
@@ -15,7 +15,6 @@ export function useMaintenanceRowColumn(
   UButton: ComponentType,
   UBadge: ComponentType,
   UDropdownMenu: ComponentType,
-  UCheckbox: ComponentType,
   UIcon: ComponentType,
 ) {
   const overlay = useOverlay();
@@ -84,8 +83,8 @@ export function useMaintenanceRowColumn(
       editMaintenanceState: editMaintenanceState.value,
       handleFormError,
       clearState,
-      editMaintenance: async () => {
-        await editMaintenance();
+      editMaintenance: async (payload: FormSubmitEvent<EditFormState>) => {
+        await editMaintenance(payload);
 
         if (!editingId.value) close();
       },
@@ -146,24 +145,6 @@ export function useMaintenanceRowColumn(
   };
 
   const columns = ref<TableColumn<MaintenanceType>[]>([
-    {
-      id: "select",
-      header: ({ table }) =>
-        h(UCheckbox, {
-          "modelValue": table.getIsSomePageRowsSelected()
-            ? "indeterminate"
-            : table.getIsAllPageRowsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") =>
-            table.toggleAllPageRowsSelected(!!value),
-          "ariaLabel": "Select all",
-        }),
-      cell: ({ row }) =>
-        h(UCheckbox, {
-          "modelValue": row.getIsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") => row.toggleSelected(!!value),
-          "ariaLabel": "Select row",
-        }),
-    },
     {
       id: "student",
       accessorFn: (row) => {

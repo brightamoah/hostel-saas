@@ -3,14 +3,136 @@ import { z } from "zod";
 
 import { formatBytes } from "@/utils/formatBytes";
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const MIN_DIMENSIONS = { width: 200, height: 200 };
 const MAX_DIMENSIONS = { width: 4096, height: 4096 };
+const MAX_FILES = 3;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/quicktime"];
+const ACCEPTED_MEDIA_TYPES = [
+  ...ACCEPTED_IMAGE_TYPES,
+  ...ACCEPTED_VIDEO_TYPES,
+];
+
+const mediaFileSchema = z
+  .instanceof(File, {
+    error: "Please select a file.",
+  })
+  .superRefine((file: File, ctx) => {
+    if (file.size > MAX_FILE_SIZE) {
+      ctx.addIssue({
+        code: "custom",
+        message: `"${file.name}" is too large. Maximum file size is ${formatBytes(MAX_FILE_SIZE)}.`,
+      });
+    }
+
+    if (!ACCEPTED_MEDIA_TYPES.includes(file.type)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `"${file.name}" has an unsupported type (${file.type}). Allowed: JPG, PNG, WebP, MP4, MOV.`,
+      });
+    }
+
+    if (ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return new Promise<void>((resolve) => {
+        const reader = new FileReader();
+
+        reader.onerror = () => {
+          ctx.addIssue({
+            code: "custom",
+            message: `Unable to read "${file.name}". Please choose a different file.`,
+          });
+          resolve();
+        };
+
+        reader.onload = (e) => {
+          const result = e.target?.result;
+
+          if (typeof result !== "string") {
+            ctx.addIssue({
+              code: "custom",
+              message: `Unable to process "${file.name}".`,
+            });
+            resolve();
+            return;
+          }
+
+          const img = new Image();
+
+          img.onerror = () => {
+            ctx.addIssue({
+              code: "custom",
+              message: `"${file.name}" is not a valid image file.`,
+            });
+            resolve();
+          };
+
+          img.onload = () => {
+            const isWithinBounds
+              = img.width >= MIN_DIMENSIONS.width
+                && img.height >= MIN_DIMENSIONS.height
+                && img.width <= MAX_DIMENSIONS.width
+                && img.height <= MAX_DIMENSIONS.height;
+
+            if (!isWithinBounds) {
+              ctx.addIssue({
+                code: "custom",
+                message: `"${file.name}" dimensions must be between ${MIN_DIMENSIONS.width}x${MIN_DIMENSIONS.height} and ${MAX_DIMENSIONS.width}x${MAX_DIMENSIONS.height} pixels.`,
+              });
+            }
+
+            resolve();
+          };
+
+          img.src = result;
+        };
+
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (ACCEPTED_VIDEO_TYPES.includes(file.type)) {
+      return new Promise<void>((resolve) => {
+        const video = document.createElement("video");
+        const objectUrl = URL.createObjectURL(file);
+
+        video.preload = "metadata";
+
+        video.onerror = () => {
+          ctx.addIssue({
+            code: "custom",
+            message: `"${file.name}" is not a valid video file.`,
+          });
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+
+        video.onloadedmetadata = () => {
+          const hasValidMetadata
+            = Number.isFinite(video.duration)
+              && video.duration > 0
+              && video.videoWidth > 0
+              && video.videoHeight > 0;
+
+          if (!hasValidMetadata) {
+            ctx.addIssue({
+              code: "custom",
+              message: `Unable to process "${file.name}" as a valid video.`,
+            });
+          }
+
+          URL.revokeObjectURL(objectUrl);
+          resolve();
+        };
+
+        video.src = objectUrl;
+      });
+    }
+  });
 
 const imageFileSchema = z
   .instanceof(File, {
-    message: "Please select an image file.",
+    error: "Please select an image file.",
   })
   .refine(file => file.size <= MAX_FILE_SIZE, {
     message: `The image is too large. Please choose an image smaller than ${formatBytes(MAX_FILE_SIZE)}.`,
@@ -524,7 +646,22 @@ const prioritySchema = z.union([
   z.literal(""),
 ]).refine(val => val !== "", "Priority is required");
 
-const createMaintenanceSchema = z.object({
+export const maintenanceMediaSchema = z
+  .array(mediaFileSchema)
+  .max(MAX_FILES, `You can upload a maximum of ${MAX_FILES} files.`)
+  .optional()
+  .default([]);
+
+export type MaintenanceMediaSchema = z.output<typeof maintenanceMediaSchema>;
+
+export const mediaAttachmentSchema = z.object({
+  url: z.url("Invalid attachment URL"),
+  type: z.enum(["image", "video"], { error: "Media type must be 'image' or 'video'" }),
+  name: z.string().nonempty("File name is required"),
+  size: z.number().positive("File size must be positive"),
+});
+
+export const apiCreateMaintenanceSchema = z.object({
   hostelId: createIdSchema("Hostel"),
   roomId: createIdSchema("Room"),
   studentId: createIdSchema("Student"),
@@ -534,6 +671,13 @@ const createMaintenanceSchema = z.object({
     .max(200, "Description cannot exceed 200 characters"),
   issueType: maintenanceIssueTypeSchema,
   priority: prioritySchema,
+  mediaAttachments: z.array(mediaAttachmentSchema).optional().default([]),
+});
+
+export type ApiCreateMaintenanceSchema = z.output<typeof apiCreateMaintenanceSchema>;
+
+const createMaintenanceSchema = apiCreateMaintenanceSchema.extend({
+  mediaAttachments: maintenanceMediaSchema,
 });
 
 export type CreateMaintenanceSchema = z.output<typeof createMaintenanceSchema>;
@@ -541,7 +685,7 @@ export type CreateMaintenanceSchema = z.output<typeof createMaintenanceSchema>;
 const editMaintenanceSchema = z.object({
   maintenanceId: createIdSchema("Maintenance"),
   studentId: createIdSchema("Student"),
-  data: createMaintenanceSchema.partial().omit({ studentId: true }),
+  data: apiCreateMaintenanceSchema.partial().omit({ studentId: true }),
 });
 
 export type EditMaintenanceSchema = z.output<typeof editMaintenanceSchema>;
@@ -970,4 +1114,5 @@ export {
   updatePhoneNumberSchema,
   verifyEmailSchema,
   verifyPaymentSchema,
+
 };

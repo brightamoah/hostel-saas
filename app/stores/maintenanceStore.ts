@@ -1,4 +1,4 @@
-import type { FormErrorEvent } from "@nuxt/ui";
+import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 
 import { acceptHMRUpdate, defineStore } from "pinia";
 
@@ -123,6 +123,7 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
     hostelId: undefined,
     studentId: undefined,
     roomId: undefined,
+    mediaAttachments: undefined,
   });
 
   const isCreateFormValid = computed(() => {
@@ -133,18 +134,31 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
       && createMaintenanceState.value.hostelId !== undefined
       && createMaintenanceState.value.studentId !== undefined
       && createMaintenanceState.value.roomId !== undefined
+      && createMaintenanceState.value.mediaAttachments !== undefined
     );
   });
 
-  const createMaintenance = async () => {
+  const createMaintenance = async (payload: FormSubmitEvent<CreateMaintenanceSchema>) => {
     if (!isCreateFormValid.value) return;
 
     isLoading.value = true;
 
     try {
+      const formData = { ...payload.data };
+      let uploadedMedia: MediaAttachment[] = [];
+
+      if (formData.mediaAttachments && formData.mediaAttachments.length > 0) {
+        uploadedMedia = await uploadFiles(formData.mediaAttachments);
+      }
+
+      const backendPayload = {
+        ...formData,
+        mediaAttachments: uploadedMedia,
+      };
+
       const response = await $apiFetch("/api/maintenance/student/createRequest", {
         method: "POST",
-        body: createMaintenanceState.value,
+        body: backendPayload,
       });
 
       await refreshNuxtData(maintenanceDataKey.value);
@@ -176,15 +190,17 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
   };
 
   const editingId = ref<number | null>(null);
-  const originalEditState = ref<MaintenanceEdit["data"] | null>(null);
+  const originalEditState = ref<EditFormState | null>(null);
 
-  const editMaintenanceState = ref<MaintenanceEdit["data"]>({
+  const editMaintenanceState = ref<EditFormState>({
     issueType: undefined,
     description: "",
     priority: undefined,
     hostelId: undefined,
     studentId: undefined,
     roomId: undefined,
+    mediaAttachments: undefined,
+    existingMedia: [],
   });
 
   const isEditFormValid = computed(() => {
@@ -200,32 +216,57 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
     );
   });
 
-  const hasNoChanges = computed(() => {
-    if (!originalEditState.value) return false;
+  // const hasNoChanges = computed(() => {
+  //   if (!originalEditState.value) return false;
 
-    return isDeepEqual(editMaintenanceState.value, originalEditState.value);
-  });
+  //   return isDeepEqual(editMaintenanceState.value, originalEditState.value);
+  // });
 
   const initEditSession = (maintenance: MaintenanceType) => {
     editingId.value = maintenance.id;
 
-    const mappedState: MaintenanceEdit["data"] = {
+    const safeMedia = maintenance.mediaAttachments
+      ? JSON.parse(JSON.stringify(maintenance.mediaAttachments))
+      : [];
+
+    const mappedState: EditFormState = {
       issueType: maintenance.issueType,
       description: maintenance.description,
       priority: maintenance.priority,
       hostelId: maintenance.hostelId,
       studentId: maintenance.studentId,
       roomId: maintenance.roomId,
+      existingMedia: safeMedia,
+      mediaAttachments: undefined,
     };
 
-    originalEditState.value = structuredClone(mappedState);
-    editMaintenanceState.value = structuredClone(mappedState);
+    originalEditState.value = { ...mappedState, existingMedia: [...safeMedia] };
+    editMaintenanceState.value = { ...mappedState, existingMedia: [...safeMedia] };
   };
 
-  const editMaintenance = async () => {
+  const editMaintenance = async (payload: FormSubmitEvent<EditFormState>) => {
     if (!isEditFormValid.value || !editingId.value) return;
 
-    if (hasNoChanges.value) {
+    const formData = payload.data;
+    const original = originalEditState.value;
+    if (!original) return;
+
+    const changes: Record<string, any> = {};
+
+    for (const key in formData) {
+      if (key === "existingMedia" || key === "mediaAttachments") continue;
+
+      const k = key as keyof CreateMaintenanceSchema;
+      if (!isDeepEqual(formData[k], original[k])) {
+        changes[k] = formData[k];
+      }
+    }
+
+    const mediaChanged
+      = !isDeepEqual(formData.existingMedia, original.existingMedia)
+        || (formData.mediaAttachments && formData.mediaAttachments.length > 0);
+
+    if (Object.keys(changes).length === 0 && !mediaChanged) {
       toast.add({
         title: "No Changes Detected",
         description: "Please make changes to the form before submitting.",
@@ -235,30 +276,28 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
       return;
     }
 
-    const changes: Partial<MaintenanceEdit["data"]> = {};
-    const current = editMaintenanceState.value;
-    const original = originalEditState.value!;
-
-    for (const key in current) {
-      const k = key as keyof MaintenanceEdit["data"];
-      if (!isDeepEqual(current[k], original[k])) {
-        // @ts-expect-error - Typescript gets strict about partial assignments, but this is safe
-        changes[k] = current[k];
-      }
-    }
-
-    const payload = {
-      maintenanceId: editingId.value,
-      studentId: current.studentId!,
-      data: changes,
-    } satisfies MaintenanceEdit;
-
     isLoading.value = true;
 
     try {
-      const response = await $apiFetch(`/api/maintenance/student/${payload.maintenanceId}`, {
+      if (mediaChanged) {
+        let uploadedMedia: MediaAttachment[] = [];
+
+        if (formData.mediaAttachments && formData.mediaAttachments.length > 0) {
+          uploadedMedia = await uploadFiles(formData.mediaAttachments as File[]);
+        }
+
+        changes.mediaAttachments = [...(formData.existingMedia || []), ...uploadedMedia];
+      }
+
+      const backendPayload = {
+        maintenanceId: editingId.value,
+        studentId: original.studentId!,
+        data: changes,
+      };
+
+      const response = await $apiFetch(`/api/maintenance/student/${editingId.value}`, {
         method: "PATCH",
-        body: payload,
+        body: backendPayload,
       });
 
       await refreshNuxtData(maintenanceDataKey.value);
@@ -312,6 +351,8 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
       hostelId: undefined,
       studentId: undefined,
       roomId: undefined,
+      existingMedia: [],
+      mediaAttachments: undefined,
     };
   };
 

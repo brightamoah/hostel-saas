@@ -21,6 +21,11 @@ const items = computed<TabsItem[]>(() => [
     slot: "details" as const,
   },
   {
+    label: "Attachments",
+    icon: "i-lucide-paperclip",
+    slot: "attachments" as const,
+  },
+  {
     label: "Responses",
     icon: "i-lucide-message-square-text",
     slot: "responses" as const,
@@ -141,6 +146,11 @@ const messages = computed(() => {
     return dateA - dateB;
   });
 });
+
+function openAttachment(url: string) {
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 </script>
 
 <template>
@@ -217,6 +227,86 @@ const messages = computed(() => {
             >
               {{ maintenance.description }}
             </UCard>
+          </div>
+        </template>
+
+        <template #attachments>
+          <UEmpty
+            v-if="!maintenance?.mediaAttachments?.length"
+            icon="i-lucide-folder-open"
+            size="xl"
+            title="No Attachments"
+            description="There are currently no attachments for this maintenance request."
+            class="mt-2"
+          />
+
+          <div
+            v-else
+            class="mt-6"
+          >
+            <p class="flex items-center pb-2 font-medium text-muted text-base">
+              <UIcon
+                name="i-lucide-paperclip"
+                class="mr-1 size-6 text-primary"
+              />
+              Attachments
+            </p>
+
+            <UCard
+              variant="subtle"
+              class="w-full"
+            >
+              <div class="gap-4 grid grid-cols-2 sm:grid-cols-3">
+                <div
+                  v-for="attachment in maintenance.mediaAttachments"
+                  :key="attachment.url"
+                  class="group relative bg-background border border-default rounded-lg aspect-square overflow-hidden transition-all cursor-pointer select-none"
+                  title="Double-click to view"
+                  @dblclick="openAttachment(attachment.url)"
+                >
+                  <video
+                    v-if="attachment.type === 'video'"
+                    :src="attachment.url"
+                    class="w-full h-full object-cover transition-transform duration-300"
+                    preload="metadata"
+                    muted
+                    playsinline
+                    webkit-playsinline
+                    controls
+                    controlslist="nodownload noremoteplayback"
+                  />
+
+                  <NuxtImg
+                    v-else-if="attachment.type === 'image'"
+                    :src="attachment.url"
+                    :alt="attachment.name"
+                    class="w-full h-full object-cover transition-transform duration-300"
+                  />
+
+                  <div
+                    v-else
+                    class="flex justify-center items-center bg-muted w-full h-full"
+                  >
+                    <UIcon
+                      name="i-lucide-image"
+                      class="size-8 text-muted"
+                    />
+                  </div>
+
+                  <div class="bottom-0 absolute inset-x-0 bg-black/60 backdrop-blur-sm px-2 py-1 font-medium text-[10px] text-white text-center truncate">
+                    {{ attachment.name }}
+                  </div>
+                </div>
+              </div>
+            </UCard>
+
+            <p class="flex items-center gap-1 mt-2 text-muted text-xs">
+              <UIcon
+                name="i-lucide-info"
+                class="size-3"
+              />
+              Double-click an attachment to open it in a new tab.
+            </p>
           </div>
         </template>
 

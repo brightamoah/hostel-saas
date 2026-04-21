@@ -18,8 +18,9 @@ import type { useSession } from "h3";
 import type { randomUUID } from "uncrypto";
 import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
 import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
+import type z from "zod";
 
-import type { ComplaintStatusResponseSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
+import type { ComplaintStatusResponseSchema, CreateMaintenanceSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
 
 export type DeepNonNullable<T> = {
   [K in keyof T]: NonNullable<T[K]>;
@@ -628,3 +629,13 @@ export type TenantBranding = {
   supportEmail?: string | null;
   supportPhone?: string | null;
 };
+
+export type MediaAttachment = z.output<typeof mediaAttachmentSchema>;
+
+export interface FileValidationOptions {
+  allowedMimeTypes?: Record<string, MediaAttachment["type"]>;
+  maxSizePerFile?: number;
+  maxTotalFiles?: number;
+}
+
+export type EditFormState = Partial<CreateMaintenanceSchema> & { existingMedia?: MediaAttachment[] };

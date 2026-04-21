@@ -198,6 +198,7 @@ const financeData = computed<ChartData<"pie">>(() => {
         data: [fin?.totalCollected || 0, fin?.totalOutstanding || 0, fin?.overdueAmount || 0],
         borderWidth: 2,
         borderColor: "#ffffff",
+        hoverOffset: 6,
       },
     ],
   };

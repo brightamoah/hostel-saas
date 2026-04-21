@@ -8,7 +8,7 @@ export function useFetchStudentVisitorData() {
     default: (): VisitorDataResponse => ({
       visitors: [],
       stats: {
-        total: { value: 0, percentage: 0, period: "monthly" as const },
+        totalVisitors: { value: 0, percentage: 0, period: "monthly" as const },
         approved: { value: 0, percentage: 0, period: "monthly" as const },
         checkedIn: { value: 0, percentage: 0, period: "weekly" as const },
         pending: { value: 0, percentage: 0, period: "daily" as const },

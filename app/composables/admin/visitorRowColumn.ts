@@ -16,8 +16,6 @@ export function useVisitorRowColumn(
   UButton: ComponentType,
   UBadge: ComponentType,
   UDropdownMenu: ComponentType,
-  UCheckbox: ComponentType,
-  // UIcon: Component,
 ) {
   const { user } = usePortalUserSession();
   const isAdmin = computed<boolean>(() => user.value?.role === "admin");
@@ -277,24 +275,7 @@ export function useVisitorRowColumn(
   };
 
   const columns = ref<TableColumn<VisitorType>[]>([
-    {
-      id: "select",
-      header: ({ table }) =>
-        h(UCheckbox, {
-          "modelValue": table.getIsSomePageRowsSelected()
-            ? "indeterminate"
-            : table.getIsAllPageRowsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") =>
-            table.toggleAllPageRowsSelected(!!value),
-          "ariaLabel": "Select all",
-        }),
-      cell: ({ row }) =>
-        h(UCheckbox, {
-          "modelValue": row.getIsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") => row.toggleSelected(!!value),
-          "ariaLabel": "Select row",
-        }),
-    },
+
     {
       id: "name",
       accessorFn: row => `${row.name} ${row.phoneNumber}`,

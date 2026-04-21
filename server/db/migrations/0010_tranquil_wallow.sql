@@ -1,0 +1,1 @@
+ALTER TABLE "maintenance_request" ADD COLUMN "media_attachments" jsonb DEFAULT '[]'::jsonb;

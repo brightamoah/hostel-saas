@@ -13,7 +13,6 @@ const toast = useToast();
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
 const UDropdownMenu = resolveComponent("UDropdownMenu");
-const UCheckbox = resolveComponent("UCheckbox");
 const UTooltip = resolveComponent("UTooltip");
 
 const table = useTemplateRef("tableRef");
@@ -81,7 +80,6 @@ const {
   UButton,
   UBadge,
   UDropdownMenu,
-  UCheckbox,
   UTooltip,
 );
 
@@ -124,7 +122,6 @@ async function handleDeleteSelectedRooms() {
     }
   }
   catch (error) {
-    // Log error to help with debugging
     console.error("Error deleting selected rooms:", error);
   }
 }

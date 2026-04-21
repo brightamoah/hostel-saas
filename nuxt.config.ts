@@ -70,6 +70,14 @@ export default defineNuxtConfig({
           csrf: false,
         },
       },
+      "/api/upload/**": {
+        security: {
+          requestSizeLimiter: {
+            maxRequestSizeInBytes: 100 * 1024 * 1024,
+            maxUploadFileRequestInBytes: 100 * 1024 * 1024,
+          },
+        },
+      },
     },
 
     site: {
@@ -183,6 +191,7 @@ export default defineNuxtConfig({
       paystackBaseUrl: env.NUXT_PAYSTACK_BASE_URL,
       adminBaseUrl: env.NUXT_PUBLIC_ADMIN_BASE_URL,
       siteBaseUrl: env.NUXT_PUBLIC_SITE_BASE_URL,
+
     },
     session: {
       password: env.NUXT_SESSION_PASSWORD,
@@ -205,6 +214,7 @@ export default defineNuxtConfig({
     emailFromEmail: env.NUXT_EMAIL_FROM_EMAIL,
     nodeEnv: env.NODE_ENV,
     paystackSecretKey: env.NUXT_PAYSTACK_SECRET_KEY,
+    r2Url: env.NUXT_R2_URL,
     // platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
 
   },
@@ -257,6 +267,14 @@ export default defineNuxtConfig({
         rateLimiter: false,
       },
     },
+    "/api/upload/**": {
+      security: {
+        requestSizeLimiter: {
+          maxRequestSizeInBytes: 100 * 1024 * 1024,
+          maxUploadFileRequestInBytes: 100 * 1024 * 1024,
+        },
+      },
+    },
   },
 
   security: {
@@ -306,6 +324,7 @@ export default defineNuxtConfig({
         "script-src-attr": ["'unsafe-inline'"],
       },
     },
+    requestSizeLimiter: false,
   },
 
   site: {

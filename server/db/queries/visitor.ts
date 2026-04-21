@@ -219,28 +219,31 @@ export async function visitorQueries() {
 
         // Keep static absolute totals for general info
         totalAllTime: count(visitor.id),
+        approvedAbs: count(sql`CASE WHEN ${visitor.status} = 'approved' THEN 1 END`),
+        checkedInAbs: count(sql`CASE WHEN ${visitor.status} = 'checked-in' THEN 1 END`),
+        pendingAbs: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
       })
       .from(visitor)
       .where(eq(visitor.studentId, studentId));
 
     return {
-      total: {
-        value: result?.totalThisMonth ?? 0,
+      totalVisitors: {
+        value: result?.totalAllTime ?? 0,
         percentage: calcChange(result?.totalThisMonth ?? 0, result?.totalLastMonth ?? 0),
         period: "monthly" as Period,
       },
       approved: {
-        value: result?.approvedThisMonth ?? 0,
+        value: result?.approvedAbs ?? 0,
         percentage: calcChange(result?.approvedThisMonth ?? 0, result?.approvedLastMonth ?? 0),
         period: "monthly" as Period,
       },
       checkedIn: {
-        value: result?.checkedInThisWeek ?? 0,
+        value: result?.checkedInAbs ?? 0,
         percentage: calcChange(result?.checkedInThisWeek ?? 0, result?.checkedInLastWeek ?? 0),
         period: "weekly" as Period,
       },
       pending: {
-        value: result?.pendingToday ?? 0,
+        value: result?.pendingAbs ?? 0,
         percentage: calcChange(result?.pendingToday ?? 0, result?.pendingYesterday ?? 0),
         period: "daily" as Period,
       },

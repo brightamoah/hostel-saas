@@ -14,7 +14,6 @@ export function useRoomRowColumn(
   UButton: ComponentType,
   UBadge: ComponentType,
   UDropdownMenu: ComponentType,
-  UCheckbox: ComponentType,
   UTooltip: ComponentType,
 ) {
   const overlay = useOverlay();
@@ -113,24 +112,6 @@ export function useRoomRowColumn(
   };
 
   const columns: TableColumn<Room>[] = [
-    {
-      id: "select",
-      header: ({ table }) =>
-        h(UCheckbox, {
-          "modelValue": table.getIsSomePageRowsSelected()
-            ? "indeterminate"
-            : table.getIsAllPageRowsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") =>
-            table.toggleAllPageRowsSelected(!!value),
-          "ariaLabel": "Select all",
-        }),
-      cell: ({ row }) =>
-        h(UCheckbox, {
-          "modelValue": row.getIsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") => row.toggleSelected(!!value),
-          "ariaLabel": "Select row",
-        }),
-    },
     {
       accessorKey: "roomNumber",
       header: createSortableHeader("Room #", UButton),
