@@ -84,7 +84,7 @@ const periodDisplay = computed(() => props.card.period ? `vs last ${periodMappin
             :trend-color
           >
             <div
-              v-if="percentageDisplay || card.period"
+              v-if="percentageDisplay || periodDisplay"
               class="flex items-center gap-1.5"
             >
               <span

@@ -184,7 +184,7 @@ export function createIdSchema(name: string) {
     .min(1, `Invalid ${name} ID`);
 }
 
-const passwordSchema = z.string().superRefine((val, ctx) => {
+const passwordSchema = z.string().trim().superRefine((val, ctx) => {
   if (!val?.trim()) {
     ctx.addIssue({
       code: "custom",

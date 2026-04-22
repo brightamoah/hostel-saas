@@ -66,17 +66,16 @@ export default defineEventHandler(async (event) => {
     if (!student.allocation || !student.allocation.room || !student.allocation.room.hostel) {
       throw createError({
         statusCode: 403,
-        message: "Access denied: You must have an active room allocation to register a visitor.",
+        message: "Access denied: You must have an active room allocation to create a maintenance request.",
       });
     }
 
     if (student.allocation.status !== "active" || student.residencyStatus !== "active") {
       throw createError({
         statusCode: 403,
-        message: "Access denied: Only active hostel residents can register a visitor.",
+        message: "Access denied: Only active hostel residents can create a maintenance request.",
       });
     }
-
     const result = await createMaintenance({
       studentId,
       description,

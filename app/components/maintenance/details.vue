@@ -149,6 +149,13 @@ const messages = computed(() => {
 
 function openAttachment(url: string) {
   if (!url) return;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    if (!["http:", "https:"].includes(parsed.protocol)) return;
+  }
+  catch {
+    return;
+  }
   window.open(url, "_blank", "noopener,noreferrer");
 }
 </script>
@@ -274,6 +281,7 @@ function openAttachment(url: string) {
                     webkit-playsinline
                     controls
                     controlslist="nodownload noremoteplayback"
+                    @dblclick.stop
                   />
 
                   <NuxtImg

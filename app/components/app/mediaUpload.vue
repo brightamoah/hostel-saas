@@ -45,9 +45,10 @@ function revokeObjectUrl(file: File) {
 }
 
 watch(() => modelValue.value, (newFiles, oldFiles) => {
-  if (oldFiles) {
-    oldFiles.forEach(file => revokeObjectUrl(file));
-  }
+  if (!oldFiles?.length) return;
+
+  const removed = oldFiles.filter(file => !newFiles?.includes(file));
+  removed.forEach(file => revokeObjectUrl(file));
 }, { deep: true });
 
 onUnmounted(() => {

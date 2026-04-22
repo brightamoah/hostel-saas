@@ -289,12 +289,15 @@ export const useMaintenanceStore = defineStore("maintenanceStore", () => {
         changes.mediaAttachments = [...(formData.existingMedia || []), ...uploadedMedia];
       }
 
+      if (!original.studentId) {
+        throw new Error("Student ID is required for editing maintenance");
+      }
+
       const backendPayload = {
         maintenanceId: editingId.value,
-        studentId: original.studentId!,
+        studentId: original.studentId,
         data: changes,
       };
-
       const response = await $apiFetch(`/api/maintenance/student/${editingId.value}`, {
         method: "PATCH",
         body: backendPayload,

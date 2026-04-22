@@ -222,7 +222,7 @@ defineExpose({
     >
       <AppMediaUpload
         v-model="state.mediaAttachments"
-        :max-files="3 - (state.existingMedia?.length || 0)"
+        :max-files="Math.max(0, 3 - (state.existingMedia?.length || 0))"
       />
     </UFormField>
   </UForm>

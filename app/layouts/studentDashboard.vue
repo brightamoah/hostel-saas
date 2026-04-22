@@ -131,6 +131,9 @@ onMounted(async () => {
       label: "Opt out",
       color: "neutral",
       variant: "ghost",
+      onClick: () => {
+        cookie.value = "rejected";
+      },
     }],
   });
 });

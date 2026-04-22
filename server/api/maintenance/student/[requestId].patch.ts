@@ -43,18 +43,12 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (data.mediaAttachments !== undefined) {
-      const oldMedia = existingMaintenance.mediaAttachments || [];
-      const newMediaUrls = data.mediaAttachments.map(m => m.url);
-
-      const deletedMedia = oldMedia.filter(m => !newMediaUrls.includes(m.url));
-
-      if (deletedMedia.length > 0) {
-        await deleteMediaByUrls(deletedMedia).catch((e) => {
-          console.error("Failed to delete orphaned media attachments:", e);
-        });
-      }
-    }
+    const mediaAttachments = data.mediaAttachments;
+    const deletedMedia = mediaAttachments !== undefined
+      ? (existingMaintenance.mediaAttachments || []).filter(
+          m => !mediaAttachments.map(media => media.url).includes(m.url),
+        )
+      : [];
 
     const updatedMaintenance = await updateMaintenance(
       maintenanceId,
@@ -66,6 +60,12 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 500,
         message: "Maintenance request update failed: no record was returned.",
+      });
+    }
+
+    if (deletedMedia.length > 0) {
+      await deleteMediaByUrls(deletedMedia).catch((e) => {
+        console.error("Failed to delete orphaned media attachments:", e);
       });
     }
 

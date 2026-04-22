@@ -63,7 +63,7 @@ watch(isModalOpen, (open) => {
           color="primary"
           icon="i-lucide-send"
           class="cursor-pointer"
-          :label=" isLoading ? 'Submitting...' : 'Submit Visitor'"
+          :label="isLoading ? 'Submitting...' : 'Submit Invoice'"
           :loading="isLoading"
           @click="billingForm?.form?.submit()"
         />

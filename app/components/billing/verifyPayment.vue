@@ -36,9 +36,9 @@ async function proceedToVerification() {
       color: "error",
     });
 
+    isLoading.value = false;
     return;
   }
-
   isOpen.value = false;
 
   await navigateTo({
@@ -58,7 +58,7 @@ async function proceedToVerification() {
     <UModal
       v-model:open="isOpen"
       title="Verify Payment"
-      description="Verify payments by providing their reference reference"
+      description="Verify payments by providing their payment reference"
       :dismissible="false"
       :ui="{
         footer: 'justify-end',

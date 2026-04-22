@@ -3,8 +3,10 @@ export async function uploadFiles(files: File[] | File): Promise<MediaAttachment
     throw new Error("No files selected for upload.");
   }
 
+  const { $apiFetch } = useNuxtApp();
+
   try {
-    const { $apiFetch } = useNuxtApp();
+   
     const formData = new FormData();
 
     const fileArray = Array.isArray(files) ? files : [files];

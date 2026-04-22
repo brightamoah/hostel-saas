@@ -59,7 +59,7 @@ const hostelFormRef = useTemplateRef("hostelFormRef");
           v-model:logo-file="createHostelState.logo"
           :is-loading
           :is-uploading
-          :copy-join-code="() => copyJoinCode"
+          :copy-join-code="() => { void copyJoinCode(createHostelState.joinCode); }"
           :remove-hostel-logo="removeStandaloneHostelLogo"
           :regenerate-join-code="regenerateStandaloneJoinCode"
         />

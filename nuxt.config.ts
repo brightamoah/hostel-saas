@@ -324,7 +324,6 @@ export default defineNuxtConfig({
         "script-src-attr": ["'unsafe-inline'"],
       },
     },
-    requestSizeLimiter: false,
   },
 
   site: {
