@@ -219,12 +219,12 @@ onMounted(async () => {
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton
-          :collapsed="collapsed"
+          :collapsed="collapsed && !open"
           class="bg-transparent ring-default cursor-pointer"
         />
 
         <UNavigationMenu
-          :collapsed="collapsed"
+          :collapsed="collapsed && !open"
           :items="links[0]"
           orientation="vertical"
           tooltip
@@ -237,7 +237,7 @@ onMounted(async () => {
         />
 
         <UNavigationMenu
-          :collapsed="collapsed"
+          :collapsed="collapsed && !open"
           :items="links[1]"
           orientation="vertical"
           tooltip

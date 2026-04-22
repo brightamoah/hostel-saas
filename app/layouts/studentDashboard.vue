@@ -178,12 +178,12 @@ onMounted(async () => {
 
       <template #default="{ collapsed }">
         <UDashboardSearchButton
-          :collapsed="collapsed"
+          :collapsed="collapsed && !open"
           class="bg-transparent ring-default"
         />
 
         <UNavigationMenu
-          :collapsed="collapsed"
+          :collapsed="collapsed && !open"
           :items="links[0]"
           orientation="vertical"
           tooltip
@@ -197,7 +197,7 @@ onMounted(async () => {
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
+        <UserMenu :collapsed="collapsed && !open" />
       </template>
     </UDashboardSidebar>
 

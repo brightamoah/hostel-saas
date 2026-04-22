@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const attachments = await uploadMedia(files.map(f => ({
+    const attachments = await uploadMedia(event, files.map(f => ({
       data: f.data,
       type: f.type!,
       filename: f.filename,

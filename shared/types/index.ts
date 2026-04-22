@@ -171,7 +171,7 @@ export type Stat = {
   color?: string;
 };
 
-export type Period = "daily" | "weekly" | "monthly";
+export type Period = "daily" | "weekly" | "monthly" | "yearly";
 export type ColorType = "primary" | "error" | "warning" | "info" | "success" | "neutral" | "secondary";
 export type VariantType = "outline" | "soft" | "subtle" | "ghost" | "none";
 

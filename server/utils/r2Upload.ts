@@ -1,3 +1,4 @@
+import type { H3Event } from "h3";
 import type { Buffer } from "node:buffer";
 
 const ALLOWED_MIME_TYPES: Record<string, MediaAttachment["type"]> = {
@@ -55,6 +56,7 @@ export function generateMediaKey(
 }
 
 export async function uploadSingleFile(
+  event: H3Event,
   file: { data: Buffer; type: string; filename?: string },
   options: {
     folder: string;
@@ -75,13 +77,31 @@ export async function uploadSingleFile(
 
   const key = generateMediaKey(options.folder, options.entityId, file.type);
 
-  const storage = useStorage("images");
+  if (import.meta.dev) {
+    const storage = useStorage("images");
 
-  await storage.setItemRaw(key, file.data, {
-    httpMetadata: {
-      contentType: file.type,
-    },
-  });
+    await storage.setItemRaw(key, file.data, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+    });
+  }
+  else {
+    const r2Bucket = event.context.cloudflare?.env?.BUCKET;
+
+    if (!r2Bucket) {
+      throw createError({
+        statusCode: 500,
+        message: "R2 bucket not configured",
+      });
+    }
+
+    await r2Bucket.put(key, file.data, {
+      httpMetadata: {
+        contentType: file.type,
+      },
+    });
+  }
 
   const url = `${config.r2Url}/${key}`;
 
@@ -98,7 +118,7 @@ export interface UploadMediaOptions extends FileValidationOptions {
   entityId: string | number;
 }
 
-export async function uploadMedia(files:
+export async function uploadMedia(event: H3Event, files:
   | { data: Buffer; type: string; filename?: string }
   | { data: Buffer; type: string; filename?: string }[], options: UploadMediaOptions): Promise<MediaAttachment[]> {
   const fileArray = Array.isArray(files) ? files : [files];
@@ -111,7 +131,7 @@ export async function uploadMedia(files:
 
   const results = await Promise.all(
     fileArray.map(file =>
-      uploadSingleFile(file, {
+      uploadSingleFile(event, file, {
         folder: options.folder,
         entityId: options.entityId,
         allowedMimeTypes: options.allowedMimeTypes,

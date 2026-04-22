@@ -31,6 +31,15 @@ const percentageDisplay = computed(() => {
   if (p === undefined) return null;
   return `${p > 0 ? "+" : ""}${p}%`;
 });
+
+const periodMapping: Record<Period, string> = {
+  daily: "day",
+  weekly: "week",
+  monthly: "month",
+  yearly: "year",
+};
+
+const periodDisplay = computed(() => props.card.period ? `vs last ${periodMapping[props.card.period]}` : null);
 </script>
 
 <template>
@@ -76,7 +85,7 @@ const percentageDisplay = computed(() => {
           >
             <div
               v-if="percentageDisplay || card.period"
-              class="flex flex-wrap items-center gap-1.5"
+              class="flex items-center gap-1.5"
             >
               <span
                 v-if="percentageDisplay !== null"
@@ -91,10 +100,10 @@ const percentageDisplay = computed(() => {
               </span>
 
               <span
-                v-if="card.period"
-                class="text-dimmed text-xs"
+                v-if="periodDisplay"
+                class="text-dimmed text-xs shrink-0"
               >
-                {{ card.period }}
+                {{ periodDisplay }}
               </span>
             </div>
           </slot>
