@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
       const deletedMedia = oldMedia.filter(m => !newMediaUrls.includes(m.url));
 
       if (deletedMedia.length > 0) {
-        deleteMediaByUrls(deletedMedia).catch((e) => {
+        await deleteMediaByUrls(deletedMedia).catch((e) => {
           console.error("Failed to delete orphaned media attachments:", e);
         });
       }

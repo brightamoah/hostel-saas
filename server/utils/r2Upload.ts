@@ -99,6 +99,7 @@ export async function uploadSingleFile(
     await r2Bucket.put(key, file.data, {
       httpMetadata: {
         contentType: file.type,
+        cacheControl: "public, max-age=3600, must-revalidate",
       },
     });
   }
@@ -148,9 +149,29 @@ export async function deleteMediaByUrls(attachments: MediaAttachment | MediaAtta
   const storage = useStorage("images");
 
   await Promise.all(
-    attachmentArray.map(async ({ url }) => {
-      const key = url.replace(`${config.r2Url}/`, "");
-      await storage.removeItem(key);
+    attachmentArray.map(async (attachment) => {
+      try {
+        const r2BaseUrl = config.r2Url.endsWith("/") ? config.r2Url : `${config.r2Url}/`;
+        let key = "";
+
+        if (attachment.url.startsWith(r2BaseUrl)) {
+          key = attachment.url.replace(r2BaseUrl, "");
+        }
+        else {
+          const parsedUrl = new URL(attachment.url);
+          key = parsedUrl.pathname.substring(1);
+        }
+
+        if (!key) {
+          console.error("Invalid URL for deletion:", attachment.url);
+          return;
+        }
+
+        await storage.removeItem(key);
+      }
+      catch (error) {
+        console.error(`Failed to delete ${attachment.url}:`, error);
+      }
     }),
   );
 }

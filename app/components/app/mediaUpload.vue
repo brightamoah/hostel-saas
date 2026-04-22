@@ -120,11 +120,11 @@ onUnmounted(() => {
           preload="metadata"
         />
 
-        <img
+        <NuxtImg
           v-else-if="file.type?.startsWith('image/')"
           :src="getObjectUrl(file)"
           class="w-full h-full object-cover"
-        >
+        />
 
         <div
           v-else
