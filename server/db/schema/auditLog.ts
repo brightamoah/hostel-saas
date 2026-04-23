@@ -11,4 +11,12 @@ export const auditActionEnum = pgEnum("audit_action", [
   "PAYMENT",
   "APPROVE",
   "DENY",
+  "CREATE",
+  "STATUS_CHANGE",
+  "PASSWORD_RESET",
+  "ROLE_CHANGE",
+  "PERMISSION_CHANGE",
+  "DATA_EXPORT",
+  "DATA_IMPORT",
+  "OTHER",
 ]);
