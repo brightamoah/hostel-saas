@@ -2,7 +2,7 @@ import type { AdminScope, Period } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, asc, countDistinct, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, asc, countDistinct, desc, eq, exists, gt, inArray, like, or, sql } from "drizzle-orm";
 
 import { allocation, hostel, room } from "../schema";
 
@@ -257,6 +257,16 @@ export async function roomQueries() {
       .findMany({
         where: and(
           eq(hostel.status, "active"),
+          exists(
+            db.select().from(room).where(
+              and(
+                eq(room.hostelId, hostel.id),
+                eq(room.allowedGender, gender),
+                inArray(room.status, ["vacant", "partially occupied"]),
+                gt(room.capacity, room.currentOccupancy),
+              ),
+            ),
+          ),
         ),
         columns: {
           id: true,
@@ -503,6 +513,110 @@ export async function roomQueries() {
       });
     return hostelResult;
   };
+
+  const getHostelsPaginated = async (params: {
+    gender: "male" | "female";
+    searchTerm?: string;
+    sort?: "price_asc" | "price_desc" | "availability" | "name";
+    page?: number;
+    limit?: number;
+  }) => {
+    const { gender, searchTerm, sort = "availability", page = 1, limit = 20 } = params;
+
+    const offset = (page - 1) * limit;
+
+    const searchCondition = searchTerm?.trim()
+      ? or(
+          like(hostel.name, `%${searchTerm}%`),
+          like(hostel.address, `%${searchTerm}%`),
+        )
+      : undefined;
+
+    const roomStatsSubquery = db
+      .select({
+        hostelId: room.hostelId,
+        availableRooms: sql<number>`COUNT(*) FILTER (WHERE ${room.status} IN ('vacant', 'partially occupied') AND ${room.currentOccupancy} < ${room.capacity} AND ${room.allowedGender} = ${gender})`.as("availableRooms"),
+        minimumRoomPrice: sql<number>`MIN(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("minimumRoomPrice"),
+        maximumRoomPrice: sql<number>`MAX(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("maximumRoomPrice"),
+        roomTypes: sql<string[]>`ARRAY_AGG(DISTINCT ${room.roomType}::text) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("roomTypes"),
+        totalCapacity: sql<number>`SUM(${room.capacity}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("totalCapacity"),
+        currentOccupancy: sql<number>`SUM(${room.currentOccupancy}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("currentOccupancy"),
+      })
+      .from(room)
+      .groupBy(room.hostelId)
+      .as("room_stats");
+
+    const whereConditions = [
+      eq(hostel.status, "active"),
+      exists(
+        db.select().from(room).where(
+          and(
+            eq(room.hostelId, hostel.id),
+            eq(room.allowedGender, gender),
+          ),
+        ),
+      ),
+    ];
+
+    if (searchCondition) whereConditions.push(searchCondition);
+
+    let orderByClause;
+    switch (sort) {
+      case "price_asc":
+        orderByClause = asc(sql`COALESCE(${roomStatsSubquery.minimumRoomPrice}, 0)`);
+        break;
+      case "price_desc":
+        orderByClause = desc(sql`COALESCE(${roomStatsSubquery.minimumRoomPrice}, 0)`);
+        break;
+      case "name":
+        orderByClause = asc(hostel.name);
+        break;
+      case "availability":
+      default:
+        orderByClause = desc(sql`COALESCE(${roomStatsSubquery.availableRooms}, 0)`);
+        break;
+    }
+
+    const hostelsQuery = db
+      .select({
+        id: hostel.id,
+        name: hostel.name,
+        slug: hostel.slug,
+        address: hostel.address,
+        logoUrl: hostel.logoUrl,
+        status: hostel.status,
+        companyId: hostel.companyId,
+        joinCode: hostel.joinCode,
+        minimumRoomPrice: sql<number>`COALESCE(${roomStatsSubquery.minimumRoomPrice}, 0)`.as("minimumRoomPrice"),
+        maximumRoomPrice: sql<number>`COALESCE(${roomStatsSubquery.maximumRoomPrice}, 0)`.as("maximumRoomPrice"),
+        availableRooms: sql<number>`COALESCE(${roomStatsSubquery.availableRooms}, 0)`.as("availableRooms"),
+        roomTypes: sql<string[]>`COALESCE(${roomStatsSubquery.roomTypes}, ARRAY[]::text[])`.as("roomTypes"),
+        totalCapacity: sql<number>`COALESCE(${roomStatsSubquery.totalCapacity}, 0)`.as("totalCapacity"),
+        currentOccupancy: sql<number>`COALESCE(${roomStatsSubquery.currentOccupancy}, 0)`.as("currentOccupancy"),
+      })
+      .from(hostel)
+      .leftJoin(roomStatsSubquery, eq(hostel.id, roomStatsSubquery.hostelId))
+      .where(and(...whereConditions))
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset(offset);
+
+    const countQuery = db
+      .select({ total: sql<number>`COUNT(DISTINCT ${hostel.id})` })
+      .from(hostel)
+      .leftJoin(roomStatsSubquery, eq(hostel.id, roomStatsSubquery.hostelId))
+      .where(and(...whereConditions));
+
+    const [hostels, [countResult]] = await Promise.all([hostelsQuery, countQuery]);
+
+    return {
+      data: hostels,
+      total: Number(countResult?.total) || 0,
+      page,
+      limit,
+    };
+  };
+
   return {
     getAllRooms,
     getRoomByIdScoped,
@@ -530,6 +644,7 @@ export async function roomQueries() {
     getGenderSpecificRoomStats,
     createNewHostel,
     getHostelByIdScoped,
+    getHostelsPaginated,
   };
 }
 
@@ -540,3 +655,5 @@ export type Room = NonNullable<RoomWithRelations>[number];
 export type HostelRoomType = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getAvailableRoomsForStudent"]>>>[number];
 
 export type AdminRoomStats = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getRoomStatusCount"]>>;
+
+export type PaginatedHostel = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getHostelsPaginated"]>>;

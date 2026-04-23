@@ -9,7 +9,7 @@ import type { AnnouncementType } from "~~/server/db/queries/announcement";
 import type { AdminBillingStats, BillingType, StudentBillingStats } from "~~/server/db/queries/billing";
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
-import type { AdminRoomStats, HostelRoomType, Room as RoomType } from "~~/server/db/queries/room";
+import type { AdminRoomStats, HostelRoomType, PaginatedHostel, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/queries/user";
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
@@ -639,3 +639,5 @@ export interface FileValidationOptions {
 }
 
 export type EditFormState = Partial<CreateMaintenanceSchema> & { existingMedia?: MediaAttachment[] };
+
+export type HostelHub = PaginatedHostel;

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { refDebounced } from "@vueuse/core";
+
 definePageMeta({
   middleware: ["requires-auth"],
   layout: "onboard",
@@ -9,13 +11,31 @@ useSeoMeta({
   description: "Discover available hostels. Search by name or use a join code to find your perfect accommodation.",
 });
 
+type SortOptions = "price_asc" | "price_desc" | "availability" | "name";
+
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const toast = useToast();
 const { $apiFetch } = useNuxtApp();
+const route = useRoute();
+const router = useRouter();
+
+const searchQuery = ref((route.query.search as string) || "");
+
+const sortBy = ref<SortOptions>(route.query.sort as SortOptions || "availability");
+
+const joinCode = ref("");
+const isJoiningByCode = ref(false);
+const isSelectingHostel = ref(false);
+const selectedHostel = ref<StudentHostel | null>(null);
+
+const currentPage = ref(Number(route.query.page) || 1);
+const itemsPerPage = 6;
+
+const debouncedSearch = refDebounced(searchQuery, 400);
 
 const {
-  data: hostels,
+  data: allHostels,
   status,
   error,
   refresh,
@@ -23,19 +43,79 @@ const {
   method: "GET",
   key: "studentHostels",
   lazy: true,
-  default: () => [],
   getCachedData: (key, nuxtApp, ctx) => {
     if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
     return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
   },
 });
 
-const searchQuery = ref("");
-const sortBy = ref<"price_asc" | "price_desc" | "availability" | "name">("availability");
-const joinCode = ref("");
-const isJoiningByCode = ref(false);
-const isSelectingHostel = ref(false);
-const selectedHostel = ref<StudentHostel | null>(null);
+const filteredHostels = computed(() => {
+  const list = allHostels.value || [];
+
+  if (!debouncedSearch.value.trim()) return list;
+
+  const q = debouncedSearch.value.toLowerCase().trim();
+  return list.filter(h =>
+    h.name.toLowerCase().includes(q) || h.address.toLowerCase().includes(q),
+  );
+});
+
+const sortedHostels = computed(() => {
+  const listToSort = [...filteredHostels.value];
+
+  switch (sortBy.value) {
+    case "price_asc":
+      listToSort.sort((a, b) => a.minimumRoomPrice - b.minimumRoomPrice);
+      break;
+    case "price_desc":
+      listToSort.sort((a, b) => b.minimumRoomPrice - a.minimumRoomPrice);
+      break;
+    case "name":
+      listToSort.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case "availability":
+      listToSort.sort((a, b) => b.availableRooms - a.availableRooms);
+      break;
+  }
+
+  return listToSort;
+});
+
+const totalHostels = computed(() => sortedHostels.value.length);
+
+const paginatedHostels = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return sortedHostels.value.slice(start, start + itemsPerPage);
+});
+
+const currentItemsShowing = computed(() => {
+  if (paginatedHostels.value.length === 0) return 0;
+  return (currentPage.value - 1) * itemsPerPage + 1;
+});
+
+const lastItemShowing = computed(() => {
+  return Math.min(currentPage.value * itemsPerPage, totalHostels.value);
+});
+
+function updatePage(page: number) {
+  currentPage.value = page;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+watch([searchQuery, sortBy, currentPage], async () => {
+  await router.replace({
+    query: {
+      ...route.query,
+      search: searchQuery.value || undefined,
+      sort: sortBy.value,
+      page: currentPage.value > 1 ? currentPage.value : undefined,
+    },
+  });
+});
+
+watch([debouncedSearch, sortBy], () => {
+  currentPage.value = 1;
+});
 
 const sortOptions = [
   { label: "Most Available", value: "availability" },
@@ -43,37 +123,6 @@ const sortOptions = [
   { label: "Price: High to Low", value: "price_desc" },
   { label: "Name: A-Z", value: "name" },
 ];
-
-const filteredHostels = computed(() => {
-  if (!hostels.value) return [];
-
-  let result = [...hostels.value];
-
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase().trim();
-    result = result.filter(h =>
-      h.name.toLowerCase().includes(q)
-      || h.address.toLowerCase().includes(q),
-    );
-  }
-
-  switch (sortBy.value) {
-    case "price_asc":
-      result.sort((a, b) => a.minimumRoomPrice - b.minimumRoomPrice);
-      break;
-    case "price_desc":
-      result.sort((a, b) => b.minimumRoomPrice - a.minimumRoomPrice);
-      break;
-    case "name":
-      result.sort((a, b) => a.name.localeCompare(b.name));
-      break;
-    case "availability":
-      result.sort((a, b) => b.availableRooms - a.availableRooms);
-      break;
-  }
-
-  return result;
-});
 
 async function joinByCode() {
   const code = joinCode.value.trim().toUpperCase();
@@ -127,10 +176,6 @@ function selectHostel(hostel: StudentHostel) {
   selectedHostel.value = hostel;
 }
 
-// function clearSelection() {
-//   selectedHostel.value = null;
-// }
-
 async function confirmSelection() {
   if (!selectedHostel.value) return;
 
@@ -158,10 +203,10 @@ async function confirmSelection() {
 
 <template>
   <UContainer
-    v-auto-animate
+    v-auto-animate="{ duration: 400 }"
     class="py-10"
   >
-    <div class="mb-10">
+    <div class="mb-4">
       <div class="flex items-center gap-2 mb-2">
         <UBadge
           color="primary"
@@ -174,23 +219,23 @@ async function confirmSelection() {
           color="neutral"
           variant="subtle"
           size="sm"
-          :label="`${filteredHostels.length} hostels`"
+          :label="`${totalHostels} hostels`"
         />
       </div>
 
-      <h1 class="mb-2 font-newsreader font-bold text-highlighted text-4xl tracking-tight">
+      <h1 class="font-newsreader font-bold text-highlighted text-4xl tracking-tight">
         Find Your Next Stay
       </h1>
 
-      <p class="max-w-2xl text-muted text-lg">
+      <p class="-mt-2 max-w-2xl text-muted text-lg">
         Browse available hostels or use a join code from your hostel administrator.
       </p>
     </div>
 
     <div
       v-if="!selectedHostel"
-      v-auto-animate
-      class="flex sm:flex-row flex-col gap-3 mb-8"
+      v-auto-animate="{ duration: 400 }"
+      class="flex sm:flex-row flex-col gap-3 mb-6"
     >
       <USelect
         v-model="sortBy"
@@ -288,9 +333,11 @@ async function confirmSelection() {
     </UCard>
 
     <UEmpty
-      v-else-if="filteredHostels.length === 0 && !selectedHostel"
+      v-else-if="totalHostels === 0 && !selectedHostel"
       :title="searchQuery ? 'No hostels found' : 'No hostels available'"
-      :description="searchQuery ? `No hostels match '${searchQuery}'` : 'Check back later or contact support.'"
+      :description="searchQuery
+        ? `No hostels match '${searchQuery}'`
+        : 'Check back later or contact support.'"
       icon="i-lucide-search-x"
       size="xl"
       variant="naked"
@@ -313,206 +360,120 @@ async function confirmSelection() {
       ]"
     />
 
-    <div
-      v-else-if="filteredHostels.length && !selectedHostel"
-      v-auto-animate
-      class="gap-3 grid grid-cols-1 sm:grid-cols-2"
-    >
-      <UCard
-        v-for="hostel in filteredHostels"
-        :key="hostel.id"
-        class="overflow-hidden"
-        :ui="{ body: 'p-0 flex items-stretch gap-0' }"
+    <div v-else-if="totalHostels > 0 && !selectedHostel">
+      <div
+        v-auto-animate="{ duration: 400 }"
+        class="gap-3 grid grid-cols-1 sm:grid-cols-2"
       >
-        <img
-          v-if="hostel.logoUrl"
-          :src="hostel.logoUrl"
-          :alt="hostel.name"
-          class="w-28 min-w-28 object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
+        <UCard
+          v-for="hostel in paginatedHostels"
+
+          :key="hostel.id"
+          class="overflow-hidden"
+          :ui="{ body: 'p-0 flex items-stretch gap-0' }"
         >
-
-        <div
-          v-else
-          class="flex justify-center items-center bg-muted/10 w-28 min-w-28"
-        >
-          <UIcon
-            name="i-lucide-building-2"
-            class="text-muted text-3xl"
-          />
-        </div>
-
-        <div class="flex flex-col flex-1 gap-1.5 px-3.5 py-3 min-w-0">
-          <header class="flex justify-between items-start gap-3">
-            <div class="min-w-0">
-              <h2 class="font-medium text-highlighted text-sm truncate">
-                {{ hostel.name }}
-              </h2>
-
-              <UBadge
-                v-for="type in hostel.roomTypes.slice(0, 3)"
-                :key="type"
-                color="neutral"
-                variant="subtle"
-                size="xs"
-              >
-                {{ type }}
-              </UBadge>
-            </div>
-
-            <UBadge
-              :color="hostel.availableRooms > 0 ? 'success' : 'error'"
-              variant="subtle"
-              size="md"
-              class="truncate shrink-0"
-            >
-              <UIcon
-                name="i-lucide-door-open"
-                class="size-4"
-              />
-              {{ hostel.availableRooms }} {{ hostel.availableRooms === 1 ? 'room' : 'rooms' }} available
-            </UBadge>
-          </header>
-
-          <p class="flex items-center gap-1 font-medium text-muted text-xs">
-            <UIcon
-              name="i-lucide-map-pin"
-              class="size-4 shrink-0"
-            />
-            {{ hostel.address }}
-          </p>
-
-          <USeparator class="my-0.5" />
-
-          <div
-            v-auto-animate
-            class="flex items-center gap-1.5 mt-4"
-          >
-            <UButton
-              color="primary"
-              variant="solid"
-              size="sm"
-              label="View rooms"
-              icon="i-lucide-arrow-right"
-              class="cursor-pointer"
-              @click="selectHostel(hostel); confirmSelection()"
-            />
-
-            <UBadge
-              color="info"
-              variant="subtle"
-              size="md"
-              class="ml-auto truncate"
-            >
-              <UIcon
-                name="i-lucide-banknote"
-                class="size-4"
-              />
-              From {{ formatCurrency(hostel.minimumRoomPrice) }}/year
-            </UBadge>
-          </div>
-        </div>
-      </UCard>
-    </div>
-
-    <!-- <UCard
-      v-if="selectedHostel"
-      class="mb-8 border-2 border-muted"
-    >
-      <div class="flex md:flex-row flex-col items-center gap-6">
-        <div class="group relative mx-auto md:mx-0 rounded-xl max-w-lg h-52 overflow-hidden shrink-0">
           <img
-            v-if="selectedHostel.logoUrl"
-            :src="selectedHostel.logoUrl"
-            :alt="selectedHostel.name"
-            class="w-full h-full object-fill group-hover:scale-105 transition-transform duration-500"
+            v-if="hostel.logoUrl"
+            :src="hostel.logoUrl"
+            :alt="hostel.name"
+            class="w-28 min-w-28 object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           >
 
           <div
             v-else
-            class="flex justify-center items-center bg-primary/10 rounded-xl w-full h-full"
+            class="flex justify-center items-center bg-muted/10 w-28 min-w-28"
           >
             <UIcon
               name="i-lucide-building-2"
-              class="text-primary/50 text-6xl"
+              class="text-muted text-3xl"
             />
           </div>
-        </div>
 
-        <div class="flex-1 md:text-left text-center">
-          <h2 class="mb-2 font-bold text-2xl">
-            {{ selectedHostel.name }}
-          </h2>
+          <div class="flex flex-col flex-1 gap-1.5 px-3.5 py-3 min-w-0">
+            <header class="flex justify-between items-start gap-3">
+              <div class="min-w-0">
+                <h2 class="font-medium text-highlighted text-sm truncate">
+                  {{ hostel.name }}
+                </h2>
 
-          <p class="flex justify-center md:justify-start items-center gap-1 mb-3 text-muted">
-            <UIcon
-              name="i-lucide-map-pin"
-              class="size-4"
-            />
-            {{ selectedHostel.address }}
-          </p>
+                <UBadge
+                  v-for="type in hostel.roomTypes.slice(0, 3)"
+                  :key="type"
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
+                >
+                  {{ type }}
+                </UBadge>
+              </div>
 
-          <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-            <UBadge
-              color="success"
-              variant="subtle"
-              size="lg"
-            >
+              <UBadge
+                :color="hostel.availableRooms > 0 ? 'success' : 'error'"
+                variant="subtle"
+                size="md"
+                class="truncate shrink-0"
+              >
+                <UIcon
+                  name="i-lucide-door-open"
+                  class="size-4"
+                />
+                {{ hostel.availableRooms }} {{ hostel.availableRooms === 1 ? 'room' : 'rooms' }} available
+              </UBadge>
+            </header>
+
+            <p class="flex items-center gap-1 font-medium text-muted text-xs">
               <UIcon
-                name="i-lucide-door-open"
-                class="mr-0.5 size-4"
+                name="i-lucide-map-pin"
+                class="size-4 shrink-0"
               />
-              {{ selectedHostel.availableRooms }} {{ selectedHostel.availableRooms > 1 ? 'rooms' : 'room' }} available
-            </UBadge>
+              {{ hostel.address }}
+            </p>
 
-            <UBadge
-              color="info"
-              variant="subtle"
-              size="lg"
+            <USeparator class="my-0.5" />
+
+            <div
+              v-auto-animate="{ duration: 400 }"
+              class="flex items-center gap-1.5 mt-4"
             >
-              <UIcon
-                name="i-lucide-banknote"
-                class="mr-0.5 size-4"
+              <UButton
+                color="primary"
+                variant="solid"
+                size="sm"
+                label="View rooms"
+                icon="i-lucide-arrow-right"
+                class="cursor-pointer"
+                @click="selectHostel(hostel); confirmSelection()"
               />
-              From {{ formatCurrency(selectedHostel.minimumRoomPrice) }}/year
-            </UBadge>
 
-            <UBadge
-              v-for="type in selectedHostel.roomTypes.slice(0, 3)"
-              :key="type"
-              color="neutral"
-              variant="subtle"
-            >
-              {{ type }}
-            </UBadge>
+              <UBadge
+                color="info"
+                variant="subtle"
+                size="md"
+                class="ml-auto truncate"
+              >
+                <UIcon
+                  name="i-lucide-banknote"
+                  class="size-4"
+                />
+                From {{ formatCurrency(hostel.minimumRoomPrice) }}/year
+              </UBadge>
+            </div>
           </div>
-
-          <div class="flex md:flex-row flex-col gap-3">
-            <UButton
-              color="primary"
-              size="lg"
-              icon="i-lucide-arrow-right"
-              label="View Rooms & Book"
-              class="flex justify-center items-center cursor-pointer"
-              :loading="isSelectingHostel"
-              :disabled="isSelectingHostel"
-              @click="confirmSelection"
-            />
-
-            <UButton
-              variant="outline"
-              color="neutral"
-              size="lg"
-              icon="i-lucide-x"
-              label="Choose Another"
-              class="flex justify-center items-center cursor-pointer"
-              :disabled="isSelectingHostel"
-              @click="clearSelection"
-            />
-          </div>
-        </div>
+        </UCard>
       </div>
-    </UCard> -->
+
+      <AppPagination
+        items-name="hostels"
+        :items="paginatedHostels"
+        :total-items="totalHostels"
+        :selected-items-length="0"
+        :current-items-showing="currentItemsShowing"
+        :last-item-showing="lastItemShowing"
+        :default-page="currentPage"
+        :items-per-page="itemsPerPage"
+        :update-page="updatePage"
+      />
+    </div>
   </UContainer>
 </template>
