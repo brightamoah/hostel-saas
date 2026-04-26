@@ -276,7 +276,7 @@ export async function announcementQueries() {
         ))
         .returning();
 
-      if (deletedReads) {
+      if (deletedReads.length > 0) {
         await logAudit(db, ctx, {
           action: "announcement.mark_as_unread",
           actionType: "DELETE",

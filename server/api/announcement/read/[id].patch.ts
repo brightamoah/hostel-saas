@@ -55,13 +55,22 @@ export default defineEventHandler(async (event) => {
         },
       });
     }
-    catch {
-      auditContext = getAuditContext({
-        kind: "student",
-        event,
-        userId: user.id,
-        companyId,
-      });
+    catch (error) {
+      const statusCode = error && typeof error === "object" && "statusCode" in error
+        ? (error as { statusCode?: number }).statusCode
+        : undefined;
+
+      if (user.role !== "admin" && statusCode === 403) {
+        auditContext = getAuditContext({
+          kind: "student",
+          event,
+          userId: user.id,
+          companyId,
+        });
+      }
+      else {
+        throw error;
+      }
     }
 
     await updateAnnouncementReadStatus(

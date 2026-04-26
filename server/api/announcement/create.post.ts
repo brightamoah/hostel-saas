@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
       if (!hostelId) {
         throw createError({
-          statusCode: 400,
+          statusCode: 403,
           message: "Your staff account is not linked to a hostel. Access denied.",
         });
       }
@@ -64,14 +64,14 @@ export default defineEventHandler(async (event) => {
 
     if (targetAudience === "hostel" && !finalTargetHostelId) {
       throw createError({
-        statusCode: 400,
+        statusCode: 403,
         message: "A specific Hostel must be targeted for this audience type.",
       });
     }
 
     if (targetAudience === "room" && !targetRoomId) {
       throw createError({
-        statusCode: 400,
+        statusCode: 403,
         message: "Target Room is required for this audience.",
       });
     }
