@@ -12,8 +12,9 @@ import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/s
 import type { AdminRoomStats, HostelRoomType, PaginatedHostel, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/queries/user";
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
-import type { admin, allocation, announcement, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
-import type { InferSelectModel } from "drizzle-orm";
+import type { admin, allocation, announcement, auditLog, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
+import type { useDB } from "~~/server/utils/db";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type { useSession } from "h3";
 import type { randomUUID } from "uncrypto";
 import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
@@ -130,7 +131,11 @@ export type NavItem = {
 export type Allocation = typeof allocation.$inferSelect;
 export type VisitorLog = typeof visitorLogs.$inferSelect;
 
-// export type DB = ReturnType<typeof useDB>["db"];
+export type DbType = ReturnType<typeof useDB>["db"];
+
+export type TxType = Parameters<Parameters<DbType["transaction"]>[0]>[0];
+
+export type DbOrTxn = DbType | TxType;
 
 export type UserMenuItem = DropdownMenuItem & {
   to?: RouteLocationRaw;
@@ -641,3 +646,20 @@ export interface FileValidationOptions {
 export type EditFormState = Partial<CreateMaintenanceSchema> & { existingMedia?: MediaAttachment[] };
 
 export type HostelHub = PaginatedHostel;
+
+export type AuditLog = typeof auditLog.$inferSelect;
+export type AuditInsert = Omit<InferInsertModel<typeof auditLog>, "id" | "createdAt">;
+
+export type AuditActor
+  = | { actorType: "admin"; actorAdminId: number; actorUserId?: number | null }
+    | { actorType: "student"; actorUserId: number }
+    | { actorType: "system" };
+
+export type AuditContext = {
+  companyId: number | null;
+  hostelId?: number | null;
+  actor: AuditActor;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  requestId?: string | null;
+};

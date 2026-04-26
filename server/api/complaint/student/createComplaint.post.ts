@@ -52,11 +52,19 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const auditContext = getAuditContext({
+      kind: "student",
+      companyId,
+      hostelId: student.allocation.room.hostelId,
+      userId,
+      event,
+    });
+
     const result = await createComplaint({
       priority,
       ...rest,
       companyId,
-    });
+    }, auditContext);
 
     if (!result) {
       throw createError({

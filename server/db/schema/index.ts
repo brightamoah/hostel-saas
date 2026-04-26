@@ -1,4 +1,5 @@
 export * from "./announcement";
+export * from "./auditLog";
 export * from "./authHandoff";
 export * from "./billing";
 export * from "./company";

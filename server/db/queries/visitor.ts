@@ -2,6 +2,7 @@ import type { AdminScope, InsertEditVisitor, Period, VisitorCreate } from "~~/sh
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
+import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
 
 import { allocation, visitor, visitorLogs } from "../schema";

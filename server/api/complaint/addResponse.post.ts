@@ -79,11 +79,41 @@ export default defineEventHandler(async (event) => {
       companyId = complaint.companyId;
     }
 
+    const auditContext = user.role === "admin"
+      ? getAuditContext({
+          kind: "admin",
+          event,
+          scope: {
+            isPlatformAdmin: user.adminData?.accessLevel === "super",
+            companyId,
+            hostelId: complaint.hostelId,
+            userId: user.id,
+            adminData: user.adminData!,
+            companyRole: user.adminData?.accessLevel === "super"
+              ? null
+              : user.companyRole!,
+            isActiveAdmin: true,
+            companyMemberStatus: "active",
+          },
+          target: {
+            companyId: complaint.companyId ?? null,
+            hostelId: complaint.hostelId ?? null,
+          },
+        })
+      : getAuditContext({
+          kind: "student",
+          companyId,
+          hostelId: complaint.hostelId ?? null,
+          userId: user.id,
+          event,
+        });
+
     const newResponse = await addComplaintResponse(
       complaintId,
       user.id,
       responseText,
       companyId,
+      auditContext,
     );
 
     return {

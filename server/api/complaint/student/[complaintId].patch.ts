@@ -1,7 +1,7 @@
 import { complaintQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  await studentSessionCheck(event);
+  const { userId, companyId } = await studentSessionCheck(event);
 
   const idFromParam = Number(getRouterParam(event, "complaintId"));
 
@@ -9,6 +9,13 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       message: "Invalid Request ID: The provided request ID is not valid.",
+    });
+  }
+
+  if (!companyId) {
+    throw createError({
+      statusCode: 403,
+      message: "You do not have permission to edit complaints. Please contact support if you believe this is an error.",
     });
   }
 
@@ -33,22 +40,31 @@ export default defineEventHandler(async (event) => {
 
     const { updateComplaint, getComplaintForStudentById } = await complaintQueries();
 
+    const existingComplaint = await getComplaintForStudentById(complaintId, studentId);
+
+    if (!existingComplaint) {
+      throw createError({
+        statusCode: 404,
+        message: "Complaint not found or you do not have permission to edit this complaint.",
+      });
+    }
+
+    const auditContext = getAuditContext({
+      kind: "student",
+      companyId,
+      hostelId: existingComplaint.hostelId,
+      userId,
+      event,
+    });
+
     const updatedComplaint = await updateComplaint(
       complaintId,
       studentId,
       data as Parameters<typeof updateComplaint>[2],
+      auditContext,
     );
 
     if (!updatedComplaint) {
-      const existingComplaint = await getComplaintForStudentById(complaintId, studentId);
-
-      if (!existingComplaint) {
-        throw createError({
-          statusCode: 404,
-          message: "Complaint not found or you do not have permission to edit this complaint.",
-        });
-      }
-
       throw createError({
         statusCode: 409,
         message: `Complaint cannot be updated in its current state: ${existingComplaint.status}`,

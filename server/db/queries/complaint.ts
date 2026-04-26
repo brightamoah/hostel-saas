@@ -1,10 +1,13 @@
-import type { AdminScope, ComplaintActionTaken, ComplaintInsert, ComplaintStatus, Period } from "~~/shared/types";
+import type { AdminScope, AuditContext, ComplaintActionTaken, ComplaintInsert, ComplaintStatus, Period } from "~~/shared/types";
 
+import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
+import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
 
 import { complaint, complaintResponse } from "../schema";
+import { auditLogQueries } from "./auditLog";
 
 const complaintWithRelations = {
   with: {
@@ -38,6 +41,8 @@ const complaintWithRelations = {
 
 export async function complaintQueries() {
   const { db } = useDB();
+
+  const { logAudit } = await auditLogQueries();
 
   const applyComplaintScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -142,10 +147,12 @@ export async function complaintQueries() {
     responseText: string,
     complaintId: number,
     scope: AdminScope,
+    ctx: AuditContext,
   ) => {
     return db.transaction(async (tx) => {
       const adminId = scope.adminData.id;
       const companyId = scope.companyId!;
+      const responderId = scope.userId;
 
       const target = await tx.query.complaint.findFirst({
         where: and(
@@ -171,12 +178,39 @@ export async function complaintQueries() {
         .insert(complaintResponse)
         .values({
           complaintId,
-          responderId: adminId,
+          responderId,
           response: responseText,
           actionTaken: actionTakenMap[status],
           companyId,
         })
         .returning();
+
+      if (updatedComplaint) {
+        const diff = computeAuditDiff(target, updatedComplaint);
+
+        await logAudit(tx, ctx, {
+          entityId: updatedComplaint.id,
+          entityType: "complaint",
+          actionType: "UPDATE",
+          action: `complaint.update_status_to_${status}`,
+          description: `${ctx.actor.actorType} updated complaint ID ${updatedComplaint.id} status to ${status} with response "${responseText}"`,
+          diff: diff ? redact(diff) : null,
+          before: target,
+          after: updatedComplaint,
+        });
+      }
+
+      if (newResponse) {
+        await logAudit(tx, ctx, {
+          entityId: newResponse.id,
+          entityType: "complaint_response",
+          actionType: "CREATE",
+          action: `complaint.add_response_with_status_${status}`,
+          description: `${ctx.actor.actorType} added response to complaint ID ${complaintId} with status ${status}: "${responseText}"`,
+          before: null,
+          after: newResponse,
+        });
+      }
 
       return { updatedComplaint, newResponse };
     });
@@ -187,6 +221,7 @@ export async function complaintQueries() {
     responderId: number,
     response: string,
     companyId: number,
+    ctx: AuditContext,
   ) => {
     const [newResponse] = await db
       .insert(complaintResponse)
@@ -198,6 +233,19 @@ export async function complaintQueries() {
         companyId,
       })
       .returning();
+
+    if (newResponse) {
+      await logAudit(db, ctx, {
+        entityId: newResponse.id,
+        entityType: "complaint_response",
+        actionType: "CREATE",
+        action: `complaint.add_response`,
+        description: `${ctx.actor.actorType} added response to complaint ID ${complaintId}: "${response}"`,
+        before: null,
+        after: newResponse,
+      });
+    }
+
     return newResponse;
   };
 
@@ -278,7 +326,7 @@ export async function complaintQueries() {
     };
   };
 
-  const createComplaint = async (data: ComplaintInsert) => {
+  const createComplaint = async (data: ComplaintInsert, ctx: AuditContext) => {
     const [newComplaint] = await db
       .insert(complaint)
       .values({
@@ -287,6 +335,19 @@ export async function complaintQueries() {
       },
       )
       .returning();
+
+    if (newComplaint) {
+      await logAudit(db, ctx, {
+        entityId: newComplaint.id,
+        entityType: "complaint",
+        actionType: "CREATE",
+        action: "complaint.create",
+        description: `${ctx.actor.actorType} create complaint of type ${newComplaint.type} with priority ${newComplaint.priority} by student ID ${newComplaint.studentId} in room ID ${newComplaint.roomId}`,
+        before: null,
+        after: newComplaint,
+      });
+    }
+
     return newComplaint;
   };
 
@@ -294,7 +355,15 @@ export async function complaintQueries() {
     complaintId: number,
     studentId: number,
     data: Partial<ComplaintInsert>,
+    ctx: AuditContext,
   ) => {
+    const before = await db.query.complaint.findFirst({
+      where: and(
+        eq(complaint.id, complaintId),
+        eq(complaint.studentId, studentId),
+      ),
+    });
+
     const allowedFields: (keyof ComplaintInsert)[] = [
       "type",
       "description",
@@ -325,6 +394,22 @@ export async function complaintQueries() {
         ),
       )
       .returning();
+
+    if (updatedComplaint) {
+      const diff = computeAuditDiff(before, updatedComplaint);
+
+      await logAudit(db, ctx, {
+        entityId: updatedComplaint.id,
+        entityType: "complaint",
+        actionType: "UPDATE",
+        action: "complaint.update",
+        description: `${ctx.actor.actorType} updated complaint of type ${updatedComplaint.type} with priority ${updatedComplaint.priority} by student ID ${updatedComplaint.studentId} in room ID ${updatedComplaint.roomId}`,
+        before,
+        after: updatedComplaint,
+        diff: diff ? redact(diff) : null,
+      });
+    }
+
     return updatedComplaint;
   };
 

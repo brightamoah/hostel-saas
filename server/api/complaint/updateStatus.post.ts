@@ -72,11 +72,22 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const auditContext = getAuditContext({
+      kind: "admin",
+      event,
+      scope,
+      target: {
+        companyId: complaintToUpdate.companyId ?? companyId,
+        hostelId: complaintToUpdate.hostelId,
+      },
+    });
+
     const { updatedComplaint, newResponse } = await updateStatusAndAddResponse(
       status,
       responseText,
       complaintId,
       newScope,
+      auditContext,
     );
 
     return {

@@ -6,7 +6,6 @@ export async function uploadFiles(files: File[] | File): Promise<MediaAttachment
   const { $apiFetch } = useNuxtApp();
 
   try {
-   
     const formData = new FormData();
 
     const fileArray = Array.isArray(files) ? files : [files];

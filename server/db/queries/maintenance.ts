@@ -2,6 +2,7 @@ import type { AdminScope, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus,
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
+import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
 
 import { maintenanceRequest, maintenanceResponse } from "../schema";
