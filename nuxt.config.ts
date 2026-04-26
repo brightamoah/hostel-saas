@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     "nuxt-auth-utils",
     "@formkit/auto-animate",
     "nuxt-tiptap-editor",
+    "evlog/nuxt",
   ],
 
   $development: {

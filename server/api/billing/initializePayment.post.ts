@@ -111,12 +111,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const auditContext = getAuditContext({
+      kind: "student",
+      companyId,
+      userId: user.id,
+      event,
+      hostelId: billing.hostelId,
+    });
+
     await createPaymentIntent(
       billingId,
       billing.studentId,
       companyId,
       amount,
       reference,
+      auditContext,
     );
 
     const data = response.data;

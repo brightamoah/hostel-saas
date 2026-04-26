@@ -1,5 +1,6 @@
-import type { AdminScope, BillingInsert, Period } from "~~/shared/types";
+import type { AdminScope, AuditContext, BillingInsert, Period } from "~~/shared/types";
 
+import { computeAuditDiff } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
@@ -8,6 +9,7 @@ import { and, desc, eq, exists, gt, ne, sql } from "drizzle-orm";
 import type { paymentMethod } from "../schema";
 
 import { billing, payment } from "../schema";
+import { auditLogQueries } from "./auditLog";
 
 const billingWithRelations = {
   with: {
@@ -33,6 +35,8 @@ type PaymentMethodType = typeof paymentMethod.enumValues[number];
 
 export async function billingQueries() {
   const { db } = useDB();
+
+  const { logAudit } = await auditLogQueries();
 
   const applyBillingScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -259,11 +263,24 @@ export async function billingQueries() {
     };
   };
 
-  const createBilling = async (data: BillingInsert) => {
+  const createBilling = async (data: BillingInsert, ctx: AuditContext) => {
     const [result] = await db
       .insert(billing)
       .values(data)
       .returning();
+
+    if (result) {
+      await logAudit(db, ctx, {
+        entityId: result.id,
+        entityType: "billing",
+        actionType: "CREATE",
+        action: "billing.create",
+        description: `Created billing record for studentId ${result.studentId} with amount ${result.amount} and status ${result.status} and due date ${result.dueDate}`,
+        before: null,
+        after: result,
+      });
+    }
+
     return result;
   };
 
@@ -283,8 +300,9 @@ export async function billingQueries() {
     companyId: number,
     amount: number,
     reference: string,
+    ctx: AuditContext,
   ) => {
-    await db.insert(payment).values({
+    const [intent] = await db.insert(payment).values({
       billingId,
       studentId,
       companyId,
@@ -293,14 +311,57 @@ export async function billingQueries() {
       paymentMethod: "card",
       status: "pending",
       paymentDate: new Date(),
+    }).returning();
+
+    if (!intent) {
+      throw new Error("Failed to create payment intent");
+    }
+
+    await logAudit(db, ctx, {
+      entityId: intent.billingId,
+      entityType: "billing",
+      actionType: "CREATE",
+      action: "billing.payment_intent_created",
+      description: `Created payment intent for billingId ${intent.billingId} with amount ${intent.amount} and reference ${intent.transactionReference}`,
+      before: null,
+      after: intent,
     });
+
+    return intent;
   };
 
-  const markPaymentAsFailed = async (reference: string) => {
-    await db
+  const markPaymentAsFailed = async (reference: string, ctx: AuditContext) => {
+    const existingPayment = await db
+      .query
+      .payment
+      .findFirst({
+        where: eq(payment.transactionReference, reference),
+      });
+
+    if (!existingPayment) {
+      throw new Error("Payment not found");
+    }
+
+    const [updatedPayment] = await db
       .update(payment)
       .set({ status: "failed" })
-      .where(eq(payment.transactionReference, reference));
+      .where(eq(payment.transactionReference, reference))
+      .returning();
+
+    if (!updatedPayment) {
+      throw new Error("Failed to update payment status");
+    }
+
+    await logAudit(db, ctx, {
+      entityId: updatedPayment.billingId,
+      entityType: "billing",
+      actionType: "UPDATE",
+      action: "billing.payment_failed",
+      description: `Marked payment as failed for reference ${reference}`,
+      before: existingPayment,
+      after: updatedPayment,
+      diff: computeAuditDiff(existingPayment, updatedPayment),
+    });
   };
 
   const processSuccessfulPayment = async (
@@ -308,15 +369,40 @@ export async function billingQueries() {
     reference: string,
     paymentMethod: PaymentMethodType,
     verifiedAmount: number,
+    ctx: AuditContext,
   ) => {
-    await db.update(payment)
+    const beforePayment = await db
+      .query
+      .payment
+      .findFirst({
+        where: and(
+          eq(payment.transactionReference, reference),
+          eq(payment.billingId, billingId),
+        ),
+      });
+
+    const [updatedPayment] = await db.update(payment)
       .set({
         amount: sql`${verifiedAmount}::numeric`,
         status: "completed",
         paymentDate: new Date(),
         paymentMethod,
       })
-      .where(eq(payment.transactionReference, reference));
+      .where(eq(payment.transactionReference, reference))
+      .returning();
+
+    if (updatedPayment) {
+      await logAudit(db, ctx, {
+        entityId: updatedPayment.billingId,
+        entityType: "payment",
+        actionType: "UPDATE",
+        action: "billing.payment_completed",
+        description: `Marked payment with reference ${reference} as completed with amount ${verifiedAmount} and payment method ${paymentMethod}`,
+        before: beforePayment,
+        after: updatedPayment,
+        diff: computeAuditDiff(beforePayment, updatedPayment),
+      });
+    }
   };
 
   return {

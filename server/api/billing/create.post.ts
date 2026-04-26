@@ -3,7 +3,14 @@ import { billingQueries, roomQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
-  const { companyId, hostelId, isPlatformAdmin } = scope;
+  const {
+    companyId,
+    hostelId,
+    isPlatformAdmin,
+    userId,
+    adminData,
+    companyRole,
+  } = scope;
   const runtimeConfig = useRuntimeConfig(event);
 
   try {
@@ -73,6 +80,27 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const auditContext = getAuditContext({
+      kind: "admin",
+      event,
+      scope: {
+        isPlatformAdmin,
+        companyId,
+        hostelId,
+        userId,
+        adminData,
+        companyRole: adminData?.accessLevel === "super"
+          ? null
+          : companyRole,
+        isActiveAdmin: true,
+        companyMemberStatus: "active",
+      },
+      target: {
+        companyId: companyId ?? null,
+        hostelId: hostelId ?? null,
+      },
+    });
+
     const newBilling = await createBilling({
       studentId,
       allocationId: studentAllocation.id,
@@ -84,7 +112,7 @@ export default defineEventHandler(async (event) => {
       dueDate: dueDate.toString(),
       type,
       companyId: isPlatformAdmin ? studentAllocation.room.hostel.companyId : companyId!,
-    });
+    }, auditContext);
 
     if (sendNotification) {
       const studentEmail = studentAllocation.student.user.email;

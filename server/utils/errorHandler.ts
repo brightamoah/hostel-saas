@@ -1,10 +1,31 @@
 import type { H3Event } from "h3";
 
+import { createError as evlogCreateError, useLogger } from "evlog";
+
 type StructuredError = {
   statusCode?: number;
   statusMessage?: string;
   data?: any;
 } & Error;
+
+interface ServerEvent {
+  method: string;
+  path: string;
+  context: H3EventContext & {
+    /** Cloudflare Workers context (available when deployed to CF Workers) */cloudflare?: {
+      context: {
+        waitUntil: (promise: Promise<unknown>) => void;
+      };
+    }; /** Vercel Edge context (available when deployed to Vercel Edge) */
+    waitUntil?: (promise: Promise<unknown>) => void;
+  };
+  node?: {
+    res?: {
+      statusCode?: number;
+    };
+  };
+  response?: Response;
+}
 
 export function handleError(
   error: unknown,
@@ -14,10 +35,22 @@ export function handleError(
   // const runtimeConfig = useRuntimeConfig();
   const err = error as StructuredError;
 
+  const log = useLogger(event! as unknown as ServerEvent);
+
+  log.set({ context });
+
   // Get Cloudflare-specific context
-  const cloudflareContext = event?.context.cloudflare || {};
-  const requestId = cloudflareContext.cf?.requestId || "unknown";
-  const cfRay = cloudflareContext.cf?.cfRay || "unknown";
+  const cloudflareContext = event?.context.cloudflare;
+  const requestId = cloudflareContext?.cf?.requestId || "unknown";
+  const cfRay = cloudflareContext?.cf?.cfRay || "unknown";
+
+  if (event?.context.cloudflare) {
+    const { cf } = event.context.cloudflare;
+    log.set({
+      requestId: cf?.requestId,
+      cfRay: cf?.cfRay,
+    });
+  }
 
   // Structured log for Cloudflare observability
   const logData = {
@@ -96,10 +129,14 @@ export function handleError(
     });
   }
 
-  // Generic fallback for unhandled errors
-  throw createError({
-    statusCode: 500,
-    message: `An unexpected server error occurred. Details: ${err.message || "Unknown error."}`,
-    statusMessage: "Internal Server Error",
+  throw evlogCreateError({
+    cause: error as Error,
+    message: (error as any)?.message || "An unexpected error occurred",
+    status: (error as any)?.statusCode || 500,
+    // Technical details for logs but hidden from clients
+    internal: {
+      originalCode: (error as any)?.code,
+      stack: (error as any)?.stack,
+    },
   });
 }

@@ -1,7 +1,7 @@
 import { billingQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  await requirePortalUserSession(event);
+  const { user } = await requirePortalUserSession(event);
 
   try {
     const body = await readValidatedBody(event, body => verifyPaymentSchema.safeParse(body));
@@ -41,19 +41,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const verifyResponse = await verifyPaystackTransaction(reference);
-
-    if (!verifyResponse.status || verifyResponse.data?.status !== "success") {
-      await markPaymentAsFailed(reference);
-
-      throw createError({
-        statusCode: 400,
-        message: `Payment failed: ${verifyResponse.data?.gateway_response || "Transaction was not successful"}`,
-      });
-    }
-
-    const transaction = verifyResponse.data;
-
     const currentBilling = await getBillingByIdStudent(billingId);
 
     if (!currentBilling) {
@@ -62,6 +49,56 @@ export default defineEventHandler(async (event) => {
         message: "Billing record not found.",
       });
     }
+
+    const billingHostelId = "hostelId" in currentBilling && typeof currentBilling.hostelId === "number"
+      ? currentBilling.hostelId
+      : null;
+
+    const verifyResponse = await verifyPaystackTransaction(reference);
+
+    const surface = getSurface(event);
+
+    const isAdmin = surface === "admin";
+
+    const auditContext = user.role === "admin" && isAdmin
+      ? getAuditContext({
+          kind: "admin",
+          event,
+          scope: {
+            isPlatformAdmin: user.adminData?.accessLevel === "super",
+            companyId: user.companyId ?? null,
+            hostelId: user.adminData?.hostelId ?? undefined,
+            userId: user.id,
+            adminData: user.adminData!,
+            companyRole: user.adminData?.accessLevel === "super"
+              ? null
+              : user.companyRole!,
+            isActiveAdmin: true,
+            companyMemberStatus: "active",
+          },
+          target: {
+            companyId: existingPayment.companyId ?? null,
+            hostelId: billingHostelId,
+          },
+        })
+      : getAuditContext({
+          kind: "student",
+          companyId: existingPayment.companyId ?? null,
+          hostelId: billingHostelId,
+          userId: user.id,
+          event,
+        });
+
+    if (!verifyResponse.status || verifyResponse.data?.status !== "success") {
+      await markPaymentAsFailed(reference, auditContext);
+
+      throw createError({
+        statusCode: 400,
+        message: `Payment failed: ${verifyResponse.data?.gateway_response || "Transaction was not successful"}`,
+      });
+    }
+
+    const transaction = verifyResponse.data;
 
     const verifiedAmount = Number(transaction.amount) / 100;
     const prevPaid = Number(currentBilling.paidAmount || 0);
@@ -80,6 +117,7 @@ export default defineEventHandler(async (event) => {
       reference,
       paymentMethod,
       verifiedAmount,
+      auditContext,
     );
     return {
       success: true,

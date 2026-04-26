@@ -115,6 +115,56 @@ export default defineEventHandler(async (event) => {
       console.error("Failed to send email:", emailError);
     }
 
+    const { logAudit } = await (await import("~~/server/db/queries/auditLog")).auditLogQueries();
+    const { useDB } = await import("~~/server/utils/db");
+    const { db } = useDB();
+
+    const auditContext = user.role === "admin"
+      ? getAuditContext({
+          kind: "admin",
+          event,
+          scope: {
+            isPlatformAdmin: user.adminData?.accessLevel === "super",
+            companyId: user.companyId ?? null,
+            hostelId: user.adminData?.hostelId ?? null,
+            userId: user.id,
+            adminData: user.adminData!,
+            companyRole: user.adminData?.accessLevel === "super" ? null : user.companyRole!,
+            isActiveAdmin: true,
+            companyMemberStatus: "active",
+          } as any,
+          target: {
+            companyId: user.companyId ?? null,
+            hostelId: user.adminData?.hostelId ?? null,
+          },
+        })
+      : getAuditContext({
+          kind: "student",
+          event,
+          userId: user.id,
+          companyId: user.companyId!,
+          hostelId: null,
+        });
+
+    await logAudit(db as any, auditContext, {
+      entityId: null,
+      entityType: "billing",
+      actionType: "OTHER",
+      action: "billing.email_invoice",
+      description: `${auditContext.actor.actorType} emailed invoice ${invoiceNumber} to ${studentEmail} for studentUserId=${studentUserId}`,
+      before: null,
+      after: {
+        invoiceNumber,
+        studentEmail,
+        studentUserId,
+        amountTotal,
+        amountPaid,
+        amountDue,
+        dateIssued,
+        dateDue,
+      },
+    });
+
     return {
       success: true,
       message: `Invoice email sent to ${studentEmail} successfully.`,
