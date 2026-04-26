@@ -119,23 +119,25 @@ export default defineEventHandler(async (event) => {
     const { useDB } = await import("~~/server/utils/db");
     const { db } = useDB();
 
-    const auditContext = user.role === "admin"
+    const adminData = user.adminData;
+
+    const auditContext = user.role === "admin" && adminData
       ? getAuditContext({
           kind: "admin",
           event,
           scope: {
-            isPlatformAdmin: user.adminData?.accessLevel === "super",
+            isPlatformAdmin: adminData.accessLevel === "super",
             companyId: user.companyId ?? null,
-            hostelId: user.adminData?.hostelId ?? null,
+            hostelId: adminData.hostelId ?? null,
             userId: user.id,
-            adminData: user.adminData!,
-            companyRole: user.adminData?.accessLevel === "super" ? null : user.companyRole!,
+            adminData,
+            companyRole: user.companyRole ?? null,
             isActiveAdmin: true,
             companyMemberStatus: "active",
           } as any,
           target: {
             companyId: user.companyId ?? null,
-            hostelId: user.adminData?.hostelId ?? null,
+            hostelId: adminData.hostelId ?? null,
           },
         })
       : getAuditContext({

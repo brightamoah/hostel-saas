@@ -1,9 +1,10 @@
-import type { AdminScope, AnnouncementInsert } from "~~/shared/types";
+import type { AdminScope, AnnouncementInsert, AuditContext } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { announcement, announcementReads } from "../schema";
+import { auditLogQueries } from "./auditLog";
 
 const announcementWithRelations = {
   orderBy: desc(announcement.postedAt),
@@ -36,6 +37,8 @@ const announcementWithRelations = {
 export async function announcementQueries() {
   const { db } = useDB();
 
+  const { logAudit } = await auditLogQueries();
+
   const applyAnnouncementScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
     if (mode === "platform") return [];
@@ -64,7 +67,11 @@ export async function announcementQueries() {
     return [sql`FALSE`];
   };
 
-  const createAnnouncement = async (data: AnnouncementInsert, scope: AdminScope) => {
+  const createAnnouncement = async (
+    data: AnnouncementInsert,
+    scope: AdminScope,
+    ctx: AuditContext,
+  ) => {
     const payload = {
       ...data,
       companyId: scope.isPlatformAdmin ? data.companyId : scope.companyId!,
@@ -74,6 +81,19 @@ export async function announcementQueries() {
       .insert(announcement)
       .values(payload)
       .returning();
+
+    if (newAnnouncement) {
+      await logAudit(db, ctx, {
+        action: "announcement.create",
+        actionType: "CREATE",
+        entityType: "announcement",
+        entityId: newAnnouncement.id,
+        description: `${ctx.actor.actorType} created announcement with title "${redact(newAnnouncement.title)}" for company ID ${newAnnouncement.companyId}, hostel ID ${newAnnouncement.targetHostelId}, room ID ${newAnnouncement.targetRoomId}, user ID ${newAnnouncement.targetUserId}`,
+        before: null,
+        after: newAnnouncement,
+      });
+    }
+
     return newAnnouncement;
   };
 
@@ -82,7 +102,17 @@ export async function announcementQueries() {
     scope: AdminScope,
     data: Partial<AnnouncementInsert>,
     resetReadStatus = false,
+    ctx: AuditContext,
   ) => {
+    const before = await db.query.announcement.findFirst({
+      where: and(
+        eq(announcement.id, announcementId),
+        ...applyAnnouncementScope(scope),
+      ),
+    });
+
+    if (!before) return null;
+
     const [updatedAnnouncement] = await db
       .update(announcement)
       .set({
@@ -95,13 +125,78 @@ export async function announcementQueries() {
       ))
       .returning();
 
+    if (updatedAnnouncement) {
+      await logAudit(db, ctx, {
+        action: "announcement.update",
+        actionType: "UPDATE",
+        entityType: "announcement",
+        entityId: updatedAnnouncement.id,
+        description: `${ctx.actor.actorType} updated announcement with title "${redact(updatedAnnouncement.title)}" for company ID ${updatedAnnouncement.companyId}, hostel ID ${updatedAnnouncement.targetHostelId}, room ID ${updatedAnnouncement.targetRoomId}, user ID ${updatedAnnouncement.targetUserId}`,
+        before,
+        after: updatedAnnouncement,
+        diff: computeAuditDiff(before, updatedAnnouncement),
+      });
+    }
+
     if (updatedAnnouncement && resetReadStatus) {
-      await db
+      const deletedReads = await db
         .delete(announcementReads)
-        .where(eq(announcementReads.announcementId, announcementId));
+        .where(eq(announcementReads.announcementId, announcementId))
+        .returning();
+
+      if (deletedReads.length > 0) {
+        await logAudit(db, ctx, {
+          action: "announcement.reset_read_status",
+          actionType: "DELETE",
+          entityType: "announcement_reads",
+          entityId: updatedAnnouncement.id,
+          description: `${ctx.actor.actorType} reset read status for announcement ID ${updatedAnnouncement.id} by deleting ${deletedReads.length} read receipt(s).`,
+          before: deletedReads,
+          after: null,
+          diff: computeAuditDiff(deletedReads, null),
+        });
+      }
     }
 
     return updatedAnnouncement;
+  };
+
+  const deleteAnnouncement = async (
+    announcementId: number,
+    scope: AdminScope,
+    ctx: AuditContext,
+  ) => {
+    const before = await db.query.announcement.findFirst({
+      where: and(
+        eq(announcement.id, announcementId),
+        ...applyAnnouncementScope(scope),
+      ),
+    });
+
+    if (!before) return null;
+
+    const [deletedAnnouncement] = await db
+      .delete(announcement)
+      .where(and(
+        eq(announcement.id, announcementId),
+        ...applyAnnouncementScope(scope),
+      ))
+      .returning();
+
+    if (deletedAnnouncement) {
+      await logAudit(db, ctx, {
+        action: "announcement.delete",
+        actionType: "DELETE",
+        entityType: "announcement",
+        entityId: deletedAnnouncement.id,
+        description: `${ctx.actor.actorType} deleted announcement ID ${deletedAnnouncement.id}`,
+        before,
+        after: null,
+        diff: computeAuditDiff(before, null),
+      });
+    }
+
+    return deletedAnnouncement;
   };
 
   const getAllAnnouncementsForAdmin = async (scope: AdminScope) => {
@@ -146,24 +241,53 @@ export async function announcementQueries() {
     companyId: number,
     userId: number,
     isRead: boolean,
+    ctx: AuditContext,
   ) => {
     if (isRead) {
-      await db
+      const [readAnnouncement] = await db
         .insert(announcementReads)
         .values({
           announcementId,
           userId,
           companyId,
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing()
+        .returning();
+
+      if (readAnnouncement) {
+        await logAudit(db, ctx, {
+          action: "announcement.mark_as_read",
+          actionType: "CREATE",
+          entityType: "announcement_reads",
+          entityId: announcementId,
+          description: `${ctx.actor.actorType} marked announcement ID ${announcementId} as read for user ID ${userId}.`,
+          before: null,
+          after: readAnnouncement,
+          diff: computeAuditDiff(null, readAnnouncement),
+        });
+      }
     }
     else {
-      await db
+      const deletedReads = await db
         .delete(announcementReads)
         .where(and(
           eq(announcementReads.announcementId, announcementId),
           eq(announcementReads.userId, userId),
-        ));
+        ))
+        .returning();
+
+      if (deletedReads) {
+        await logAudit(db, ctx, {
+          action: "announcement.mark_as_unread",
+          actionType: "DELETE",
+          entityType: "announcement_reads",
+          entityId: announcementId,
+          description: `${ctx.actor.actorType} marked announcement ID ${announcementId} as unread for user ID ${userId}.`,
+          before: deletedReads,
+          after: null,
+          diff: computeAuditDiff(deletedReads, null),
+        });
+      }
     }
   };
 
@@ -230,6 +354,7 @@ export async function announcementQueries() {
     getAnnouncementById,
     updateAnnouncementReadStatus,
     editAnnouncement,
+    deleteAnnouncement,
     getAllAnnouncementForStudent,
   };
 }

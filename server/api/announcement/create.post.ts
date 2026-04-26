@@ -97,17 +97,31 @@ export default defineEventHandler(async (event) => {
     const cleanContent = sanitizeHtmlContent(content);
     const { createAnnouncement } = await announcementQueries();
 
-    const newAnnouncement = await createAnnouncement({
-      content: cleanContent,
-      priority,
-      targetAudience,
-      title,
-      targetHostelId: saveTargetHostelId,
-      targetRoomId: targetAudience === "room" ? targetRoomId : null,
-      targetUserId: targetAudience === "user" ? targetUserId : null,
-      postedBy: adminData.id,
-      companyId: finalCompanyId,
-    }, scope);
+    const auditContext = getAuditContext({
+      kind: "admin",
+      event,
+      scope,
+      target: {
+        companyId: finalCompanyId,
+        hostelId: saveTargetHostelId,
+      },
+    });
+
+    const newAnnouncement = await createAnnouncement(
+      {
+        content: cleanContent,
+        priority,
+        targetAudience,
+        title,
+        targetHostelId: saveTargetHostelId,
+        targetRoomId: targetAudience === "room" ? targetRoomId : null,
+        targetUserId: targetAudience === "user" ? targetUserId : null,
+        postedBy: adminData.id,
+        companyId: finalCompanyId,
+      },
+      scope,
+      auditContext,
+    );
 
     return {
       success: true,

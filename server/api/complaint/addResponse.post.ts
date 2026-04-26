@@ -80,26 +80,37 @@ export default defineEventHandler(async (event) => {
     }
 
     const auditContext = user.role === "admin"
-      ? getAuditContext({
-          kind: "admin",
-          event,
-          scope: {
-            isPlatformAdmin: user.adminData?.accessLevel === "super",
-            companyId,
-            hostelId: complaint.hostelId,
-            userId: user.id,
-            adminData: user.adminData!,
-            companyRole: user.adminData?.accessLevel === "super"
-              ? null
-              : user.companyRole!,
-            isActiveAdmin: true,
-            companyMemberStatus: "active",
-          },
-          target: {
-            companyId: complaint.companyId ?? null,
-            hostelId: complaint.hostelId ?? null,
-          },
-        })
+      ? (() => {
+          const adminData = user.adminData;
+
+          if (!adminData) {
+            throw createError({
+              statusCode: 403,
+              message: "Admin profile missing.",
+            });
+          }
+
+          return getAuditContext({
+            kind: "admin",
+            event,
+            scope: {
+              isPlatformAdmin: adminData.accessLevel === "super",
+              companyId,
+              hostelId: complaint.hostelId,
+              userId: user.id,
+              adminData,
+              companyRole: adminData.accessLevel === "super"
+                ? null
+                : user.companyRole ?? null,
+              isActiveAdmin: true,
+              companyMemberStatus: "active",
+            },
+            target: {
+              companyId: complaint.companyId ?? null,
+              hostelId: complaint.hostelId ?? null,
+            },
+          });
+        })()
       : getAuditContext({
           kind: "student",
           companyId,

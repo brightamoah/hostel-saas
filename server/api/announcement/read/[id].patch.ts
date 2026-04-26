@@ -1,3 +1,5 @@
+import type { AuditContext } from "~~/shared/types";
+
 import { announcementQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
@@ -39,11 +41,35 @@ export default defineEventHandler(async (event) => {
 
     const { updateAnnouncementReadStatus } = await announcementQueries();
 
+    let auditContext: AuditContext;
+
+    try {
+      const scope = await adminSessionCheck(event);
+      auditContext = getAuditContext({
+        kind: "admin",
+        event,
+        scope,
+        target: {
+          companyId,
+          hostelId: scope.hostelId,
+        },
+      });
+    }
+    catch {
+      auditContext = getAuditContext({
+        kind: "student",
+        event,
+        userId: user.id,
+        companyId,
+      });
+    }
+
     await updateAnnouncementReadStatus(
       id,
       companyId,
       user.id,
       action === "read",
+      auditContext,
     );
 
     return {

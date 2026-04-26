@@ -3,6 +3,24 @@ import type { H3Event } from "h3";
 
 import { randomUUID } from "uncrypto";
 
+const sensitiveFields = new Set([
+  "password",
+  "resettoken",
+  "verificationtoken",
+  "verificationtokenexpiresat",
+  "tokenhash",
+  "phonenumber",
+  "emergencycontactphonenumber",
+  "emergencycontactemail",
+  "healthconditions",
+  "dateofbirth",
+  "address",
+  "bankaccountnumber",
+  "bankname",
+  "bankbranch",
+  "accountname",
+]);
+
 /**
  * Recursively redact sensitive fields from any object/array.
  * Operates on a best-effort basis: mutates a deep clone, not the original.
@@ -12,20 +30,6 @@ export function redact(value: unknown): unknown {
   if (typeof value !== "object") return value;
 
   const clone = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
-  const sensitiveFields = new Set([
-    "password",
-    "resettoken",
-    "verificationtoken",
-    "verificationtokenexpiresat",
-    "tokenhash",
-    "phonenumber",
-    "emergencycontactphonenumber",
-    "emergencycontactemail",
-    "healthconditions",
-    "dateofbirth",
-    "address",
-    "phonenumber",
-  ]);
 
   function redactObject(obj: unknown): unknown {
     if (Array.isArray(obj)) {

@@ -80,6 +80,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const log = useLogger(event);
+
     const auditContext = getAuditContext({
       kind: "admin",
       event,
@@ -113,6 +115,14 @@ export default defineEventHandler(async (event) => {
       type,
       companyId: isPlatformAdmin ? studentAllocation.room.hostel.companyId : companyId!,
     }, auditContext);
+
+    log.audit({
+      action: "billing.create",
+      actor: { type: "user", id: scope.userId, adminId: scope.adminData.id },
+      target: { type: "billing", id: newBilling.id },
+      outcome: "success",
+      reason: "Admin created a new billing record for a student.",
+    });
 
     if (sendNotification) {
       const studentEmail = studentAllocation.student.user.email;

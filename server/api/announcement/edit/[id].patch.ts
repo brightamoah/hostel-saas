@@ -32,11 +32,22 @@ export default defineEventHandler(async (event) => {
 
     const { editAnnouncement, getAnnouncementById } = await announcementQueries();
 
+    const auditContext = getAuditContext({
+      kind: "admin",
+      event,
+      scope,
+      target: {
+        companyId: data.companyId ?? scope.companyId,
+        hostelId: data.targetHostelId,
+      },
+    });
+
     const updatedAnnouncement = await editAnnouncement(
       announcementId,
       scope,
       data,
       resetReadStatus,
+      auditContext,
     );
 
     if (!updatedAnnouncement) {

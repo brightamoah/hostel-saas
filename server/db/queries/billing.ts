@@ -269,21 +269,22 @@ export async function billingQueries() {
       .values(data)
       .returning();
 
-    if (result) {
-      await logAudit(db, ctx, {
-        entityId: result.id,
-        entityType: "billing",
-        actionType: "CREATE",
-        action: "billing.create",
-        description: `Created billing record for studentId ${result.studentId} with amount ${result.amount} and status ${result.status} and due date ${result.dueDate}`,
-        before: null,
-        after: result,
-      });
+    if (!result) {
+      throw new Error("Failed to create billing record");
     }
+
+    await logAudit(db, ctx, {
+      entityId: result.id,
+      entityType: "billing",
+      actionType: "CREATE",
+      action: "billing.create",
+      description: `Created billing record for studentId ${result.studentId} with amount ${result.amount} and status ${result.status} and due date ${result.dueDate}`,
+      before: null,
+      after: result,
+    });
 
     return result;
   };
-
   const checkExistingPayment = async (reference: string) => {
     const result = await db
       .query

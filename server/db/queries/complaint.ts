@@ -193,7 +193,7 @@ export async function complaintQueries() {
           entityType: "complaint",
           actionType: "UPDATE",
           action: `complaint.update_status_to_${status}`,
-          description: `${ctx.actor.actorType} updated complaint ID ${updatedComplaint.id} status to ${status} with response "${responseText}"`,
+          description: `${ctx.actor.actorType} updated complaint ID ${updatedComplaint.id} status to ${status} with response "${redact(responseText)}"`,
           diff: diff ? redact(diff) : null,
           before: target,
           after: updatedComplaint,
@@ -240,7 +240,7 @@ export async function complaintQueries() {
         entityType: "complaint_response",
         actionType: "CREATE",
         action: `complaint.add_response`,
-        description: `${ctx.actor.actorType} added response to complaint ID ${complaintId}: "${response}"`,
+        description: `${ctx.actor.actorType} added response to complaint ID ${complaintId}`,
         before: null,
         after: newResponse,
       });
@@ -342,7 +342,7 @@ export async function complaintQueries() {
         entityType: "complaint",
         actionType: "CREATE",
         action: "complaint.create",
-        description: `${ctx.actor.actorType} create complaint of type ${newComplaint.type} with priority ${newComplaint.priority} by student ID ${newComplaint.studentId} in room ID ${newComplaint.roomId}`,
+        description: `${ctx.actor.actorType} created complaint of type ${newComplaint.type} with priority ${newComplaint.priority} by student ID ${newComplaint.studentId} in room ID ${newComplaint.roomId}`,
         before: null,
         after: newComplaint,
       });

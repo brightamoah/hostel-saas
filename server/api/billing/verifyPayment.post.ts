@@ -60,19 +60,19 @@ export default defineEventHandler(async (event) => {
 
     const isAdmin = surface === "admin";
 
-    const auditContext = user.role === "admin" && isAdmin
+    const auditContext = user.role === "admin" && isAdmin && user.adminData
       ? getAuditContext({
           kind: "admin",
           event,
           scope: {
-            isPlatformAdmin: user.adminData?.accessLevel === "super",
+            isPlatformAdmin: user.adminData.accessLevel === "super",
             companyId: user.companyId ?? null,
-            hostelId: user.adminData?.hostelId ?? undefined,
+            hostelId: user.adminData.hostelId ?? undefined,
             userId: user.id,
-            adminData: user.adminData!,
-            companyRole: user.adminData?.accessLevel === "super"
+            adminData: user.adminData,
+            companyRole: user.adminData.accessLevel === "super"
               ? null
-              : user.companyRole!,
+              : user.companyRole ?? null,
             isActiveAdmin: true,
             companyMemberStatus: "active",
           },
@@ -88,7 +88,6 @@ export default defineEventHandler(async (event) => {
           userId: user.id,
           event,
         });
-
     if (!verifyResponse.status || verifyResponse.data?.status !== "success") {
       await markPaymentAsFailed(reference, auditContext);
 

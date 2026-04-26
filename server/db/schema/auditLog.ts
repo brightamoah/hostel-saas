@@ -28,6 +28,7 @@ export const auditActionEnum = pgEnum("audit_action", [
 
 export const entityTypeEnum = pgEnum("audit_entity_type", [
   "announcement",
+  "announcement_reads",
   "billing",
   "payment",
   "complaint",
