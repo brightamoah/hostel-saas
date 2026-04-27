@@ -1,4 +1,4 @@
-import type { AdminScope, AuditContext } from "~~/shared/types";
+import type { AdminScope, AuditContext, ServerEvent } from "~~/shared/types";
 import type { H3Event } from "h3";
 
 import { randomUUID } from "uncrypto";
@@ -172,6 +172,7 @@ export function getAuditContext(input: StudentAuditInput | AdminAuditInput | Sys
       ipAddress,
       userAgent,
       requestId,
+      event: input.event as H3Event & ServerEvent,
     };
   }
 
@@ -188,6 +189,7 @@ export function getAuditContext(input: StudentAuditInput | AdminAuditInput | Sys
       ipAddress,
       userAgent,
       requestId,
+      event: input.event as H3Event & ServerEvent,
     };
   }
 
@@ -196,7 +198,7 @@ export function getAuditContext(input: StudentAuditInput | AdminAuditInput | Sys
     hostelId: input.hostelId ?? null,
 
     actor: { actorType: "system" },
-
+    event: input.event as H3Event & ServerEvent,
     ipAddress,
     userAgent,
     requestId,

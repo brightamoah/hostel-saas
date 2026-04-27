@@ -15,7 +15,8 @@ import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, auditLog, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { useDB } from "~~/server/utils/db";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import type { useSession } from "h3";
+import type { H3EventContext } from "evlog";
+import type { H3Event, useSession } from "h3";
 import type { randomUUID } from "uncrypto";
 import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
 import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
@@ -662,4 +663,24 @@ export type AuditContext = {
   ipAddress?: string | null;
   userAgent?: string | null;
   requestId?: string | null;
+  event: H3Event & ServerEvent;
 };
+
+export interface ServerEvent {
+  method: string;
+  path: string;
+  context: H3EventContext & {
+    /** Cloudflare Workers context (available when deployed to CF Workers) */cloudflare?: {
+      context: {
+        waitUntil: (promise: Promise<unknown>) => void;
+      };
+    }; /** Vercel Edge context (available when deployed to Vercel Edge) */
+    waitUntil?: (promise: Promise<unknown>) => void;
+  };
+  node?: {
+    res?: {
+      statusCode?: number;
+    };
+  };
+  response?: Response;
+}

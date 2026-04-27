@@ -118,7 +118,7 @@ export default defineEventHandler(async (event) => {
 
     log.audit({
       action: "billing.create",
-      actor: { type: "user", id: scope.userId, adminId: scope.adminData.id },
+      actor: { type: "admin", id: scope.userId, adminId: scope.adminData.id },
       target: { type: "billing", id: newBilling.id },
       outcome: "success",
       reason: "Admin created a new billing record for a student.",
