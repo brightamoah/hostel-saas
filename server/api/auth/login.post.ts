@@ -94,7 +94,18 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     if (surface === "public" && currentUser.role === "admin") {
       const { createHandoffToken } = await authHandoffQueries();
-      const { token } = await createHandoffToken(currentUser.id);
+
+      const auditContext = getAuditContext({
+        kind: "system",
+        event,
+        companyId: null,
+        hostelId: null,
+      });
+
+      const { token } = await createHandoffToken(
+        currentUser.id,
+        auditContext,
+      );
 
       await recordLoginAttempt(currentUser.id, ip, true);
 
