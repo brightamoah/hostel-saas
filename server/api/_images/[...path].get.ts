@@ -1,3 +1,25 @@
+defineRouteMeta({
+  openAPI: {
+    summary: "Serve images from R2 or local storage in development",
+    description: "This endpoint serves images stored in Cloudflare R2 in production and local storage during development. It handles caching and content type headers appropriately.",
+    parameters: [
+      {
+        name: "path",
+        in: "path",
+        required: true,
+        schema: { type: "string" },
+        description: "The path to the image, relative to the root of the storage. Example: 'avatars/user123.jpg'",
+      },
+    ],
+    responses: {
+      200: { description: "The requested image file" },
+      400: { description: "Invalid image path" },
+      404: { description: "Image not found" },
+      500: { description: "Server error or R2 bucket not configured" },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   try {
     const rawPath = getRouterParam(event, "path");

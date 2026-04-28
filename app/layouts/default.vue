@@ -1,6 +1,11 @@
 <script lang="ts" setup>
 import { useAuthStore } from "~/stores/authStore";
 
+const { showNavbar = true, showBg = true } = defineProps<{
+  showNavbar?: boolean;
+  showBg?: boolean;
+}>();
+
 const authStore = useAuthStore();
 const { refreshSession } = authStore;
 
@@ -9,7 +14,10 @@ await refreshSession();
 
 <template>
   <div class="relative min-h-screen">
-    <SvgsLine1 class="-z-10 fixed inset-0 opacity-15 w-full h-full pointer-events-none" />
+    <SvgsLine1
+      v-if="showBg"
+      class="-z-10 fixed inset-0 opacity-15 w-full h-full pointer-events-none"
+    />
 
     <!-- <div
       class="absolute inset-0 overflow-hidden pointer-events-none"
@@ -20,7 +28,7 @@ await refreshSession();
       <div class="top-0 left-1/2 absolute bg-primary/30 w-150 h-px -translate-x-1/2" />
     </div> -->
 
-    <AppNavbar />
+    <AppNavbar v-if="showNavbar" />
 
     <UMain>
       <slot />

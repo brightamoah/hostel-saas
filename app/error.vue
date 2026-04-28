@@ -46,7 +46,7 @@ useSeoMeta({
 
     <!-- <AppNavbar /> -->
 
-    <UError :error="error" />
+    <UError :error />
 
     <AppFooter />
   </UApp>

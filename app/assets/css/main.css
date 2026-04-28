@@ -40,6 +40,7 @@ html {
   --font-geist: "Geist", sans-serif;
   --font-mono: "Geist Mono", sans-serif;
   --font-code: "Fira Code", "JetBrains Mono", monospace;
+   --font-DM: "DM Serif Display", Georgia, serif;
 
   --color-drake-50: oklch(0.9194 0.0118 190.2754);
   --color-drake-100: oklch(0.8374 0.0239 190.0055);
