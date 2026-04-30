@@ -6,46 +6,20 @@ const faqRef = useTemplateRef("faqRef");
 useSchemaOrg([
   defineWebPage({
     "@type": "WebPage",
+    "mainEntity": computed(() => {
+      const items = faqRef.value?.faqItems as AccordionItem[] | undefined;
+
+      if (!items || items.length === 0) return [];
+
+      return items
+        .filter(item => typeof item.label === "string" && typeof item.content === "string")
+        .map(item => ({
+          question: item.label,
+          answer: item.content,
+        }));
+    }),
   }),
 ]);
-
-const faqSchema = ref({
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [] as Array<{
-    "@type": "Question";
-    "name": string;
-    "acceptedAnswer": { "@type": "Answer"; "text": string };
-  }>,
-});
-
-watchEffect(() => {
-  const items = faqRef.value?.faqItems as AccordionItem[] | undefined;
-  if (items && items.length) {
-    const validItems = items.filter(
-      (item): item is AccordionItem & { label: string; content: string } =>
-        typeof item.label === "string" && typeof item.content === "string",
-    );
-
-    faqSchema.value.mainEntity = validItems.map(item => ({
-      "@type": "Question",
-      "name": item.label,
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": item.content,
-      },
-    }));
-  }
-});
-
-useHead({
-  script: [
-    {
-      type: "application/ld+json",
-      innerHTML: computed(() => JSON.stringify(faqSchema.value)),
-    },
-  ],
-});
 </script>
 
 <template>
