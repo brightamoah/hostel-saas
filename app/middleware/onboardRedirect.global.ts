@@ -17,6 +17,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     "about",
     "contact",
     "faq",
+    "features",
   ];
 
   const authRoutes: (keyof RouteNamedMap)[] = [
@@ -44,7 +45,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     "student-billing",
     "student-announcements",
     "student-profile",
-    "student-settings",
   ];
 
   const selfHandledRoutes: (keyof RouteNamedMap)[] = [

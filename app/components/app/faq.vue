@@ -28,6 +28,10 @@ const faqItems = ref<AccordionItem[]>([
       "If you need to leave before your contract ends, submit an early departure request through your student portal at least 30 days before your intended departure date. The administration will review your request and inform you about any applicable refunds or fees according to our early departure policy. You'll need to schedule a room inspection and complete the checkout process to finalize your departure.",
   },
 ]);
+
+defineExpose({
+  faqItems,
+});
 </script>
 
 <template>
