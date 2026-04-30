@@ -1,5 +1,34 @@
 import z from "zod";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Manage announcement drafts",
+    tags: ["Announcements"],
+    requestBody: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              content: { type: "string" },
+              priority: { type: "string", enum: ["low", "medium", "high"] },
+              targetAudience: {
+                type: "string",
+                enum: ["all", "students", "admins", "hostel", "room", "user"],
+              },
+              targetHostelId: { type: "number", nullable: true },
+              targetRoomId: { type: "number", nullable: true },
+              targetUserId: { type: "number", nullable: true },
+              companyId: { type: "number", nullable: true },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized, please log in to access announcement drafts.",

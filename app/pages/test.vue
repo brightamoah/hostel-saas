@@ -90,13 +90,14 @@ const links = ref<ButtonProps[]>([
     class: "cursor-pointer",
     trailingIcon: "i-lucide-arrow-right",
     size: "lg",
-
+    to: { name: "auth-login" },
   },
   {
     label: "Book a demo",
     color: "neutral",
     class: "cursor-pointer",
     size: "lg",
+    to: { name: "contact" },
   },
 ]);
 </script>
@@ -127,7 +128,7 @@ const links = ref<ButtonProps[]>([
       </section>
 
       <section class="m-auto my-16 w-full max-w-5xl">
-        <div class="gap-3 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] px-3">
+        <div class="gap-3 grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] px-3">
           <UButton
             v-for="feature in features"
             :key="feature.id"
@@ -143,7 +144,7 @@ const links = ref<ButtonProps[]>([
                 class="size-5 shrink-0"
               />
 
-              <span class="card-label">{{ feature.label }}</span>
+              <span class="truncate card-label">{{ feature.label }}</span>
             </div>
 
             <UIcon

@@ -2,6 +2,51 @@ import type { AuditContext } from "~~/shared/types";
 
 import { announcementQueries } from "~~/server/db/queries";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Update announcement read status",
+    tags: ["Announcements"],
+    parameters: [
+      {
+        name: "id",
+        in: "path",
+        required: true,
+        schema: { type: "number" },
+      },
+    ],
+    requestBody: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              action: { type: "string", enum: ["read", "unread"] },
+            },
+            required: ["action"],
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Read status updated",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                message: { type: "string" },
+                id: { type: "number" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",

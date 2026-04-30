@@ -1,5 +1,58 @@
 import { roomQueries } from "~~/server/db/queries";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Create a new hostel",
+    tags: ["Admin", "Hostel"],
+    requestBody: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              slug: { type: "string" },
+              supportEmail: { type: "string", nullable: true },
+              supportPhone: { type: "string", nullable: true },
+              address: { type: "string" },
+              logoUrl: { type: "string", nullable: true },
+              joinCode: { type: "string", nullable: true },
+            },
+            required: ["name", "slug", "address"],
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Hostel created successfully",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                message: { type: "string" },
+                hostel: {
+                  type: "object",
+                  properties: {
+                    id: { type: "number" },
+                    name: { type: "string" },
+                    slug: { type: "string" },
+                    joinCode: { type: "string", nullable: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      400: { description: "Bad Request - Validation failed or no company association" },
+      403: { description: "Forbidden - Only company owners can create hostels" },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const { companyId, companyRole } = await adminSessionCheck(event);
 

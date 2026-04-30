@@ -1,6 +1,6 @@
 import type { AuditContext } from "~~/shared/types";
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
 import { authHandoffToken } from "../schema";
@@ -62,9 +62,13 @@ export async function authHandoffQueries() {
       const [updatedToken] = await db
         .update(authHandoffToken)
         .set({ usedAt: new Date() })
-        .where(eq(authHandoffToken.id, row.id))
+        .where(and(
+          eq(authHandoffToken.id, row.id),
+          isNull(authHandoffToken.usedAt),
+        ))
         .returning();
 
+      if (!updatedToken) continue; // Already consumed by another request
       if (updatedToken) {
         await logAudit(db, ctx, {
           action: "auth_handoff_token.consume",

@@ -3,8 +3,8 @@
 </script>
 
 <template>
-  <div>
-    <AppFaq class="md:-mt-20" />
+  <div class="max-w-screen">
+    <AppFaq />
   </div>
 </template>
 

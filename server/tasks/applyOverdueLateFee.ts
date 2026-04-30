@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 import { sql } from "drizzle-orm";
 
+import { auditLogQueries } from "../db/queries/auditLog";
+
 export default defineTask({
   meta: {
     name: "applyOverdueLateFee",
@@ -17,6 +19,24 @@ export default defineTask({
       const totalFees = result.rows[0]?.total_late_fees ?? 0;
 
       console.log("Task completed: Apply weekly late fees - Success. Updated", updatedCount, "billing(s). Total late fees applied:", totalFees);
+
+      if (Number(updatedCount) > 0) {
+        const { logAudit } = await auditLogQueries();
+
+        const ctx = getAuditContext({
+          kind: "system",
+          companyId: null,
+        });
+
+        await logAudit(db, ctx, {
+          action: "billing.apply_weekly_late_fees",
+          actionType: "UPDATE",
+          entityType: "billing",
+          description: `System applied weekly late fees to ${updatedCount} overdue billing(s). Total fees applied: ${totalFees}`,
+          before: null,
+          after: { updatedCount, totalFees },
+        });
+      }
 
       return {
         result: `Success. Applied late fees to ${updatedCount} billing(s). Total: ${totalFees}`,

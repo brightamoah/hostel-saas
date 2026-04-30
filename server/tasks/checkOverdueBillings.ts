@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { and, inArray, sql } from "drizzle-orm";
 
+import { auditLogQueries } from "../db/queries/auditLog";
 import { billing } from "../db/schema";
 
 export default defineTask({
@@ -27,6 +28,25 @@ export default defineTask({
         .returning({ id: billing.id }); ;
 
       const count = result.length;
+
+      if (Number(count) > 0) {
+        const { logAudit } = await auditLogQueries();
+
+        const ctx = getAuditContext({
+          kind: "system",
+          companyId: null,
+        });
+
+        await logAudit(db, ctx, {
+          action: "billing.mark_overdue",
+          actionType: "STATUS_CHANGE",
+          entityType: "billing",
+          description: `System marked ${count} bill(s) as overdue.`,
+          before: null,
+          after: { updatedIds: result.map(r => r.id) },
+        });
+      }
+
       return { result: `Success. Marked ${count} bill(s) as overdue.` };
     }
     catch (error) {

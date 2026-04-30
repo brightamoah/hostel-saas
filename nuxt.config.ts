@@ -332,9 +332,9 @@ export default defineNuxtConfig({
     name: env.NUXT_EMAIL_FROM_NAME,
   },
 
-  sitemap: {
-    zeroRuntime: false,
-  },
+  // sitemap: {
+  //   zeroRuntime: false,
+  // },
   ogImage: {
     enabled: false,
   },

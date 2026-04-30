@@ -1,5 +1,49 @@
 import { announcementQueries } from "~~/server/db/queries";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Create a new announcement",
+    tags: ["Announcements"],
+    requestBody: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              content: { type: "string" },
+              priority: { type: "string", enum: ["low", "medium", "high"] },
+              targetAudience: { type: "string", enum: ["company", "hostel", "room", "user"] },
+              title: { type: "string" },
+              targetHostelId: { type: "number", nullable: true },
+              targetRoomId: { type: "number", nullable: true },
+              targetUserId: { type: "number", nullable: true },
+              companyId: { type: "number", nullable: true },
+            },
+            required: ["content", "priority", "targetAudience", "title"],
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Announcement posted successfully",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                message: { type: "string" },
+                data: { type: "object" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
   const {

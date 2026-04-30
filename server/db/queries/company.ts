@@ -1,11 +1,14 @@
-import type { AdminScope } from "~~/shared/types";
+import type { AdminScope, AuditContext } from "~~/shared/types";
 
+import { getActorLabel } from "~~/server/utils/auditLogUtils";
 import { and, count, eq, sql } from "drizzle-orm";
 
 import { admin, company, companyMember, hostel, room, student, user } from "../schema";
+import { auditLogQueries } from "./auditLog";
 
 export async function companyQueries() {
   const { db } = useDB();
+  const { logAudit } = await auditLogQueries();
 
   const applyCompanyScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -23,7 +26,11 @@ export async function companyQueries() {
     });
   };
 
-  const updateCompanyProfile = async (scope: AdminScope, data: Partial<typeof company.$inferInsert>) => {
+  const updateCompanyProfile = async (
+    scope: AdminScope,
+    data: Partial<typeof company.$inferInsert>,
+    ctx: AuditContext,
+  ) => {
     if (!canManageCompanySettings(scope)) {
       throw createError({
         statusCode: 403,
@@ -31,11 +38,31 @@ export async function companyQueries() {
       });
     }
 
+    const before = await db
+      .query
+      .company
+      .findFirst({
+        where: and(...applyCompanyScope(scope)),
+      });
+
     const [updated] = await db
       .update(company)
       .set({ ...data, updatedAt: new Date() })
       .where(and(...applyCompanyScope(scope)))
       .returning();
+
+    if (updated && before) {
+      await logAudit(db, ctx, {
+        action: "company.update",
+        actionType: "UPDATE",
+        entityId: updated.id,
+        entityType: "company",
+        description: `${getActorLabel(ctx)} updated company profile for ID ${updated.id}`,
+        before,
+        after: updated,
+        diff: computeAuditDiff(redact(before), redact(updated)),
+      });
+    }
 
     return updated;
   };
@@ -84,10 +111,13 @@ export async function companyQueries() {
     });
   };
 
-  const registerCompanyOwner = async (data: RegisterCompanySchema & {
-    verificationToken: string;
-    verificationTokenExpiresAt: Date;
-  }) => {
+  const registerCompanyOwner = async (
+    data: RegisterCompanySchema & {
+      verificationToken: string;
+      verificationTokenExpiresAt: Date;
+    },
+    ctx: AuditContext,
+  ) => {
     return await db.transaction(async (tx) => {
       const existingUser = await tx.query.user.findFirst({
         where: (user, { eq }) => eq(user.email, data.email),
@@ -147,7 +177,25 @@ export async function companyQueries() {
         });
       }
 
+      const ctxWithCompany: AuditContext = {
+        ...ctx,
+        companyId: createdCompany.id,
+        hostelId: null,
+      };
+
+      await logAudit(tx, ctxWithCompany, {
+        action: "company.create",
+        actionType: "CREATE",
+        entityType: "company",
+        entityId: createdCompany.id,
+        description: `${getActorLabel(ctxWithCompany)} registered new company "${createdCompany.name}"`,
+        before: null,
+        after: createdCompany,
+      });
+
       let createdHostel: typeof hostel.$inferSelect | null = null;
+
+      let auditCtx: AuditContext = ctxWithCompany;
 
       if (data.createHostelNow) {
         const {
@@ -206,6 +254,23 @@ export async function companyQueries() {
         }).returning();
 
         createdHostel = newHostel ?? null;
+
+        if (createdHostel) {
+          auditCtx = {
+            ...ctxWithCompany,
+            hostelId: createdHostel.id,
+          };
+
+          await logAudit(tx, auditCtx, {
+            action: "hostel.create",
+            actionType: "CREATE",
+            entityType: "hostel",
+            entityId: createdHostel.id,
+            description: `${getActorLabel(auditCtx)} created initial hostel "${createdHostel.name}" during company registration`,
+            before: null,
+            after: createdHostel,
+          });
+        }
       }
 
       if (!createdHostel && data.createHostelNow) {
@@ -245,6 +310,26 @@ export async function companyQueries() {
           message: "Failed to create company membership. Please try again.",
         });
       }
+
+      await logAudit(tx, auditCtx, {
+        action: "admin.create",
+        actionType: "CREATE",
+        entityType: "admin",
+        entityId: createdAdmin.id,
+        description: `${getActorLabel(auditCtx)} created admin record for owner user ID ${createdUser.id} in company ID ${createdCompany.id}`,
+        before: null,
+        after: createdAdmin,
+      });
+
+      await logAudit(tx, auditCtx, {
+        action: "companyMember.create",
+        actionType: "CREATE",
+        entityType: "company_member",
+        entityId: createdMembership.id,
+        description: `${getActorLabel(auditCtx)} created company membership for owner user ID ${createdUser.id} in company ID ${createdCompany.id}`,
+        before: null,
+        after: createdMembership,
+      });
 
       return {
         user: createdUser,

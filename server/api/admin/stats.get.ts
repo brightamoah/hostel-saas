@@ -1,5 +1,28 @@
 import { statsQueries } from "~~/server/db/queries/stats";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Get admin dashboard statistics",
+    tags: ["Admin", "Stats"],
+    responses: {
+      200: {
+        description: "Dashboard overview and card statistics",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                overview: { type: "object" },
+                cardStats: { type: "object" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const {
     adminData,

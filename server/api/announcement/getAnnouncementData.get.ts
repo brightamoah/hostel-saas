@@ -1,5 +1,32 @@
 import { announcementQueries, userQueries } from "~~/server/db/queries";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Get announcements for the admin",
+    tags: ["Announcements"],
+    responses: {
+      200: {
+        description: "List of announcements relevant to the admin",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                announcements: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
   const { userId } = scope;

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { User } from "#auth-utils";
 
-const { items, isLoggedIn, user, activeSection } = defineProps<{
+const { items, isLoggedIn, user } = defineProps<{
   items: NavItem[];
   isLoggedIn: boolean;
   user: User | null;
-  activeSection: string;
 }>();
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
@@ -14,7 +13,7 @@ const isMobileMenuOpen = ref(false);
 
 const navItems = computed(() =>
   items.map((item) => {
-    const isActive = item.id === activeSection;
+    const isActive = item.id === route.name;
 
     return {
       ...item,

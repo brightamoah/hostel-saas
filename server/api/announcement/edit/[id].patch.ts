@@ -1,5 +1,56 @@
 import { announcementQueries } from "~~/server/db/queries";
 
+defineRouteMeta({
+  openAPI: {
+    summary: "Edit an announcement",
+    tags: ["Announcements"],
+    parameters: [
+      {
+        name: "id",
+        in: "path",
+        required: true,
+        schema: { type: "number" },
+        description: "ID of the announcement to edit",
+      },
+    ],
+    requestBody: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              announcementId: { type: "number" },
+              data: { type: "object" },
+              resetReadStatus: { type: "boolean", nullable: true },
+            },
+            required: ["announcementId", "data"],
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Announcement updated successfully",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                message: { type: "string" },
+                data: { type: "object" },
+              },
+            },
+          },
+        },
+      },
+      400: { description: "Invalid input or ID mismatch" },
+      403: { description: "Unauthorized to edit" },
+      404: { description: "Announcement not found" },
+    },
+  },
+});
+
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
 

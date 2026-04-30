@@ -1,38 +1,39 @@
 <script setup lang="ts">
-import { useIntersectionObserver, useWindowScroll } from "@vueuse/core";
+import { useWindowScroll } from "@vueuse/core";
 
 import { useAuthStore } from "~/stores/authStore";
 import { generateUserColor } from "~/utils/generateUserColor";
 
+const route = useRoute();
 const authStore = useAuthStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const { signout } = authStore;
 
 const avatarBgColor = generateUserColor(user.value?.id || "default");
-const activeSection = ref("home");
+// const activeSection = ref("home");
 
 const items = ref<NavItem[]>([
   {
     label: "Home",
-    to: { name: "index", hash: "#home" },
+    to: { name: "index" },
     icon: "i-lucide-home",
     id: "home",
   },
   {
     label: "Features",
-    to: { name: "index", hash: "#features" },
+    to: { name: "features" },
     icon: "i-lucide-sparkles",
     id: "features",
   },
   {
     label: "FAQ",
-    to: { name: "index", hash: "#faq" },
+    to: { name: "faq" },
     icon: "i-lucide-message-circle-question-mark",
     id: "faq",
   },
   {
     label: "Contact",
-    to: { name: "index", hash: "#contact" },
+    to: { name: "contact" },
     icon: "i-lucide-phone",
     id: "contact",
   },
@@ -40,26 +41,26 @@ const items = ref<NavItem[]>([
 
 const { y } = useWindowScroll();
 
-onMounted(() => {
-  items.value.forEach((item) => {
-    const element = document.getElementById(item.id);
-    if (element) {
-      useIntersectionObserver(
-        element,
-        ([entry]) => {
-          if (entry?.isIntersecting) {
-            activeSection.value = item.id;
-          }
-        },
-        { rootMargin: "-50% 0px -50% 0px" },
-      );
-    }
-  });
-});
+// onMounted(() => {
+//   items.value.forEach((item) => {
+//     const element = document.getElementById(item.id);
+//     if (element) {
+//       useIntersectionObserver(
+//         element,
+//         ([entry]) => {
+//           if (entry?.isIntersecting) {
+//             activeSection.value = item.id;
+//           }
+//         },
+//         { rootMargin: "-50% 0px -50% 0px" },
+//       );
+//     }
+//   });
+// });
 
-watch(y, (newY) => {
-  if (newY < 50) activeSection.value = "home";
-});
+// watch(y, (newY) => {
+//   if (newY < 50) activeSection.value = "home";
+// });
 </script>
 
 <template>
@@ -76,7 +77,6 @@ watch(y, (newY) => {
         :items
         :is-logged-in
         :user
-        :active-section
       />
 
       <NuxtLink
@@ -98,7 +98,7 @@ watch(y, (newY) => {
         :to="item.to"
         class="flex items-center gap-2 font-normal transition-colors duration-200"
         :class="[
-          activeSection === item.id ? 'text-primary' : 'text-highlighted/70 hover:text-default',
+          route.name === item.id ? 'text-primary' : 'text-highlighted/70 hover:text-default',
         ]"
         exact-hash
         raw

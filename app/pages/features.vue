@@ -1,5 +1,15 @@
 <script setup lang="ts">
-definePageMeta({ layout: "default" });
+import type { ButtonProps } from "@nuxt/ui";
+
+definePageMeta({
+  layout: {
+    name: "default",
+    props: {
+      // showNavbar: false,
+      showBg: false,
+    },
+  },
+});
 
 const features = [
   {
@@ -7,7 +17,7 @@ const features = [
     icon: "i-lucide-building-2",
     label: "Room Management",
     headline: "Every room, perfectly organized.",
-    description: "Assign rooms, track occupancy, manage bed spaces, and handle transfers — all from a single view. No spreadsheets, no chaos.",
+    description: "Assign rooms, track occupancy, manage bed spaces, and handle transfers - all from a single view. No spreadsheets, no chaos.",
     details: ["Real-time occupancy status", "Room type & capacity tracking", "Transfer & swap requests", "Vacancy alerts"],
   },
   {
@@ -15,7 +25,7 @@ const features = [
     icon: "i-lucide-wrench",
     label: "Maintenance Requests",
     headline: "Issues reported. Issues resolved.",
-    description: "Students submit requests with photo or video evidence. Staff triage, assign, and resolve — with full status visibility on both ends.",
+    description: "Students submit requests with photo or video evidence. Staff triage, assign, and resolve - with full status visibility on both ends.",
     details: ["Photo & video attachments", "Priority levels", "Staff assignment", "Status tracking"],
   },
   {
@@ -36,7 +46,7 @@ const features = [
   },
   {
     id: "portal",
-    icon: "i-lucide-user-circle",
+    icon: "i-lucide-circle-user",
     label: "Student Portal",
     headline: "A home for every student.",
     description: "Students access their room details, payment history, maintenance requests, and announcements from a clean, dedicated portal.",
@@ -70,406 +80,157 @@ const features = [
 
 const activeId = ref("room");
 const activeFeature = computed(() => features.find(f => f.id === activeId.value)!);
+
+const isActive = computed(() => (id: string) => id === activeId.value);
+
+const links = ref<ButtonProps[]>([
+  {
+    label: "Get started",
+    color: "primary",
+    class: "cursor-pointer",
+    trailingIcon: "i-lucide-arrow-right",
+    size: "lg",
+    to: { name: "auth-login" },
+  },
+  {
+    label: "Book a demo",
+    color: "neutral",
+    class: "cursor-pointer",
+    size: "lg",
+    to: { name: "contact" },
+  },
+]);
 </script>
 
 <template>
-  <div class="features-page">
-    <!-- ── Hero ─────────────────────────────────────── -->
-    <section class="hero">
-      <p class="eyebrow">
-        Platform Features
-      </p>
+  <div>
+    <UContainer class="py-6">
+      <UColorModeButton class="top-4 right-4 absolute" />
 
-      <h1 class="hero-title">
-        Everything a hostel<br>needs to run well.
-      </h1>
-
-      <p class="hero-sub">
-        One platform. Eight modules. Built for Nigerian student hostels.
-      </p>
-    </section>
-
-    <!-- ── Feature grid ───────────────────────────── -->
-    <section class="grid-section">
-      <div class="feature-grid">
-        <button
-          v-for="f in features"
-          :key="f.id"
-          class="feature-card"
-          :class="{ active: activeId === f.id }"
-          @click="activeId = f.id"
+      <section class="m-auto my-10 max-w-2xl text-center">
+        <UBadge
+          color="primary"
+          variant="subtle"
+          class="mb-2 rounded-full font-bold text-xs uppercase"
         >
-          <UIcon
-            :name="f.icon"
-            class="card-icon"
-          />
+          Platform Features
+        </UBadge>
 
-          <span class="card-label">{{ f.label }}</span>
+        <h1 class="font-newsreader font-semibold text-[clamp(2.2rem,5vw,3.75rem)] text-highlighted leading-[1.1]">
+          Everything a hostel<br>
 
-          <UIcon
-            name="i-lucide-arrow-right"
-            class="card-arrow"
-          />
-        </button>
-      </div>
-    </section>
+          needs to run <span class="text-primary">efficiently.</span>
+        </h1>
 
-    <!-- ── Feature detail ─────────────────────────── -->
-    <section class="detail-section">
-      <Transition
-        name="fade"
-        mode="out-in"
-      >
-        <div
-          :key="activeFeature.id"
-          class="detail-inner"
-        >
-          <div class="detail-left">
-            <div class="detail-icon-wrap">
+        <p class="mt-2 text-muted text-lg">
+          Manage rooms, maintenance, payments, communication and more from one streamlined platform built for efficiency.
+        </p>
+      </section>
+
+      <section class="m-auto my-16 w-full max-w-5xl">
+        <div class="gap-3 grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] px-3">
+          <UButton
+            v-for="feature in features"
+            :key="feature.id"
+            :color="isActive(feature.id) ? 'primary' : 'neutral'"
+            :variant="isActive(feature.id) ? 'solid' : 'subtle'"
+            size="lg"
+            class="group flex justify-between items-center gap-3 py-3.5 hover:border-accented rounded-xl w-full transition-colors duration-200 cursor-pointer"
+            @click="activeId = feature.id"
+          >
+            <div class="flex items-center gap-2 w-full">
               <UIcon
-                :name="activeFeature.icon"
-                class="detail-icon"
+                :name="feature.icon"
+                class="size-5 shrink-0"
               />
+
+              <span class="truncate card-label">{{ feature.label }}</span>
             </div>
 
-            <p class="detail-label">
-              {{ activeFeature.label }}
-            </p>
-
-            <h2 class="detail-headline">
-              {{ activeFeature.headline }}
-            </h2>
-
-            <p class="detail-description">
-              {{ activeFeature.description }}
-            </p>
-          </div>
-
-          <div class="detail-right">
-            <p class="detail-includes">
-              What's included
-            </p>
-
-            <ul class="detail-list">
-              <li
-                v-for="item in activeFeature.details"
-                :key="item"
-                class="detail-item"
-              >
-                <UIcon
-                  name="i-lucide-check"
-                  class="check-icon"
-                />
-                {{ item }}
-              </li>
-            </ul>
-          </div>
+            <UIcon
+              name="i-lucide-arrow-right"
+              class="opacity-0 group-hover:opacity-100 size-4.5 transition-all -translate-x-1 group-hover:translate-x-0 duration-300 ease-out shrink-0"
+            />
+          </UButton>
         </div>
-      </Transition>
-    </section>
+      </section>
 
-    <!-- ── CTA ───────────────────────────────────── -->
-    <section class="cta-section">
-      <div class="cta-inner">
-        <h2 class="cta-title">
-          Ready to simplify your hostel?
+      <section class="m-auto px-2 pb-18 w-full md:max-w-6xl">
+        <Transition
+          name="fade"
+          mode="out-in"
+        >
+          <div
+            :key="activeFeature.id"
+            class="flex md:flex-row flex-col gap-12 bg-muted shadow-md p-6 md:p-16 border border-muted rounded-xl"
+          >
+            <div class="flex flex-col items-start gap-3">
+              <UIcon
+                :name="activeFeature.icon"
+                class="size-7 text-primary"
+              />
+
+              <p class="font-semibold text-muted text-sm uppercase">
+                {{ activeFeature.label }}
+              </p>
+
+              <h2 class="font-newsreader font-bold text-[clamp(1.5rem,3vw,2.1rem)] text-2xl leading-[1.2] tracking-tight">
+                {{ activeFeature.headline }}
+              </h2>
+
+              <p class="md:max-w-lg max-w-xl text-muted">
+                {{ activeFeature.description }}
+              </p>
+            </div>
+
+            <div>
+              <p class="font-semibold text-lg">
+                What's included
+              </p>
+
+              <ul class="flex flex-col gap-3 mt-4 font-medium">
+                <li
+                  v-for="item in activeFeature.details"
+                  :key="item"
+                  class="flex items-center gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-check"
+                    class="check-icon"
+                  />
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </Transition>
+      </section>
+    </UContainer>
+
+    <UPageCTA
+      variant="subtle"
+      :links
+      :ui="{
+        title: 'font-newsreader tracking-tight',
+      }"
+      class="shadow-md"
+    >
+      <template #title>
+        <h2 class="mb-4 font-newsreader font-bold text-highlighted text-4xl lg:text-5xl tracking-tight">
+          Ready to simplify your hostel operations?
         </h2>
+      </template>
 
-        <p class="cta-sub">
-          Get started in minutes. No setup fees.
+      <template #description>
+        <p class="mx-auto text-muted text-lg">
+          Join Kayanest today and experience the future of hostel management with our all-in-one platform!
         </p>
-
-        <div class="cta-actions">
-          <UButton
-            size="xl"
-            color="neutral"
-            variant="solid"
-            label="Get started"
-            trailing-icon="i-lucide-arrow-right"
-          />
-
-          <UButton
-            size="xl"
-            color="neutral"
-            variant="outline"
-            label="Book a demo"
-          />
-        </div>
-      </div>
-    </section>
+      </template>
+    </UPageCTA>
   </div>
 </template>
 
 <style scoped>
-/* ── Tokens ───────────────────────────────────────── */
-.features-page {
-  --ink: #0d0d0d;
-  --ink-muted: #6b7280;
-  --surface: #ffffff;
-  --surface-2: #f9f9f8;
-  --surface-3: #f1f1ef;
-  --border: #e5e5e3;
-  --accent: #0d0d0d;
-  --accent-fg: #ffffff;
-  --radius: 14px;
-
-  font-family: "DM Sans", "Helvetica Neue", sans-serif;
-  background: var(--surface);
-  color: var(--ink);
-  min-height: 100vh;
-}
-
-/* ── Hero ─────────────────────────────────────────── */
-.hero {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 96px 24px 64px;
-  text-align: center;
-}
-
-.eyebrow {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  margin-bottom: 20px;
-}
-
-.hero-title {
-  font-family: "DM Serif Display", Georgia, serif;
-  font-size: clamp(2.4rem, 5vw, 3.75rem);
-  font-weight: 400;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin-bottom: 20px;
-}
-
-.hero-sub {
-  font-size: 1.05rem;
-  color: var(--ink-muted);
-  line-height: 1.6;
-}
-
-/* ── Feature grid ─────────────────────────────────── */
-.grid-section {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px 56px;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.feature-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
-  border-radius: var(--radius);
-  border: 1.5px solid var(--border);
-  background: var(--surface);
-  cursor: pointer;
-  text-align: left;
-  transition:
-    border-color 0.18s,
-    background 0.18s,
-    box-shadow 0.18s;
-  width: 100%;
-}
-
-.feature-card:hover {
-  border-color: #bbb;
-  background: var(--surface-2);
-}
-
-.feature-card.active {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--accent-fg);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-}
-
-.card-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  opacity: 0.8;
-}
-
-.card-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  flex: 1;
-}
-
-.card-arrow {
-  width: 14px;
-  height: 14px;
-  opacity: 0;
-  transition:
-    opacity 0.15s,
-    transform 0.15s;
-  flex-shrink: 0;
-}
-
-.feature-card:hover .card-arrow,
-.feature-card.active .card-arrow {
-  opacity: 0.6;
-  transform: translateX(2px);
-}
-
-/* ── Detail ───────────────────────────────────────── */
-.detail-section {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px 96px;
-}
-
-.detail-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  background: var(--surface-2);
-  border: 1.5px solid var(--border);
-  border-radius: calc(var(--radius) * 1.5);
-  padding: 52px;
-}
-
-@media (max-width: 700px) {
-  .detail-inner {
-    grid-template-columns: 1fr;
-    padding: 32px 24px;
-    gap: 32px;
-  }
-}
-
-.detail-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: var(--surface-3);
-  border: 1.5px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.detail-icon {
-  width: 20px;
-  height: 20px;
-  color: var(--ink);
-}
-
-.detail-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  margin-bottom: 10px;
-}
-
-.detail-headline {
-  font-family: "DM Serif Display", Georgia, serif;
-  font-size: clamp(1.5rem, 3vw, 2.1rem);
-  font-weight: 400;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-  margin-bottom: 16px;
-  color: var(--ink);
-}
-
-.detail-description {
-  font-size: 0.975rem;
-  color: var(--ink-muted);
-  line-height: 1.7;
-}
-
-.detail-right {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.detail-includes {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  margin-bottom: 20px;
-}
-
-.detail-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.detail-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.check-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--ink);
-  flex-shrink: 0;
-  background: var(--surface-3);
-  border-radius: 50%;
-  padding: 2px;
-}
-
-/* ── CTA ──────────────────────────────────────────── */
-.cta-section {
-  background: var(--surface-3);
-  border-top: 1.5px solid var(--border);
-}
-
-.cta-inner {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 80px 24px;
-  text-align: center;
-}
-
-.cta-title {
-  font-family: "DM Serif Display", Georgia, serif;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-  color: var(--ink);
-}
-
-.cta-sub {
-  color: var(--ink-muted);
-  font-size: 1rem;
-  margin-bottom: 32px;
-}
-
-.cta-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* ── Transition ───────────────────────────────────── */
 .fade-enter-active,
 .fade-leave-active {
   transition:

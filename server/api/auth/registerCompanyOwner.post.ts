@@ -53,6 +53,13 @@ export default defineEventHandler(async (event) => {
 
     const { registerCompanyOwner } = await companyQueries();
 
+    const auditContext = getAuditContext({
+      kind: "system",
+      event,
+      companyId: null,
+      hostelId: null,
+    });
+
     const newCompanyOwner = await registerCompanyOwner({
       companyName,
       companySlug,
@@ -70,7 +77,7 @@ export default defineEventHandler(async (event) => {
       verificationToken: hashedVerificationToken,
       verificationTokenExpiresAt,
       hostelLogoUrl,
-    });
+    }, auditContext);
 
     if (!newCompanyOwner) {
       throw createError({

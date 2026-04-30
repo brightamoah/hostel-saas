@@ -204,3 +204,8 @@ export function getAuditContext(input: StudentAuditInput | AdminAuditInput | Sys
     requestId,
   };
 }
+
+export function getActorLabel(ctx: AuditContext) {
+  if (ctx.actor.actorType === "system") return "system";
+  return `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId}`;
+}
