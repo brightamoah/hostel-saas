@@ -1,39 +1,40 @@
 <script setup lang="ts">
-const faq = useTemplateRef("faq");
+import type { AccordionItem } from "@nuxt/ui";
 
-interface FAQSchema {
-  "@context": string;
-  "@type": string;
-  "mainEntity": Array<{
-    "@type": string;
-    "name": string;
-    "acceptedAnswer": {
-      "@type": string;
-      "text": string;
-    };
-  }>;
-}
+const faqRef = useTemplateRef("faqRef");
 
-const faqSchema = ref<FAQSchema>({
+useSchemaOrg([
+  defineWebPage({
+    "@type": "WebPage",
+  }),
+]);
+
+const faqSchema = ref({
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "mainEntity": [],
+  "mainEntity": [] as Array<{
+    "@type": "Question";
+    "name": string;
+    "acceptedAnswer": { "@type": "Answer"; "text": string };
+  }>,
 });
 
 watchEffect(() => {
-  if (faq.value?.faqItems) {
-    faqSchema.value = {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      "mainEntity": faq.value.faqItems.map(item => ({
-        "@type": "Question",
-        "name": item.question,
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": item.answer,
-        },
-      })),
-    };
+  const items = faqRef.value?.faqItems as AccordionItem[] | undefined;
+  if (items && items.length) {
+    const validItems = items.filter(
+      (item): item is AccordionItem & { label: string; content: string } =>
+        typeof item.label === "string" && typeof item.content === "string",
+    );
+
+    faqSchema.value.mainEntity = validItems.map(item => ({
+      "@type": "Question",
+      "name": item.label,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.content,
+      },
+    }));
   }
 });
 
@@ -49,7 +50,7 @@ useHead({
 
 <template>
   <div class="max-w-screen">
-    <AppFaq ref="faq" />
+    <AppFaq ref="faqRef" />
   </div>
 </template>
 
