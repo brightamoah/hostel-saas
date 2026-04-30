@@ -96,22 +96,15 @@ export default defineNuxtConfig({
         { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
       ],
       titleTemplate: `%s - ${env.NUXT_EMAIL_FROM_NAME}`,
+
+      meta: [
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { name: "robots", content: "index, follow" },
+      ],
     },
   },
 
   css: ["~/assets/css/main.css"],
-
-  // image: {
-  //   domains: ["localhost", "res.cloudinary.com", "images.unsplash.com", env.NUXT_PUBLIC_SITE_BASE_URL, env.NUXT_PUBLIC_SITE_URL, env.NUXT_PUBLIC_ADMIN_BASE_URL],
-  //   alias: {
-  //     api: "/api/images",
-  //   },
-  //   ipx:{
-  //     modifiers:{
-
-  //     }
-  //   }
-  // },
 
   nitro: {
     preset: "cloudflare_module",
@@ -331,10 +324,11 @@ export default defineNuxtConfig({
     url: env.NUXT_PUBLIC_SITE_URL,
     name: env.NUXT_EMAIL_FROM_NAME,
   },
+  sitemap: {
+    autoLastmod: true,
+    zeroRuntime: true,
+  },
 
-  // sitemap: {
-  //   zeroRuntime: false,
-  // },
   ogImage: {
     enabled: false,
   },
