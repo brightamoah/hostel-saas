@@ -1,44 +1,20 @@
 <script setup lang="ts">
 const {
-  modelValue,
-  statusFilter,
   statusFilterOptions,
-  roleFilter,
   roleFilterOptions,
+  hostelFilterOptions,
 } = defineProps<{
-  modelValue: string;
-  statusFilter: string;
   statusFilterOptions: FilterOption[];
-  roleFilter: string;
   roleFilterOptions: FilterOption[];
-}>();
-
-const emit = defineEmits<{
-  (e: "update:modelValue", value: string): void;
-  (e: "update:statusFilter", value: string): void;
-  (e: "update:roleFilter", value: string): void;
-  (e: "update:hostelFilter", value: string): void;
+  hostelFilterOptions: FilterOption[];
 }>();
 
 const { isPlatformAdminOrOwner } = usePortalUserSession();
 
-const hostelFilter = defineModel<string>("hostelFilter");
-const hostelFilterOptions = defineModel<FilterOption[]>("hostelFilterOptions");
-
-const globalFilterModel = computed({
-  get: () => modelValue,
-  set: (val: string) => emit("update:modelValue", val),
-});
-
-const statusFilterModel = computed({
-  get: () => statusFilter,
-  set: (val: string) => emit("update:statusFilter", val),
-});
-
-const roleFilterModel = computed({
-  get: () => roleFilter,
-  set: (val: string) => emit("update:roleFilter", val),
-});
+const globalFilterModel = defineModel<string>();
+const statusFilterModel = defineModel<string>("statusFilter");
+const roleFilterModel = defineModel<string>("roleFilter");
+const hostelFilterModel = defineModel<string>("hostelFilter");
 </script>
 
 <template>
@@ -80,7 +56,7 @@ const roleFilterModel = computed({
 
       <USelectMenu
         v-if="isPlatformAdminOrOwner"
-        v-model="hostelFilter"
+        v-model="hostelFilterModel"
         arrow
         clear
         placeholder="Filter by Hostel"

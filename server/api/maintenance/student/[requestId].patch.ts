@@ -2,7 +2,7 @@ import { maintenanceQueries } from "~~/server/db/queries";
 import { deleteMediaByUrls } from "~~/server/utils/r2Upload";
 
 export default defineEventHandler(async (event) => {
-  const { userId } = await studentSessionCheck(event);
+  const { userId, studentId: sessionStudentId } = await studentSessionCheck(event);
 
   const idFromParam = Number(getRouterParam(event, "requestId"));
 
@@ -24,6 +24,13 @@ export default defineEventHandler(async (event) => {
     }
 
     const { maintenanceId, data, studentId } = body.data;
+
+    if (studentId !== sessionStudentId) {
+      throw createError({
+        statusCode: 403,
+        message: "Unauthorized Student ID: You can only edit maintenance requests for your own student account.",
+      });
+    }
 
     if (maintenanceId !== idFromParam) {
       throw createError({

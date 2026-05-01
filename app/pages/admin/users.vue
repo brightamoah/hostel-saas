@@ -155,10 +155,10 @@ watch([globalFilter, statusFilter, roleFilter], () => {
             v-model="globalFilter"
             v-model:role-filter="roleFilter"
             v-model:status-filter="statusFilter"
-            v-model:hostel-filter-options="hostelFilterOptions"
             v-model:hostel-filter="hostelFilter"
             :role-filter-options
             :status-filter-options
+            :hostel-filter-options
           >
             <template #actions>
               <DashboardRefreshButton

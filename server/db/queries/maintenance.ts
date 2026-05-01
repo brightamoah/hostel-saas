@@ -289,56 +289,60 @@ export async function maintenanceQueries() {
     responseText: string,
     ctx: AuditContext,
   ) => {
-    const [newResponse] = await db
-      .insert(maintenanceResponse)
-      .values({
-        maintenanceRequestId: maintenanceId,
-        responderId,
-        companyId,
-        responseText,
-      })
-      .returning();
+    return db.transaction(async (tx) => {
+      const [newResponse] = await tx
+        .insert(maintenanceResponse)
+        .values({
+          maintenanceRequestId: maintenanceId,
+          responderId,
+          companyId,
+          responseText,
+        })
+        .returning();
 
-    if (newResponse) {
-      await logAudit(db, ctx, {
-        action: "maintenance.add_response",
-        actionType: "CREATE",
-        entityType: "maintenance_response",
-        after: newResponse,
-        before: null,
-        description: `${ctx.actor.actorType} with id=${responderId} added a response to maintenance request ID ${maintenanceId}`,
-        entityId: newResponse.id,
-      });
-    }
+      if (newResponse) {
+        await logAudit(tx, ctx, {
+          action: "maintenance.add_response",
+          actionType: "CREATE",
+          entityType: "maintenance_response",
+          after: newResponse,
+          before: null,
+          description: `${ctx.actor.actorType} with id=${responderId} added a response to maintenance request ID ${maintenanceId}`,
+          entityId: newResponse.id,
+        });
+      }
 
-    return newResponse;
+      return newResponse;
+    });
   };
 
   const createMaintenance = async (
     data: MaintenanceCreate,
     ctx: AuditContext,
   ) => {
-    const [newRequest] = await db
-      .insert(maintenanceRequest)
-      .values({
-        ...data,
-        status: "pending",
-      })
-      .returning();
+    return db.transaction(async (tx) => {
+      const [newRequest] = await tx
+        .insert(maintenanceRequest)
+        .values({
+          ...data,
+          status: "pending",
+        })
+        .returning();
 
-    if (newRequest) {
-      await logAudit(db, ctx, {
-        action: "maintenance.create",
-        actionType: "CREATE",
-        entityType: "maintenance_request",
-        entityId: newRequest.id,
-        description: `${ctx.actor.actorType} with id=${ctx.actor.actorUserId} created a new maintenance request with ID ${newRequest.id}`,
-        before: null,
-        after: newRequest,
-      });
-    }
+      if (newRequest) {
+        await logAudit(tx, ctx, {
+          action: "maintenance.create",
+          actionType: "CREATE",
+          entityType: "maintenance_request",
+          entityId: newRequest.id,
+          description: `${ctx.actor.actorType} with id=${ctx.actor.actorUserId} created a new maintenance request with ID ${newRequest.id}`,
+          before: null,
+          after: newRequest,
+        });
+      }
 
-    return newRequest;
+      return newRequest;
+    });
   };
 
   const updateMaintenance = async (
@@ -347,42 +351,44 @@ export async function maintenanceQueries() {
     data: MaintenanceEdit["data"],
     ctx: AuditContext,
   ) => {
-    const before = await db.query.maintenanceRequest.findFirst({
-      where: and(
-        eq(maintenanceRequest.id, requestId),
-        eq(maintenanceRequest.studentId, studentId),
-        eq(maintenanceRequest.status, "pending"),
-      ),
-    });
-    if (!before) return null;
-
-    const [updateRequest] = await db
-      .update(maintenanceRequest)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(and(
-        eq(maintenanceRequest.id, requestId),
-        eq(maintenanceRequest.studentId, studentId),
-        eq(maintenanceRequest.status, "pending"),
-      ))
-      .returning();
-
-    if (updateRequest) {
-      await logAudit(db, ctx, {
-        action: "maintenance.update",
-        actionType: "UPDATE",
-        entityType: "maintenance_request",
-        entityId: updateRequest.id,
-        description: `${ctx.actor.actorType} with id=${ctx.actor.actorUserId} updated maintenance request with ID ${updateRequest.id}`,
-        before,
-        after: updateRequest,
-        diff: computeAuditDiff(before, updateRequest),
+    return db.transaction(async (tx) => {
+      const before = await tx.query.maintenanceRequest.findFirst({
+        where: and(
+          eq(maintenanceRequest.id, requestId),
+          eq(maintenanceRequest.studentId, studentId),
+          eq(maintenanceRequest.status, "pending"),
+        ),
       });
-    }
+      if (!before) return null;
 
-    return updateRequest;
+      const [updateRequest] = await tx
+        .update(maintenanceRequest)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(and(
+          eq(maintenanceRequest.id, requestId),
+          eq(maintenanceRequest.studentId, studentId),
+          eq(maintenanceRequest.status, "pending"),
+        ))
+        .returning();
+
+      if (updateRequest) {
+        await logAudit(tx, ctx, {
+          action: "maintenance.update",
+          actionType: "UPDATE",
+          entityType: "maintenance_request",
+          entityId: updateRequest.id,
+          description: `${ctx.actor.actorType} with id=${ctx.actor.actorUserId} updated maintenance request with ID ${updateRequest.id}`,
+          before,
+          after: updateRequest,
+          diff: computeAuditDiff(before, updateRequest),
+        });
+      }
+
+      return updateRequest;
+    });
   };
 
   const getMaintenanceByIdForStudent = async (id: number, studentId: number) => {
