@@ -333,6 +333,51 @@ export default defineNuxtConfig({
     enabled: false,
   },
 
+  evlog: {
+    enabled: true,
+    pretty: true,
+    include: ["/api/**"],
+    exclude: [
+      "/api/_nuxt_icon/**",
+      "/api/_content/**",
+      "/api/_images/**",
+      "/api/_auth/**",
+      "/api/_ipx/**",
+      "/api/health",
+    ],
+    env: {
+      service: "kayanest-app",
+    },
+    transport: {
+      enabled: true,
+      endpoint: "/api/_evlog/ingest",
+    },
+    redact: true,
+    routes: {
+      "/api/admin/**": { service: "admin-api" },
+      "/api/auth/**": { service: "auth-api" },
+      "/api/room/**": { service: "room-api" },
+      "/api/user/**": { service: "user-api" },
+      "/api/announcement/**": { service: "announcement-api" },
+      "/api/billing/**": { service: "billing-api" },
+      "/api/analytics/**": { service: "analytics-api" },
+      "/api/complaint/**": { service: "complaint-api" },
+      "/api/maintenance/**": { service: "maintenance-api" },
+      "/api/student/**": { service: "student-api" },
+      "/api/visitor/**": { service: "visitor-api" },
+    },
+  },
+
+  $production: {
+    evlog: {
+      console: false,
+      sampling: {
+        rates: { info: 10, warn: 50, debug: 0 },
+        keep: [{ duration: 1000 }, { status: 400 }],
+      },
+    },
+  },
+
   hooks: {
     "nitro:config": (nitroConfig) => {
       nitroConfig.handlers = nitroConfig.handlers?.filter(handler => handler?.route !== "/api/_auth/session");
