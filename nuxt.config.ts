@@ -387,8 +387,8 @@ export default defineNuxtConfig({
         },
       },
       sampling: {
-        rates: { info: 10, warn: 50, debug: 0 },
-        keep: [{ duration: 1000 }, { status: 400 }],
+        rates: { info: 100, warn: 100, debug: 100 },
+        keep: [{ status: 400 }, { status: 500 }],
       },
     },
   },
