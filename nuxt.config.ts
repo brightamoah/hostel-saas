@@ -210,7 +210,9 @@ export default defineNuxtConfig({
     paystackSecretKey: env.NUXT_PAYSTACK_SECRET_KEY,
     r2Url: env.NUXT_R2_URL,
     // platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
-
+    axiomToken: env.NUXT_AXIOM_TOKEN,
+    axiomDataset: env.NUXT_AXIOM_DATASET,
+    sentryDsn: env.NUXT_SENTRY_DSN,
   },
 
   experimental: {
@@ -351,6 +353,7 @@ export default defineNuxtConfig({
     transport: {
       enabled: true,
       endpoint: "/api/_evlog/ingest",
+      credentials: "include",
     },
     redact: true,
     routes: {
@@ -371,6 +374,18 @@ export default defineNuxtConfig({
   $production: {
     evlog: {
       console: false,
+      silent: false,
+      axiom: {
+        dataset: env.NUXT_AXIOM_DATASET,
+        token: env.NUXT_AXIOM_TOKEN,
+      },
+      sentry: {
+        dsn: env.NUXT_SENTRY_DSN,
+        environment: env.NODE_ENV,
+        tags: {
+          service: "kayanest-app",
+        },
+      },
       sampling: {
         rates: { info: 10, warn: 50, debug: 0 },
         keep: [{ duration: 1000 }, { status: 400 }],
