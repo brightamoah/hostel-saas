@@ -43,6 +43,26 @@ export function useUserFilters(table: TableType<UserWithRelations>, data: DataTy
     },
   ]);
 
+  const { hostels } = useFetchRoomData();
+
+  const hostelFilter = ref("");
+
+  const hostelFilterOptions = computed<FilterOption[]>(() => {
+    const options: FilterOption[] = [
+      {
+        label: "All Hostels",
+        value: "all",
+      },
+    ];
+    if (hostels.value.length > 0) {
+      options.push(...hostels.value.map(h => ({
+        label: capitalizeWords(h.name),
+        value: h.name,
+      })));
+    }
+    return options;
+  });
+
   const {
     safeTableApi,
     updatePage,
@@ -57,7 +77,7 @@ export function useUserFilters(table: TableType<UserWithRelations>, data: DataTy
     defaultPage,
   } = useTableFilters<UserWithRelations>(table, data, "users");
 
-  watch(() => [statusFilter.value, roleFilter.value], async ([newStatus, newRole]) => {
+  watch(() => [statusFilter.value, roleFilter.value, hostelFilter.value], async ([newStatus, newRole, newHostel]) => {
     await nextTick();
     const tableApi = safeTableApi();
     if (!tableApi) return;
@@ -77,6 +97,14 @@ export function useUserFilters(table: TableType<UserWithRelations>, data: DataTy
     if (newRole === "all") roleColumn.setFilterValue(undefined);
 
     else roleColumn.setFilterValue(newRole);
+
+    const hostelColumn = tableApi.getColumn?.("hostel");
+
+    if (!hostelColumn) return;
+
+    if (newHostel === "all") hostelColumn.setFilterValue(undefined);
+
+    else hostelColumn.setFilterValue(newHostel);
   }, { immediate: true });
 
   return {
@@ -92,6 +120,8 @@ export function useUserFilters(table: TableType<UserWithRelations>, data: DataTy
     selectedUsersLength,
     totalUsers,
     itemsToDisplay,
+    hostelFilter,
+    hostelFilterOptions,
     updatePage,
   };
 }

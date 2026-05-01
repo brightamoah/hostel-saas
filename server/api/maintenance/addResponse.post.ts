@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
     }
 
     let companyId: number;
+    let auditContext: AuditContext;
 
     const admin = await getAdminByUserIdUnscoped(user.id, true);
 
@@ -45,6 +46,18 @@ export default defineEventHandler(async (event) => {
         });
       }
       companyId = admin.companyId!;
+
+      const scope = await adminSessionCheck(event);
+
+      auditContext = getAuditContext({
+        kind: "admin",
+        event,
+        scope,
+        target: {
+          companyId: request.companyId,
+          hostelId: request.hostelId,
+        },
+      });
     }
     else {
       const student = await getStudentByUserId(user.id);
@@ -56,6 +69,14 @@ export default defineEventHandler(async (event) => {
         });
       }
       companyId = student.companyId!;
+
+      auditContext = getAuditContext({
+        kind: "student",
+        event,
+        userId: user.id,
+        companyId,
+        hostelId: student.hostelId,
+      });
     }
 
     if (request.companyId !== companyId) {
@@ -77,6 +98,7 @@ export default defineEventHandler(async (event) => {
       user.id,
       companyId,
       responseText,
+      auditContext,
     );
 
     return {

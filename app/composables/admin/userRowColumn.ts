@@ -19,6 +19,8 @@ export function useUserRowColumn(
   const userStore = useUserStore();
   const { isLoading } = storeToRefs(userStore);
 
+  const { isPlatformAdminOrOwner } = usePortalUserSession();
+
   const openDetailsModal = (user: UserWithRelations) => {
     void overlay.create(UserDetailsModal).open({
       user,
@@ -154,24 +156,6 @@ export function useUserRowColumn(
 
   const columns = ref<TableColumn<UserWithRelations>[]>([
     {
-      id: "select",
-      header: ({ table }) =>
-        h(UCheckbox, {
-          "modelValue": table.getIsSomePageRowsSelected()
-            ? "indeterminate"
-            : table.getIsAllPageRowsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") =>
-            table.toggleAllPageRowsSelected(!!value),
-          "ariaLabel": "Select all",
-        }),
-      cell: ({ row }) =>
-        h(UCheckbox, {
-          "modelValue": row.getIsSelected(),
-          "onUpdate:modelValue": (value: boolean | "indeterminate") => row.toggleSelected(!!value),
-          "ariaLabel": "Select row",
-        }),
-    },
-    {
       id: "name",
       accessorFn: row => `${row.name} ${row.email}`,
       header: createSortableHeader("User", UButton),
@@ -216,68 +200,83 @@ export function useUserRowColumn(
       },
       cell: ({ row }) => {
         const residencyStatus = row.original.role === "admin" ? "N/A" : row.original.student?.residencyStatus ?? "N/A";
-        return h(UBadge, {
-          label: residencyStatus,
-          color: studentStatusColorMap[residencyStatus],
-          variant: "subtle",
-          class: "capitalize",
-        });
+        return h("div", { class: "flex items-center justify-center gap-2" }, [
+          h(UBadge, {
+            label: residencyStatus,
+            color: studentStatusColorMap[residencyStatus],
+            variant: "subtle",
+            class: "capitalize",
+          }),
+        ]);
       },
-    },
-    {
-      id: "phoneNumber",
-      accessorFn: row => row.student?.phoneNumber ?? row.admin?.phoneNumber ?? "",
-      header: createSortableHeader("Phone Number", UButton),
-      cell: ({ row }) => {
-        const phoneNumber = row.original.role === "admin" ? row.original.admin?.phoneNumber : row.original.student?.phoneNumber;
-        return phoneNumber || "N/A";
-      },
-    },
-    {
-      accessorKey: "emailVerified",
-      header: createSortableHeader("Email Status", UButton),
-      cell: ({ row }) => {
-        return row.original.emailVerified
-          ? h(UBadge, {
-              label: "Verified",
-              color: "success",
-              variant: "subtle",
-            })
-          : h(UBadge, {
-              label: "Unverified",
-              color: "warning",
-              variant: "subtle",
-            });
-      },
-    },
-    {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }) =>
-        h(
-          "div",
-          { class: "text-center" },
-          [
-            h(UDropdownMenu, {
-              arrow: true,
-              content: {
-                align: "center",
-              },
-              items: getRowItems(row),
-              ui: {
-                item: "cursor-pointer rounded",
-              },
-            }, () =>
-              h(UButton, {
-                icon: "i-lucide-ellipsis-vertical",
-                color: "neutral",
-                variant: "ghost",
-                class: "ml-auto cursor-pointer",
-              })),
-          ],
-        ),
     },
   ]);
+
+  if (isPlatformAdminOrOwner.value) {
+    columns.value.push(
+      {
+        id: "hostel",
+        accessorFn: row => row.hostelName ?? "N/A",
+        header: createSortableHeader("Hostel", UButton),
+        cell: ({ row }) => {
+          const hostelName = row.original.hostelName ?? "N/A";
+          return h("p", { class: "text-default font-medium" }, hostelName);
+        },
+      },
+    );
+  };
+
+  columns.value.push({
+    id: "phoneNumber",
+    accessorFn: row => row.student?.phoneNumber ?? row.admin?.phoneNumber ?? "",
+    header: createSortableHeader("Phone Number", UButton),
+    cell: ({ row }) => {
+      const phoneNumber = row.original.role === "admin" ? row.original.admin?.phoneNumber : row.original.student?.phoneNumber;
+      return h("p", { class: "text-default" }, phoneNumber ?? "N/A");
+    },
+  }, {
+    accessorKey: "emailVerified",
+    header: createSortableHeader("Email Status", UButton),
+    cell: ({ row }) => {
+      return row.original.emailVerified
+        ? h(UBadge, {
+            label: "Verified",
+            color: "success",
+            variant: "subtle",
+          })
+        : h(UBadge, {
+            label: "Unverified",
+            color: "warning",
+            variant: "subtle",
+          });
+    },
+  }, {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) =>
+      h(
+        "div",
+        { class: "text-center" },
+        [
+          h(UDropdownMenu, {
+            arrow: true,
+            content: {
+              align: "center",
+            },
+            items: getRowItems(row),
+            ui: {
+              item: "cursor-pointer rounded",
+            },
+          }, () =>
+            h(UButton, {
+              icon: "i-lucide-ellipsis-vertical",
+              color: "neutral",
+              variant: "ghost",
+              class: "ml-auto cursor-pointer",
+            })),
+        ],
+      ),
+  });
 
   return {
     getRowItems,

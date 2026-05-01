@@ -17,7 +17,13 @@ const emit = defineEmits<{
   (e: "update:modelValue", value: string): void;
   (e: "update:statusFilter", value: string): void;
   (e: "update:roleFilter", value: string): void;
+  (e: "update:hostelFilter", value: string): void;
 }>();
+
+const { isPlatformAdminOrOwner } = usePortalUserSession();
+
+const hostelFilter = defineModel<string>("hostelFilter");
+const hostelFilterOptions = defineModel<FilterOption[]>("hostelFilterOptions");
 
 const globalFilterModel = computed({
   get: () => modelValue,
@@ -66,6 +72,22 @@ const roleFilterModel = computed({
         class="w-full sm:min-w-40 text-center cursor-pointer"
         size="xl"
         :items="roleFilterOptions"
+        :ui="{
+          trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200',
+          item: 'cursor-pointer',
+        }"
+      />
+
+      <USelectMenu
+        v-if="isPlatformAdminOrOwner"
+        v-model="hostelFilter"
+        arrow
+        clear
+        placeholder="Filter by Hostel"
+        class="w-full sm:min-w-40 text-center cursor-pointer"
+        size="xl"
+        value-key="value"
+        :items="hostelFilterOptions"
         :ui="{
           trailingIcon: 'group-data-[state=open]:rotate-180 transition-transform duration-200',
           item: 'cursor-pointer',

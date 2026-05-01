@@ -71,6 +71,7 @@ export async function studentSessionCheck(event: H3Event): Promise<{
   userId: number;
   studentId: number;
   companyId?: number;
+  user: NonNullable<Awaited<ReturnType<typeof requirePortalUserSession>>["user"]>;
 }> {
   const session = await requirePortalUserSession(event);
   const studentId = session.user?.studentId;
@@ -90,5 +91,6 @@ export async function studentSessionCheck(event: H3Event): Promise<{
     userId: session.user.id,
     studentId,
     companyId: session.user.companyId,
+    user: session.user,
   };
 }

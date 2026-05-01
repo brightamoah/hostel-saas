@@ -397,6 +397,7 @@ type AdminWithDetails = BaseAdmin & {
 export type UserWithRelations = BaseUser & {
   student?: StudentWithDetails | null;
   admin?: AdminWithDetails | null;
+  hostelName?: string | null;
 };
 
 export type RoomInHostel = Pick<BaseRoom, "id" | "roomNumber" | "floor">;

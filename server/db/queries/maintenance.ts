@@ -1,4 +1,4 @@
-import type { AdminScope, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus, Period } from "~~/shared/types";
+import type { AdminScope, AuditContext, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus, Period } from "~~/shared/types";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -6,6 +6,7 @@ import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
 
 import { maintenanceRequest, maintenanceResponse } from "../schema";
+import { auditLogQueries } from "./auditLog";
 
 const maintenanceWithRelations = {
   with: {
@@ -39,6 +40,7 @@ const maintenanceWithRelations = {
 
 export async function maintenanceQueries() {
   const { db } = useDB();
+  const { logAudit } = await auditLogQueries();
 
   const applyMaintenanceScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -216,6 +218,7 @@ export async function maintenanceQueries() {
     status: MaintenanceStatus,
     responseText: string,
     scope: AdminScope,
+    ctx: AuditContext,
   ) => {
     return db
       .transaction(async (tx) => {
@@ -240,6 +243,19 @@ export async function maintenanceQueries() {
           .where(eq(maintenanceRequest.id, maintenanceId))
           .returning();
 
+        if (updatedRequest) {
+          await logAudit(tx, ctx, {
+            entityId: updatedRequest.id,
+            entityType: "maintenance_request",
+            action: `maintenance.update_status_${status}`,
+            actionType: "UPDATE",
+            description: `Maintenance request #${updatedRequest.id} status updated to ${status} by user with id=${userId}`,
+            before: target,
+            after: updatedRequest,
+            diff: computeAuditDiff(target, updatedRequest),
+          });
+        }
+
         const [newResponse] = await tx
           .insert(maintenanceResponse)
           .values({
@@ -250,6 +266,18 @@ export async function maintenanceQueries() {
           })
           .returning();
 
+        if (newResponse) {
+          await logAudit(tx, ctx, {
+            action: `maintenance.add_response`,
+            actionType: "CREATE",
+            entityId: newResponse.id,
+            entityType: "maintenance_response",
+            description: `${ctx.actor.actorType} with id=${userId} added a response to maintenance request ID ${maintenanceId}`,
+            before: null,
+            after: newResponse,
+          });
+        }
+
         return { updatedRequest, newResponse };
       });
   };
@@ -259,6 +287,7 @@ export async function maintenanceQueries() {
     responderId: number,
     companyId: number,
     responseText: string,
+    ctx: AuditContext,
   ) => {
     const [newResponse] = await db
       .insert(maintenanceResponse)
@@ -270,10 +299,25 @@ export async function maintenanceQueries() {
       })
       .returning();
 
+    if (newResponse) {
+      await logAudit(db, ctx, {
+        action: "maintenance.add_response",
+        actionType: "CREATE",
+        entityType: "maintenance_response",
+        after: newResponse,
+        before: null,
+        description: `${ctx.actor.actorType} with id=${responderId} added a response to maintenance request ID ${maintenanceId}`,
+        entityId: newResponse.id,
+      });
+    }
+
     return newResponse;
   };
 
-  const createMaintenance = async (data: MaintenanceCreate) => {
+  const createMaintenance = async (
+    data: MaintenanceCreate,
+    ctx: AuditContext,
+  ) => {
     const [newRequest] = await db
       .insert(maintenanceRequest)
       .values({
@@ -281,6 +325,19 @@ export async function maintenanceQueries() {
         status: "pending",
       })
       .returning();
+
+    if (newRequest) {
+      await logAudit(db, ctx, {
+        action: "maintenance.create",
+        actionType: "CREATE",
+        entityType: "maintenance_request",
+        entityId: newRequest.id,
+        description: `${ctx.actor.actorType} with id=${ctx.actor.actorUserId} created a new maintenance request with ID ${newRequest.id}`,
+        before: null,
+        after: newRequest,
+      });
+    }
+
     return newRequest;
   };
 
@@ -288,7 +345,17 @@ export async function maintenanceQueries() {
     requestId: number,
     studentId: number,
     data: MaintenanceEdit["data"],
+    ctx: AuditContext,
   ) => {
+    const before = await db.query.maintenanceRequest.findFirst({
+      where: and(
+        eq(maintenanceRequest.id, requestId),
+        eq(maintenanceRequest.studentId, studentId),
+        eq(maintenanceRequest.status, "pending"),
+      ),
+    });
+    if (!before) return null;
+
     const [updateRequest] = await db
       .update(maintenanceRequest)
       .set({
@@ -301,6 +368,19 @@ export async function maintenanceQueries() {
         eq(maintenanceRequest.status, "pending"),
       ))
       .returning();
+
+    if (updateRequest) {
+      await logAudit(db, ctx, {
+        action: "maintenance.update",
+        actionType: "UPDATE",
+        entityType: "maintenance_request",
+        entityId: updateRequest.id,
+        description: `${ctx.actor.actorType} with id=${ctx.actor.actorUserId} updated maintenance request with ID ${updateRequest.id}`,
+        before,
+        after: updateRequest,
+        diff: computeAuditDiff(before, updateRequest),
+      });
+    }
 
     return updateRequest;
   };

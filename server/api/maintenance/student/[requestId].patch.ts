@@ -2,7 +2,7 @@ import { maintenanceQueries } from "~~/server/db/queries";
 import { deleteMediaByUrls } from "~~/server/utils/r2Upload";
 
 export default defineEventHandler(async (event) => {
-  await studentSessionCheck(event);
+  const { userId } = await studentSessionCheck(event);
 
   const idFromParam = Number(getRouterParam(event, "requestId"));
 
@@ -50,10 +50,19 @@ export default defineEventHandler(async (event) => {
         )
       : [];
 
+    const auditContext = getAuditContext({
+      kind: "student",
+      event,
+      userId,
+      companyId: existingMaintenance.companyId,
+      hostelId: existingMaintenance.hostelId,
+    });
+
     const updatedMaintenance = await updateMaintenance(
       maintenanceId,
       studentId,
       data as Parameters<typeof updateMaintenance>[2],
+      auditContext,
     );
 
     if (!updatedMaintenance) {

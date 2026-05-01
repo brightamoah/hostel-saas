@@ -1,6 +1,6 @@
 import type { UserSession, UserSessionComposable } from "#auth-utils";
 
-export function usePortalUserSession(): UserSessionComposable {
+export function usePortalUserSession(): UserSessionComposable & { isPlatformAdminOrOwner: ComputedRef<boolean> } {
   const serverEvent = import.meta.server ? useRequestEvent() : null;
   const sessionState = useState<UserSession | null>("app-session", () => null);
   const authReadyState = useState("app-auth-ready", () => false);
@@ -63,11 +63,19 @@ export function usePortalUserSession(): UserSessionComposable {
     window.addEventListener("storage", popupListener);
   };
 
+  const isPlatformAdminOrOwner = computed(() => {
+    const user = sessionState.value?.user;
+    return user?.adminData?.accessLevel === "super"
+      || user?.companyRole === "owner";
+  },
+  );
+
   return {
     ready: computed(() => authReadyState.value),
     loggedIn: computed(() => Boolean(sessionState.value?.user)),
     user: computed(() => sessionState.value?.user ?? null),
     session: sessionState,
+    isPlatformAdminOrOwner,
     fetch,
     openInPopup,
     clear,

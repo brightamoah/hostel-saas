@@ -1,4 +1,14 @@
 <script setup lang="ts">
+definePageMeta({
+  layout: {
+    name: "default",
+    props: {
+      title: "Frequently Asked Questions",
+      showBg: false,
+    },
+  },
+});
+
 const faqItems = [
   {
     label: "How do I apply for hostel accommodation?",

@@ -1,5 +1,3 @@
-// utils/capitalizeWords.ts
-
 const SMALL_WORDS = new Set([
   "and",
   "or",

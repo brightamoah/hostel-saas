@@ -1,9 +1,7 @@
 import { maintenanceQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requirePortalUserSession(event, {
-    message: "Unauthorized Access: Please log in to continue.",
-  });
+  const { userId, companyId, user } = await studentSessionCheck(event);
 
   if (user.role !== "student") {
     throw createError({
@@ -11,8 +9,6 @@ export default defineEventHandler(async (event) => {
       message: "Forbidden: This endpoint is only accessible to students.",
     });
   }
-
-  const companyId = user.companyId;
 
   if (!companyId) {
     throw createError({
@@ -76,6 +72,15 @@ export default defineEventHandler(async (event) => {
         message: "Access denied: Only active hostel residents can create a maintenance request.",
       });
     }
+
+    const auditContext = getAuditContext({
+      kind: "student",
+      event,
+      userId,
+      companyId,
+      hostelId,
+    });
+
     const result = await createMaintenance({
       studentId,
       description,
@@ -85,7 +90,7 @@ export default defineEventHandler(async (event) => {
       roomId,
       companyId,
       mediaAttachments,
-    });
+    }, auditContext);
 
     return {
       success: true,

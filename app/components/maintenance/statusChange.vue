@@ -19,13 +19,22 @@ const title = computed(() =>
     : `Add Response to Maintenance Request # ${maintenance.id}`,
 );
 
-const statusOptions = ref<StatusResponseForm["status"][]>([
-  "completed",
-  "pending",
-  "in-progress",
-  "rejected",
-  "assigned",
-]);
+const statusOptions = computed(() => {
+  const options: StatusResponseForm["status"][] = [
+    "pending",
+    "in-progress",
+    "assigned",
+    "completed",
+    "rejected",
+  ];
+
+  return options.map((option) => {
+    return {
+      label: capitalizeWords(option),
+      value: option,
+    };
+  });
+});
 
 const maintenanceStore = useMaintenanceStore();
 
@@ -72,10 +81,14 @@ onMounted(() => clearState());
               v-model="maintenanceStatusResponseState.status"
               :items="statusOptions"
               size="xl"
+              value-key="value"
               label="Select New Status"
               placeholder="Choose status"
               class="w-full"
               clear
+              :ui="{
+                item: 'cursor-pointer',
+              }"
             />
           </UFormField>
 
@@ -135,7 +148,7 @@ onMounted(() => clearState());
         />
 
         <UButton
-          color="success"
+          color="primary"
           variant="solid"
           class="cursor-pointer"
           icon="i-lucide-send"
