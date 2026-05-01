@@ -17,7 +17,7 @@ const items = ref<NavItem[]>([
     label: "Home",
     to: { name: "index" },
     icon: "i-lucide-home",
-    id: "home",
+    id: "index",
   },
   {
     label: "Features",

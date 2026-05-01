@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { faqItems } from "~/data/faq";
+
 const { loggedIn, user } = usePortalUserSession();
 
 const dashboardRoute = computed(() => {
@@ -203,16 +205,19 @@ const features = ref([
         />
       </UPageGrid>
 
-      <div class="mt-12 mb-10 linebreak" />
+      <div class="my-5 linebreak" />
 
       <AppHeroCta />
     </UPageSection>
 
-    <div class="my-12 linebreak" />
+    <div class="my-5 linebreak" />
 
-    <AppFaq id="faq" />
+    <AppFaq
+      id="faq"
+      :faq-items
+    />
 
-    <div class="my-12 linebreak" />
+    <div class="my-5 linebreak" />
 
     <AppContactUs id="contact" />
   </div>
