@@ -1,24 +1,20 @@
-import type { AuditContext } from "~~/shared/types";
-
 import { and, eq, isNull } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
 import { authHandoffToken } from "../schema";
-import { auditLogQueries } from "./auditLog";
 
 const TOKEN_TTL_MS = 2 * 60 * 1000;
 
 export async function authHandoffQueries() {
   const { db } = useDB();
-  const { logAudit } = await auditLogQueries();
 
-  const createHandoffToken = async (userId: number, ctx: AuditContext) => {
+  const createHandoffToken = async (userId: number) => {
     const token = randomUUID();
     const tokenHash = await hash(token);
 
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
-    const [newToken] = await db
+    await db
       .insert(authHandoffToken)
       .values({
         userId,
@@ -26,22 +22,10 @@ export async function authHandoffQueries() {
         expiresAt,
       })
       .returning();
-
-    if (newToken) {
-      await logAudit(db, ctx, {
-        action: "auth_handoff_token.create",
-        actionType: "CREATE",
-        entityType: "auth",
-        entityId: newToken.id,
-        description: `Created auth handoff token for userId=${userId} with tokenId=${newToken.id}`,
-        after: newToken,
-      });
-    }
-
     return { token, expiresAt };
   };
 
-  const consumeHandoffToken = async (token: string, ctx: AuditContext) => {
+  const consumeHandoffToken = async (token: string) => {
     const candidates = await db
       .query
       .authHandoffToken
@@ -68,17 +52,7 @@ export async function authHandoffQueries() {
         ))
         .returning();
 
-      if (!updatedToken) continue; // Already consumed by another request
-      if (updatedToken) {
-        await logAudit(db, ctx, {
-          action: "auth_handoff_token.consume",
-          actionType: "UPDATE",
-          entityType: "auth",
-          entityId: updatedToken.id,
-          description: `Consumed auth handoff token for userId=${row.userId} with tokenId=${updatedToken.id}`,
-          after: updatedToken,
-        });
-      }
+      if (!updatedToken) continue;
 
       return { userId: row.userId };
     }

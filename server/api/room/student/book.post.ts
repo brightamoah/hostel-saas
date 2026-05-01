@@ -39,9 +39,18 @@ export default defineEventHandler(async (event) => {
 
     const studentId = student.id;
 
+    const auditContext = getAuditContext({
+      kind: "student",
+      event,
+      companyId: session.user.companyId!,
+      hostelId: session.selectedHostelId!,
+      userId: session.user.id,
+    });
+
     const allocation = await bookRoom(
       studentId,
       roomId,
+      auditContext,
       endDate,
       academicPeriod,
     );

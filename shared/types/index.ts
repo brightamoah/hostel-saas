@@ -653,9 +653,20 @@ export type AuditLog = typeof auditLog.$inferSelect;
 export type AuditInsert = Omit<InferInsertModel<typeof auditLog>, "id" | "createdAt">;
 
 export type AuditActor
-  = | { actorType: "admin"; actorAdminId: number; actorUserId?: number | null }
-    | { actorType: "student"; actorUserId: number }
-    | { actorType: "system"; actorUserId?: number | null; actorAdminId?: number | null };
+  = | {
+    actorType: "admin";
+    actorAdminId: number;
+    actorUserId?: number | null;
+  }
+  | {
+    actorType: "student";
+    actorUserId: number;
+  }
+  | {
+    actorType: "system";
+    actorUserId?: number | null;
+    actorAdminId?: number | null;
+  };
 
 export type AuditContext = {
   companyId: number | null;

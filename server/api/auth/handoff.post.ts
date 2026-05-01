@@ -18,14 +18,7 @@ export default defineEventHandler(async (event) => {
 
     const { consumeHandoffToken } = await authHandoffQueries();
 
-    const auditContext = getAuditContext({
-      kind: "system",
-      event,
-      companyId: null,
-      hostelId: null,
-    });
-
-    const consumed = await consumeHandoffToken(token, auditContext);
+    const consumed = await consumeHandoffToken(token);
 
     if (!consumed) {
       throw createError({
