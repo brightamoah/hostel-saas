@@ -205,6 +205,13 @@ export async function bookRoom(
           } satisfies typeof billing.$inferInsert)
           .returning();
 
+        if (!newBilling) {
+          throw createError({
+            statusCode: 500,
+            message: "Failed to create billing record.",
+          });
+        }
+
         const [updatedRoom] = await tx.update(room)
           .set({
             currentOccupancy: sql`${room.currentOccupancy} + 1`,
@@ -237,7 +244,7 @@ export async function bookRoom(
           actionType: "CREATE",
           entityType: "allocation",
           entityId: newAllocation.id,
-          description: `Student ${studentId} booked room ${roomId} in hostel ${hostelRecord.id} with allocation ID ${newAllocation.id} and billingId=${newBilling?.id ?? "n/a"}`,
+          description: `Student ${studentId} booked room ${roomId} in hostel ${hostelRecord.id} with allocation ID ${newAllocation.id} and billingId=${newBilling.id}`,
           before: null,
           after: {
             ...newAllocation,
@@ -250,8 +257,8 @@ export async function bookRoom(
           action: "billing.create",
           actionType: "CREATE",
           entityType: "billing",
-          entityId: newBilling?.id,
-          description: `Created billing record ${newBilling?.id} for allocation ${newAllocation.id}, amount ${targetRoom.amountPerYear}`,
+          entityId: newBilling.id,
+          description: `Created billing record ${newBilling.id} for allocation ${newAllocation.id}, amount ${targetRoom.amountPerYear}`,
           before: null,
           after: newBilling,
         });

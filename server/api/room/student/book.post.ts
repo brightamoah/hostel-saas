@@ -26,10 +26,16 @@ export default defineEventHandler(async (event) => {
 
     const { getStudentIdByUserId } = await userQueries();
 
-    const { roomId, userId, endDate, academicPeriod } = body.data;
+    const { roomId, endDate, academicPeriod, userId } = body.data;
+
+    if (userId !== session.user.id) {
+      throw createError({
+        statusCode: 403,
+        message: "You cannot book a room for another user",
+      });
+    }
 
     const student = await getStudentIdByUserId(userId);
-
     if (!student) {
       throw createError({
         statusCode: 404,
