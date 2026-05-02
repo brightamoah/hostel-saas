@@ -337,7 +337,6 @@ export default defineNuxtConfig({
 
   evlog: {
     enabled: true,
-    pretty: true,
     include: ["/api/**"],
     exclude: [
       "/api/_nuxt_icon/**",
@@ -387,7 +386,7 @@ export default defineNuxtConfig({
         },
       },
       sampling: {
-        rates: { info: 100, warn: 100, debug: 100 },
+        rates: { info: 20, warn: 50, debug: 20, error: 100 },
         keep: [{ status: 400 }, { status: 500 }],
       },
     },

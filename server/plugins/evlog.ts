@@ -7,9 +7,6 @@ export default defineNitroPlugin((nitro) => {
   const config = useRuntimeConfig();
 
   nitro.hooks.hook("evlog:enrich", auditEnricher());
-  nitro.hooks.hook("evlog:drain", (ctx) => {
-    console.log("Evlog drain triggered for path:", ctx.request?.path);
-  });
 
   nitro.hooks.hook("evlog:drain", createSentryDrain({
     dsn: config.sentryDsn,
