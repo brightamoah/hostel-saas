@@ -495,6 +495,7 @@ export interface Students {
 export interface Tasks {
   pendingComplaints: number;
   inProgressComplaints: number;
+  criticalComplaints: number;
   pendingMaintenance: number;
   inProgressMaintenance: number;
   criticalMaintenance: number;

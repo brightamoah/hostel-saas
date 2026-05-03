@@ -222,6 +222,7 @@ export async function statsQueries() {
     const complaintsQuery = db.select({
       pending: sql<number>`SUM(CASE WHEN ${complaint.status} = 'pending' THEN 1 ELSE 0 END)::int`,
       inProgress: sql<number>`SUM(CASE WHEN ${complaint.status} = 'in-progress' THEN 1 ELSE 0 END)::int`,
+      critical: sql<number>`SUM(CASE WHEN ${complaint.priority} = 'emergency' AND ${complaint.status} != 'resolved' THEN 1 ELSE 0 END)::int`,
     })
       .from(complaint)
       .where(complaintCondition);
@@ -329,6 +330,7 @@ export async function statsQueries() {
       tasks: {
         pendingComplaints: Number(complaintsData?.pending || 0),
         inProgressComplaints: Number(complaintsData?.inProgress || 0),
+        criticalComplaints: Number(complaintsData?.critical || 0),
         pendingMaintenance: Number(maintenanceData?.pending || 0),
         inProgressMaintenance: Number(maintenanceData?.inProgress || 0),
         criticalMaintenance: Number(maintenanceData?.critical || 0),

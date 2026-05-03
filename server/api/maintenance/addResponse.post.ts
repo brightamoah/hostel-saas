@@ -39,15 +39,21 @@ export default defineEventHandler(async (event) => {
     const admin = await getAdminByUserIdUnscoped(user.id, true);
 
     if (admin) {
-      if (admin.accessLevel !== "super" && admin.hostelId !== request.hostelId) {
+      const scope = await adminSessionCheck(event);
+      const superAdmin = isSuperAdmin(scope);
+      const companyOwner = isCompanyOwner(scope);
+      const canAccessRequest = superAdmin
+        || companyOwner
+        || admin.companyId === request.companyId
+        || admin.hostelId === request.hostelId;
+
+      if (!canAccessRequest) {
         throw createError({
           statusCode: 403,
           message: "You do not have permission to respond to requests for this hostel.",
         });
       }
-      companyId = admin.companyId!;
-
-      const scope = await adminSessionCheck(event);
+      companyId = superAdmin ? request.companyId : admin.companyId!;
 
       auditContext = getAuditContext({
         kind: "admin",

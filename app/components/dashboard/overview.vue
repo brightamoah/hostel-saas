@@ -245,7 +245,7 @@ const tasksData = computed<ChartData<"bar">>(() => {
       },
       {
         label: "Emergency",
-        data: [0, t?.criticalMaintenance || 0],
+        data: [t?.criticalComplaints || 0, t?.criticalMaintenance || 0],
         backgroundColor: "#EF4444",
         borderRadius: 6,
       },
