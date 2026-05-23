@@ -5,7 +5,7 @@ import { acceptHMRUpdate, defineStore } from "pinia";
 
 export const useAuthStore = defineStore("authStore", () => {
   const toast = useToast();
-  // const route = useRoute();
+  const route = useRoute();
 
   const { $apiFetch } = useNuxtApp();
 
@@ -177,7 +177,9 @@ export const useAuthStore = defineStore("authStore", () => {
         method: "GET",
       });
 
-      await goto(postLoginResponse.nextUrl);
+      const targetUrl = (route.query.redirect as string) || postLoginResponse.nextUrl;
+
+      await goto(targetUrl);
     }
     catch (error: any) {
       const message = error?.data?.message || "Login failed. Please check your credentials.";

@@ -3,7 +3,7 @@ import type { AdminScope, AuditContext, MaintenanceCreate, MaintenanceEdit, Main
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
+import { and, count, countDistinct, eq, sql } from "drizzle-orm";
 
 import { maintenanceRequest, maintenanceResponse } from "../schema";
 import { auditLogQueries } from "./auditLog";
@@ -23,7 +23,9 @@ const maintenanceWithRelations = {
     room: true,
     hostel: true,
     responses: {
-      orderBy: desc(maintenanceResponse.responseDate),
+      orderBy: {
+        responseDate: "desc",
+      },
       with: {
         responder: {
           columns: {
@@ -42,7 +44,7 @@ export async function maintenanceQueries() {
   const { db } = useDB();
   const { logAudit } = await auditLogQueries();
 
-  const applyMaintenanceScope = (scope: AdminScope) => {
+  const applyMaintenanceScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
 
     if (mode === "platform") return [];
@@ -51,30 +53,43 @@ export async function maintenanceQueries() {
     return [sql`FALSE`];
   };
 
+  const applyMaintenanceScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return {};
+    if (mode === "company" && scope.companyId) return { companyId: scope.companyId };
+    if (mode === "hostel" && scope.hostelId) return { hostelId: scope.hostelId };
+    return { RAW: () => sql`FALSE` };
+  };
+
   const getAllMaintenanceRequests = async (scope: AdminScope) => {
     return await db
       .query
       .maintenanceRequest
       .findMany({
         ...maintenanceWithRelations,
-        where: and(...applyMaintenanceScope(scope)),
-        orderBy: desc(maintenanceRequest.requestDate),
+        where: {
+          ...applyMaintenanceScope(scope),
+        },
+        orderBy: {
+          requestDate: "desc",
+        },
       });
   };
 
   const getMaintenanceById = async (id: number, scope: AdminScope) => {
     return await db.query.maintenanceRequest.findFirst({
       ...maintenanceWithRelations,
-      where: and(
-        eq(maintenanceRequest.id, id),
+      where: {
+        id,
         ...applyMaintenanceScope(scope),
-      ),
+      },
     });
   };
 
   const findMaintenanceRequestById = async (id: number) => {
     return db.query.maintenanceRequest.findFirst({
-      where: eq(maintenanceRequest.id, id),
+      where: { id },
     });
   };
 
@@ -88,7 +103,7 @@ export async function maintenanceQueries() {
       startOfLastMonth,
     } = getTimePeriod();
 
-    const filters = applyMaintenanceScope(scope);
+    const filters = applyMaintenanceScopeSql(scope);
 
     const [result] = await db
       .select({
@@ -178,8 +193,8 @@ export async function maintenanceQueries() {
 
     const requests = await db.query.maintenanceRequest.findMany({
       ...maintenanceWithRelations,
-      where: eq(maintenanceRequest.studentId, studentId),
-      orderBy: desc(maintenanceRequest.requestDate),
+      where: { studentId },
+      orderBy: { requestDate: "desc" },
     });
 
     return {
@@ -226,10 +241,10 @@ export async function maintenanceQueries() {
         const companyId = scope.companyId!;
 
         const target = await tx.query.maintenanceRequest.findFirst({
-          where: and(
-            eq(maintenanceRequest.id, maintenanceId),
+          where: {
+            id: maintenanceId,
             ...applyMaintenanceScope(scope),
-          ),
+          },
         });
 
         if (!target) throw new Error("Maintenance request not found or unauthorized access.");
@@ -353,11 +368,11 @@ export async function maintenanceQueries() {
   ) => {
     return db.transaction(async (tx) => {
       const before = await tx.query.maintenanceRequest.findFirst({
-        where: and(
-          eq(maintenanceRequest.id, requestId),
-          eq(maintenanceRequest.studentId, studentId),
-          eq(maintenanceRequest.status, "pending"),
-        ),
+        where: {
+          id: requestId,
+          studentId,
+          status: "pending",
+        },
       });
       if (!before) return null;
 
@@ -393,10 +408,10 @@ export async function maintenanceQueries() {
 
   const getMaintenanceByIdForStudent = async (id: number, studentId: number) => {
     const maintenanceRecord = await db.query.maintenanceRequest.findFirst({
-      where: and(
-        eq(maintenanceRequest.id, id),
-        eq(maintenanceRequest.studentId, studentId),
-      ),
+      where: {
+        id,
+        studentId,
+      },
     });
     return maintenanceRecord;
   };

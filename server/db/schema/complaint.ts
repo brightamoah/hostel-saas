@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm";
 import { pgEnum, pgTable } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -58,39 +57,4 @@ export const complaintResponse = pgTable("complaint_response", t => ({
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-}));
-
-export const complaintRelations = relations(complaint, ({ one, many }) => ({
-  student: one(student, {
-    fields: [complaint.studentId],
-    references: [student.id],
-  }),
-  room: one(room, {
-    fields: [complaint.roomId],
-    references: [room.id],
-  }),
-  hostel: one(hostel, {
-    fields: [complaint.hostelId],
-    references: [hostel.id],
-  }),
-  responses: many(complaintResponse),
-  company: one(company, {
-    fields: [complaint.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const complaintResponseRelations = relations(complaintResponse, ({ one }) => ({
-  complaint: one(complaint, {
-    fields: [complaintResponse.complaintId],
-    references: [complaint.id],
-  }),
-  responder: one(user, { // The user (admin/staff) who responded
-    fields: [complaintResponse.responderId],
-    references: [user.id],
-  }),
-  company: one(company, {
-    fields: [complaintResponse.companyId],
-    references: [company.id],
-  }),
 }));

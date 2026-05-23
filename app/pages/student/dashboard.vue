@@ -23,7 +23,7 @@ const {
 } = useFetchStudentDashboardData();
 
 const roommates = computed<Roommate[]>(() => {
-  return student.value?.allocation?.room?.allocations.filter(allocation => allocation.student.id !== student.value?.id && ["active", "pending"].includes(allocation.status))
+  return student.value?.allocation?.room?.allocations.filter(allocation => allocation?.student?.id !== student.value?.id && ["active", "pending"].includes(allocation.status))
     .map(allocation => allocation.student) ?? [];
 });
 
@@ -132,7 +132,7 @@ const cards = computed<StatsCard[]>(() => [
               v-if="card.id === 1"
               class="block font-normal text-muted text-sm"
             >
-              Amount: {{ formatCurrency(Number(student.allocation.room.amountPerYear ?? 0)) }}
+              Amount: {{ formatCurrency(Number(student?.allocation?.room?.amountPerYear ?? 0)) }}
             </span>
 
             <span
@@ -159,10 +159,6 @@ const cards = computed<StatsCard[]>(() => [
         </DashboardStatsCard>
 
         <LazyStudentCard />
-
-        <!-- <div class="p-2 md:p-4">
-          hello world
-        </div> -->
       </template>
     </UDashboardPanel>
   </div>

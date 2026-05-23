@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -50,39 +50,4 @@ export const visitorLogs = pgTable("visitor_logs", t => ({
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp(),
-}));
-
-export const visitorRelations = relations(visitor, ({ one, many }) => ({
-  student: one(student, {
-    fields: [visitor.studentId],
-    references: [student.id],
-  }),
-  hostel: one(hostel, {
-    fields: [visitor.hostelId],
-    references: [hostel.id],
-  }),
-  admin: one(admin, {
-    fields: [visitor.adminId],
-    references: [admin.id],
-  }),
-  visitorLogs: many(visitorLogs),
-  company: one(company, {
-    fields: [visitor.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const visitorLogsRelations = relations(visitorLogs, ({ one }) => ({
-  visitor: one(visitor, {
-    fields: [visitorLogs.visitorId],
-    references: [visitor.id],
-  }),
-  admin: one(admin, {
-    fields: [visitorLogs.adminId],
-    references: [admin.id],
-  }),
-  company: one(company, {
-    fields: [visitorLogs.companyId],
-    references: [company.id],
-  }),
 }));

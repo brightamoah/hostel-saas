@@ -66,7 +66,7 @@ export function useStudentRoomRowColumn(
     const close = modal.close;
 
     await modal.open({
-      "title": `Book Room ${room.roomNumber} at ${room.hostel.name}`,
+      "title": `Book Room ${room.roomNumber} at ${room?.hostel?.name}`,
       "confirmLabel": "Book Room",
       "description": `This action will reserve room ${room.roomNumber} for you.`,
       "renderTrigger": false,

@@ -1,7 +1,5 @@
-import { relations } from "drizzle-orm";
 import { pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { hostel } from "./room";
 import { user } from "./user";
 
 export const companyStatusEnum = pgEnum("company_status", [
@@ -33,10 +31,10 @@ export const company = pgTable("company", t => ({
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-}), table => ({
-  slugUnique: uniqueIndex("company_slug_unique").on(table.slug),
-  nameUnique: uniqueIndex("company_name_unique").on(table.name),
-}));
+}), table => [
+  uniqueIndex("company_slug_unique").on(table.slug),
+  uniqueIndex("company_name_unique").on(table.name),
+]);
 
 export const companyMember = pgTable("company_member", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -49,23 +47,6 @@ export const companyMember = pgTable("company_member", t => ({
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-}), table => ({
-  companyUserUnique: uniqueIndex("company_member_company_user_unique").on(table.companyId, table.userId),
-}));
-
-export const companyRelations = relations(company, ({ many }) => ({
-  members: many(companyMember),
-  hostels: many(hostel),
-}));
-
-export const companyMemberRelations = relations(companyMember, ({ one }) => ({
-  company: one(company, {
-    fields: [companyMember.companyId],
-    references: [company.id],
-  }),
-
-  user: one(user, {
-    fields: [companyMember.userId],
-    references: [user.id],
-  }),
-}));
+}), table => [
+  uniqueIndex("company_member_company_user_unique").on(table.companyId, table.userId),
+]);

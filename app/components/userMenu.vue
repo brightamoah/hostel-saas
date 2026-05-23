@@ -145,7 +145,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
     {
       label: "Settings",
       icon: "i-lucide-settings",
-      to: { name: "student-settings" },
+      to: { name: "student-profile-settings-security" },
     },
   ],
   [

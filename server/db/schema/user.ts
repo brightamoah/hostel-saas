@@ -1,17 +1,12 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   check,
   pgEnum,
   pgTable,
 } from "drizzle-orm/pg-core";
 
-import { announcement, announcementReads } from "./announcement";
-import { billing, payment } from "./billing";
 import { company } from "./company";
-import { complaint, complaintResponse } from "./complaint";
-import { maintenanceRequest, maintenanceResponse } from "./maintenance";
-import { allocation, hostel } from "./room";
-import { visitor } from "./visitor";
+import { hostel } from "./room";
 
 export const rolesEnum = pgEnum("roles", [
   "student",
@@ -120,59 +115,6 @@ export const loginAttempts = pgTable("login_attempts", t => ({
   ip: t.text().notNull(),
   timestamp: t.timestamp().notNull(),
   success: t.boolean().notNull(),
-}));
-
-export const userRelations = relations(user, ({ one, many }) => ({
-  student: one(student, {
-    fields: [user.id],
-    references: [student.userId],
-  }),
-  admin: one(admin, {
-    fields: [user.id],
-    references: [admin.userId],
-  }),
-  announcementReads: many(announcementReads),
-  complaintResponses: many(complaintResponse),
-  maintenanceResponses: many(maintenanceResponse),
-  billings: many(billing),
-  payments: many(payment),
-  visitors: many(visitor),
-}));
-
-export const studentRelations = relations(student, ({ one, many }) => ({
-  user: one(user, {
-    fields: [student.userId],
-    references: [user.id],
-  }),
-  allocation: one(allocation, {
-    fields: [student.id],
-    references: [allocation.studentId],
-  }),
-  billings: many(billing),
-  payments: many(payment),
-  complaints: many(complaint),
-  maintenanceRequests: many(maintenanceRequest),
-  visitors: many(visitor),
-  company: one(company, {
-    fields: [student.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const adminRelations = relations(admin, ({ one, many }) => ({
-  user: one(user, {
-    fields: [admin.userId],
-    references: [user.id],
-  }),
-  hostel: one(hostel, {
-    fields: [admin.hostelId],
-    references: [hostel.id],
-  }),
-  announcementsPosted: many(announcement),
-  company: one(company, {
-    fields: [admin.companyId],
-    references: [company.id],
-  }),
 }));
 
 export type UserWithRelations = typeof user & {

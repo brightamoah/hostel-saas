@@ -8,6 +8,8 @@ definePageMeta({
   layout: "student-dashboard",
 });
 
+const { hostelSlug } = useFetchStudentDashboardData();
+
 const title = ref("Student Rooms");
 
 const table = useTemplateRef("tableRef");
@@ -39,7 +41,7 @@ const {
   canResend,
   coolDownTime,
   handleRefresh,
-} = useFetchStudentRoomData();
+} = useFetchStudentRoomData(hostelSlug!);
 
 const {
   selectedRoomsLength,

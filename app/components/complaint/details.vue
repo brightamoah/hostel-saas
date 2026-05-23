@@ -30,17 +30,17 @@ const items = computed<TabsItem[]>(() => [
 const detailItems = computed(() => [
   {
     label: "Student Name",
-    value: complaint.student.user.name,
+    value: complaint?.student?.user?.name,
     icon: "i-lucide-user",
   },
   {
     label: "Student Email",
-    value: complaint.student.user.email,
+    value: complaint?.student?.user?.email,
     icon: "i-lucide-mail",
   },
   {
     label: "Hostel",
-    value: complaint.hostel.name,
+    value: complaint?.hostel?.name,
     icon: "i-lucide-map-pinned",
   },
   {
@@ -105,7 +105,7 @@ const messages = computed(() => {
     },
     ...responseItems.value.map((response) => {
       const responderInfo = response.responder;
-      const isStudent = responderInfo.role === "student";
+      const isStudent = responderInfo?.role === "student";
 
       let messageRole: "user" | "assistant";
       if (isAdmin) messageRole = isStudent ? "assistant" : "user";
@@ -123,10 +123,10 @@ const messages = computed(() => {
           },
         ],
         metadata: {
-          id: response.responder.id,
-          senderName: responderInfo.name,
+          id: response?.responder?.id,
+          senderName: responderInfo?.name,
           senderRole: isStudent ? "Student" : "Admin",
-          email: responderInfo.email,
+          email: responderInfo?.email,
           date: response.responseDate,
           timeAgo: useFormattedTimeAgo(response.responseDate, isMobile).value,
         },
@@ -186,12 +186,12 @@ const messages = computed(() => {
                   />
 
                   <p v-if="!item.badge">
-                    {{ capitalize(item.value) }}
+                    {{ capitalize(item?.value || '') }}
                   </p>
 
                   <UBadge
                     v-if="item.badge"
-                    :label="capitalize(item.value)"
+                    :label="capitalize(item?.value || '')"
                     :color="item.badge"
                     variant="subtle"
                     class="justify-center mt-1 text-center"

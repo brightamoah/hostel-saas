@@ -3,10 +3,9 @@ import type { AuditActor } from "evlog";
 import type { H3Event } from "h3";
 
 import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
-import { eq } from "drizzle-orm";
 import { useLogger } from "evlog";
 
-import { auditLog, user } from "../schema";
+import { auditLog } from "../schema";
 
 export async function auditLogQueries() {
   const actorFields = (ctx: AuditContext): Pick<AuditInsert, "actorUserId" | "actorAdminId" | "actorType"> => {
@@ -83,7 +82,9 @@ export async function auditLogQueries() {
       const { db: globalDb } = useDB();
 
       const userData = await globalDb.query.user.findFirst({
-        where: eq(user.id, targetUserId),
+        where: {
+          id: targetUserId,
+        },
         columns: { name: true, email: true },
       });
 

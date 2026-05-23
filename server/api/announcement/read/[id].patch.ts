@@ -1,6 +1,6 @@
 import type { AuditContext } from "~~/shared/types";
 
-import { announcementQueries } from "~~/server/db/queries";
+import { announcementQueries, userQueries } from "~~/server/db/queries";
 
 defineRouteMeta({
   openAPI: {
@@ -62,15 +62,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const companyId = user.companyId;
-
-    if (!companyId) {
-      throw createError({
-        statusCode: 403,
-        message: "You do not have permission to update announcement read status. Please contact support if you believe this is an error.",
-      });
-    }
-
     const body = await readValidatedBody(event, body => readStatusSchema.safeParse(body));
 
     if (!body.success) {
@@ -86,41 +77,57 @@ export default defineEventHandler(async (event) => {
 
     const { updateAnnouncementReadStatus } = await announcementQueries();
 
+    let companyId: number | null | undefined = user.companyId;
     let auditContext: AuditContext;
 
-    try {
+    if (user.role === "student") {
+      if (!companyId) {
+        const { getStudentByUserId } = await userQueries();
+        const student = await getStudentByUserId(user.id);
+        companyId = student?.companyId;
+      }
+
+      if (!companyId) {
+        throw createError({
+          statusCode: 403,
+          message: "Tenant boundaries missing. Please contact support.",
+        });
+      }
+
+      auditContext = getAuditContext({
+        kind: "student",
+        event,
+        userId: user.id,
+        companyId,
+      });
+    }
+    else {
       const scope = await adminSessionCheck(event);
+      const mode = getScopeMode(scope);
+
+      if (mode !== "platform" && !companyId) companyId = scope.companyId;
+
+      if (mode !== "platform" && !companyId) {
+        throw createError({
+          statusCode: 403,
+          message: "Admin tenant boundaries missing.",
+        });
+      }
+
       auditContext = getAuditContext({
         kind: "admin",
         event,
         scope,
         target: {
-          companyId,
+          companyId: companyId || scope.companyId,
           hostelId: scope.hostelId,
         },
       });
     }
-    catch (error) {
-      const statusCode = error && typeof error === "object" && "statusCode" in error
-        ? (error as { statusCode?: number }).statusCode
-        : undefined;
-
-      if (user.role !== "admin" && statusCode === 403) {
-        auditContext = getAuditContext({
-          kind: "student",
-          event,
-          userId: user.id,
-          companyId,
-        });
-      }
-      else {
-        throw error;
-      }
-    }
 
     await updateAnnouncementReadStatus(
       id,
-      companyId,
+      companyId!,
       user.id,
       action === "read",
       auditContext,

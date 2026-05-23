@@ -1,10 +1,6 @@
 import type { AdminScope, NotificationDTO } from "~~/shared/types";
 
-function getScopeMode(scope: AdminScope) {
-  if (scope.isPlatformAdmin) return "none" as const;
-  if (scope.companyRole === "owner") return "company" as const;
-  return "hostel" as const;
-}
+import { sql } from "drizzle-orm";
 
 export async function notificationQueries() {
   const { db } = useDB();
@@ -15,78 +11,78 @@ export async function notificationQueries() {
     if (mode === "company" && !scope.companyId) return [];
     if (mode === "hostel" && !scope.adminData.hostelId) return [];
 
-    const maintenanceWhere = (table: any, { eq, and }: any) => and(
-      eq(table.status, "pending"),
-      mode === "none"
-        ? undefined
-        : mode === "company"
-          ? eq(table.companyId, scope.companyId!)
-          : eq(table.hostelId, scope.adminData.hostelId!),
-    );
+    const applyNotificationScope = (scope: AdminScope, mode: string) => {
+      if (mode === "none") return {};
+      if (mode === "company") return { companyId: scope.companyId! };
+      if (mode === "hostel") return { hostelId: scope.adminData.hostelId! };
+      return { RAW: () => sql`FALSE` };
+    };
 
-    const complaintWhere = (table: any, { eq, and }: any) => and(
-      eq(table.status, "pending"),
-      mode === "none"
-        ? undefined
-        : mode === "company"
-          ? eq(table.companyId, scope.companyId!)
-          : eq(table.hostelId, scope.adminData.hostelId!),
-    );
-
-    const visitorWhere = (table: any, { eq, and }: any) => and(
-      eq(table.status, "pending"),
-      mode === "none"
-        ? undefined
-        : mode === "company"
-          ? eq(table.companyId, scope.companyId!)
-          : eq(table.hostelId, scope.adminData.hostelId!),
-    );
+    const baseFilter = {
+      status: "pending" as const,
+      ...applyNotificationScope(scope, mode),
+    };
 
     const [pendingMaintenance, pendingComplaints, pendingVisitors] = await Promise.all([
       db.query.maintenanceRequest.findMany({
-        where: maintenanceWhere,
+        where: baseFilter,
         with: {
           room: true,
           student: {
             with: {
               user: {
-                columns: { id: true, name: true, email: true, image: true },
+                columns: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
               },
             },
           },
         },
-        orderBy: (t, { desc }) => [desc(t.createdAt)],
+        orderBy: { createdAt: "desc" },
         limit,
       }),
 
       db.query.complaint.findMany({
-        where: complaintWhere,
+        where: baseFilter,
         with: {
           student: {
             with: {
               user: {
-                columns: { id: true, name: true, email: true, image: true },
+                columns: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
               },
             },
           },
         },
-        orderBy: (t, { desc }) => [desc(t.createdAt)],
+        orderBy: { createdAt: "desc" },
         limit,
       }),
 
       db.query.visitor.findMany({
-        where: visitorWhere,
+        where: baseFilter,
         with: {
           student: {
             with: {
               user: {
-                columns: { id: true, name: true, email: true, image: true },
+                columns: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  image: true,
+                },
               },
             },
           },
           hostel: true,
         },
-        orderBy: (t, { desc }) => [desc(t.createdAt)],
+        orderBy: { createdAt: "desc" },
         limit,
       }),
     ]);
@@ -97,7 +93,7 @@ export async function notificationQueries() {
         title: "New Maintenance Request",
         message: m.room ? `Room ${m.room.roomNumber}: ${m.description}` : m.description,
         type: "maintenance" as const,
-        sender: m.student.user,
+        sender: m.student!.user!,
         isRead: false,
         link: { name: "admin-maintenance", query: { id: m.id } },
         createdAt: m.createdAt,
@@ -108,7 +104,7 @@ export async function notificationQueries() {
         title: "New Complaint",
         message: c.description,
         type: "complaint" as const,
-        sender: c.student.user,
+        sender: c.student!.user!,
         isRead: false,
         link: { name: "admin-complaints", query: { id: c.id } },
         createdAt: c.createdAt,
@@ -117,9 +113,9 @@ export async function notificationQueries() {
       ...pendingVisitors.map(v => ({
         id: `visitor-${v.id}`,
         title: "Visitor Pending Approval",
-        message: `${v.name} is visiting ${v.student.user.name}${v.hostel ? ` (${v.hostel.name})` : ""}`,
+        message: `${v.name} is visiting ${v?.student?.user?.name}${v.hostel ? ` (${v.hostel.name})` : ""}`,
         type: "visitor" as const,
-        sender: v.student.user,
+        sender: v.student!.user!,
         isRead: false,
         link: { name: "admin-visitors", query: { id: v.id } },
         createdAt: v.createdAt,

@@ -80,9 +80,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const deletedRooms = await deleteRoomsByIds(ids, scope);
+    const auditContext = getAuditContext({
+      event,
+      kind: "admin",
+      scope,
+      target: {
+        companyId: roomsToDelete?.[0]?.companyId ?? scope.companyId,
+        hostelId: roomsToDelete?.[0]?.hostelId ?? scope.hostelId,
+      },
+    });
 
-    if (deletedRooms.length === 0) {
+    const deletedRooms = await deleteRoomsByIds(
+      ids,
+      scope,
+      auditContext,
+    );
+
+    if (!deletedRooms) {
       throw createError({
         statusCode: 404,
         message: `Deletion failed. No rooms were deleted for the provided IDs: ${ids.join(", ")}.`,

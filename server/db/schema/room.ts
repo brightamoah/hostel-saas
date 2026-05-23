@@ -1,11 +1,8 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { check, index, pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
 
-import { billing } from "./billing";
 import { company } from "./company";
-import { complaint } from "./complaint";
-import { maintenanceRequest } from "./maintenance";
-import { admin, genderEnum, student } from "./user";
+import { student } from "./user";
 
 export const roomTypeEnum = pgEnum("room_type", [
   "single",
@@ -33,6 +30,13 @@ export const academicPeriodEnum = pgEnum("academic_period", [
   "second semester",
   "entire year",
   "vacation period",
+]);
+
+export const roomGenderEnum = pgEnum("room_gender", [
+  "male",
+  "female",
+  "mixed",
+  "unassigned",
 ]);
 
 export const allocationStatusEnum = pgEnum("allocation_status", ["active", "expired", "pending", "cancelled"]);
@@ -63,7 +67,6 @@ export const hostel = pgTable("hostel", t => ({
 export const room = pgTable("room", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   roomNumber: t.varchar({ length: 10 }).notNull().unique(),
-  // building: t.varchar({ length: 100 }).notNull(),
   hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
   floor: t.integer().notNull(),
   capacity: t.integer().notNull(),
@@ -72,7 +75,7 @@ export const room = pgTable("room", t => ({
   features: t.text().array().default(sql`ARRAY[]::text[]`),
   amountPerYear: t.numeric({ precision: 10, scale: 2, mode: "number" }).notNull(),
   status: roomStatusEnum().default("vacant").notNull(),
-  allowedGender: genderEnum().default("male").notNull(),
+  allowedGender: roomGenderEnum().default("unassigned").notNull(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
@@ -90,6 +93,7 @@ export const allocation = pgTable("allocation", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   roomId: t.integer().notNull().references(() => room.id, { onDelete: "cascade" }),
+  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
   allocationDate: t.date().notNull(),
   academicPeriod: academicPeriodEnum().default("first semester").notNull(),
   academicYear: t.varchar({ length: 9 }).notNull().default("2025/2026"), // e.g., "2023/2024"
@@ -105,45 +109,3 @@ export const allocation = pgTable("allocation", t => ({
   check("chk_dates", sql`end_date IS NULL OR end_date >= allocation_date`),
   index("idx_allocation_student_status").on(table.studentId, table.status),
 ]);
-
-export const hostelRelations = relations(hostel, ({ one, many }) => ({
-  rooms: many(room),
-  admins: many(admin),
-  billings: many(billing),
-  complaints: many(complaint),
-  maintenanceRequests: many(maintenanceRequest),
-  company: one(company, {
-    fields: [hostel.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const roomRelations = relations(room, ({ one, many }) => ({
-  hostel: one(hostel, {
-    fields: [room.hostelId],
-    references: [hostel.id],
-  }),
-  allocations: many(allocation),
-  complaints: many(complaint),
-  maintenanceRequests: many(maintenanceRequest),
-  company: one(company, {
-    fields: [room.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const allocationRelations = relations(allocation, ({ one, many }) => ({
-  student: one(student, {
-    fields: [allocation.studentId],
-    references: [student.id],
-  }),
-  room: one(room, {
-    fields: [allocation.roomId],
-    references: [room.id],
-  }),
-  billings: many(billing),
-  company: one(company, {
-    fields: [allocation.companyId],
-    references: [company.id],
-  }),
-}));

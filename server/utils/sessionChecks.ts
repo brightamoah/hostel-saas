@@ -1,15 +1,11 @@
 import type { H3Event } from "h3";
 
-import { eq } from "drizzle-orm";
-
-import { companyMember } from "../db/schema";
-
-export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
-  const {
-    user,
-  } = await requirePortalUserSession(event, {
+export async function adminSessionCheck(event: H3Event): Promise<AdminScope & { session: Awaited<ReturnType<typeof requirePortalUserSession>> }> {
+  const session = await requirePortalUserSession(event, {
     message: "You must be logged in as an admin to access this resource.",
   });
+
+  const user = session.user;
 
   if (
     user?.adminData?.status !== "active"
@@ -33,13 +29,16 @@ export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
       companyRole: null,
       companyMemberStatus: undefined,
       hostelId: undefined,
+      session,
     };
   }
 
   const { db } = useDB();
 
   const membership = await db.query.companyMember.findFirst({
-    where: eq(companyMember.userId, user.id),
+    where: {
+      userId: user.id,
+    },
     columns: {
       companyId: true,
       role: true,
@@ -63,6 +62,7 @@ export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
     companyRole: membership.role,
     companyMemberStatus: membership.status,
     hostelId: adminData.hostelId ?? undefined,
+    session,
   };
 }
 
@@ -72,6 +72,7 @@ export async function studentSessionCheck(event: H3Event): Promise<{
   studentId: number;
   companyId?: number;
   user: NonNullable<Awaited<ReturnType<typeof requirePortalUserSession>>["user"]>;
+  session: Awaited<ReturnType<typeof requirePortalUserSession>>;
 }> {
   const session = await requirePortalUserSession(event);
   const studentId = session.user?.studentId;
@@ -92,5 +93,6 @@ export async function studentSessionCheck(event: H3Event): Promise<{
     studentId,
     companyId: session.user.companyId,
     user: session.user,
+    session,
   };
 }

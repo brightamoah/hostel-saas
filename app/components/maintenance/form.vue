@@ -30,7 +30,7 @@ const roomOptions = computed(() => {
 
   return room
     ? [{
-        label: `${capitalize(room.hostel.name)} - Room ${room.roomNumber} (${getOrdinalString(room.floor)} Floor)`,
+        label: `${capitalizeWords(room?.hostel?.name ?? "")} - Room ${room.roomNumber} (${getOrdinalString(room.floor)} Floor)`,
         value: room.id,
       }]
     : [];

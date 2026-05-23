@@ -71,8 +71,8 @@ watch(selectedPaymentType, (newType) => {
 onMounted(() => {
   paymentState.value.totalAmount = total.value;
   paymentState.value.amount = balanceDue.value;
-  paymentState.value.email = billing.student.user.email;
-  paymentState.value.phoneNumber = billing.student.phoneNumber;
+  paymentState.value.email = billing?.student?.user?.email;
+  paymentState.value.phoneNumber = billing?.student?.phoneNumber;
   paymentState.value.billingId = billing.id;
 });
 

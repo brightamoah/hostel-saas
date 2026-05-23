@@ -38,22 +38,22 @@ const { roommates } = context;
       <UPageList v-else>
         <UUser
           v-for="roommate in roommates"
-          :key="roommate.id"
+          :key="roommate?.id"
           name="Bright Amoah"
           size="lg"
           class="mb-4 divide-accented"
           :avatar="{
-            text: generateInitials(roommate?.user.name),
+            text: generateInitials(roommate?.user?.name || roommate?.user?.email || 'User'),
             src: roommate?.user?.image ?? undefined,
-            style: `background-color: ${generateUserColor(roommate.user.id)}`,
+            style: `background-color: ${generateUserColor(roommate?.user?.id || roommate?.user?.email || 'User')}`,
             ui: { fallback: 'text-white' },
           }"
         >
           <template #description>
             <div class="flex flex-col gap-0.5 text-muted text-sm italic leading-tight">
-              <span class="font-medium">{{ roommate.user.email }}</span>
+              <span class="font-medium">{{ roommate?.user?.email }}</span>
 
-              <span>{{ roommate.phoneNumber }}</span>
+              <span>{{ roommate?.phoneNumber }}</span>
             </div>
           </template>
         </UUser>

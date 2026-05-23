@@ -1,4 +1,4 @@
-import type { AdminScope, Period } from "~~/shared/types";
+import type { AdminScope, AuditContext, Period } from "~~/shared/types";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -6,6 +6,7 @@ import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, asc, countDistinct, desc, eq, exists, gt, inArray, like, or, sql } from "drizzle-orm";
 
 import { allocation, hostel, room } from "../schema";
+import { auditLogQueries } from "./auditLog";
 
 const roomWithRelations = {
   with: {
@@ -15,8 +16,9 @@ const roomWithRelations = {
 
 export async function roomQueries() {
   const { db } = useDB();
+  const { logAudit } = await auditLogQueries();
 
-  const applyRoomScope = (scope: AdminScope) => {
+  const applyRoomScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
 
     if (mode === "platform") return [];
@@ -28,47 +30,67 @@ export async function roomQueries() {
     return [sql`FALSE`];
   };
 
+  const applyRoomScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return {};
+
+    if (mode === "company" && scope.companyId) return { companyId: scope.companyId };
+
+    if (mode === "hostel" && scope.hostelId) return { hostelId: scope.hostelId };
+
+    return { RAW: () => sql`FALSE` };
+  };
+
+  // const applyHostelScopeSql = (scope: AdminScope) => {
+  //   const mode = getScopeMode(scope);
+
+  //   if (mode === "platform") return [];
+  //   if (mode === "company" && scope.companyId) return [eq(hostel.companyId, scope.companyId)];
+
+  //   if (mode === "hostel" && scope.hostelId) return [eq(hostel.id, scope.hostelId)];
+
+  //   return [sql`FALSE`];
+  // };
+
   const applyHostelScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
 
-    if (mode === "platform") return [];
-    if (mode === "company" && scope.companyId) return [eq(hostel.companyId, scope.companyId)];
+    if (mode === "platform") return {};
+    if (mode === "company" && scope.companyId) return { companyId: scope.companyId };
 
-    if (mode === "hostel" && scope.hostelId) return [eq(hostel.id, scope.hostelId)];
+    if (mode === "hostel" && scope.hostelId) return { id: scope.hostelId };
 
-    return [sql`FALSE`];
-  }; ;
+    return { RAW: () => sql`FALSE` };
+  };
 
   // --- STUDENT & pUBLIC QUERIES ---
   const getHostelByCode = async (joinCode: string) => {
-    return await db
-      .query
-      .hostel
-      .findFirst({
-        where: and(eq(hostel.joinCode, joinCode), eq(hostel.status, "active")),
-        columns: {
-          primaryColor: false,
-          createdAt: false,
-          updatedAt: false,
-        },
-      });
+    return await db.query.hostel.findFirst({
+      where: {
+        joinCode,
+        status: "active",
+      },
+      columns: {
+        primaryColor: false,
+        createdAt: false,
+        updatedAt: false,
+      },
+    });
   };
 
   const getHostelBySlug = async (slug: string) => {
-    const hostelResult = db
-      .query
-      .hostel
-      .findFirst({
-        where: and(
-          eq(hostel.slug, slug),
-          eq(hostel.status, "active"),
-        ),
-        columns: {
-          primaryColor: false,
-          createdAt: false,
-          updatedAt: false,
-        },
-      });
+    const hostelResult = db.query.hostel.findFirst({
+      where: {
+        slug,
+        status: "active",
+      },
+      columns: {
+        primaryColor: false,
+        createdAt: false,
+        updatedAt: false,
+      },
+    });
 
     return hostelResult;
   };
@@ -76,54 +98,80 @@ export async function roomQueries() {
   const getAvailableRoomsForStudent = async (hostelId: number, gender: "male" | "female") => {
     return await db.query.room.findMany({
       ...roomWithRelations,
-      where: and(
-        eq(room.hostelId, hostelId),
-        eq(room.allowedGender, gender),
-        inArray(room.status, ["vacant", "partially occupied"]),
-        gt(sql`${room.capacity} - ${room.currentOccupancy}`, 0),
-      ),
-      orderBy: asc(room.roomNumber),
+      where: {
+        hostelId,
+        allowedGender: { in: [gender, "unassigned", "mixed"] },
+        status: { in: ["vacant", "partially occupied"] },
+        RAW: table => sql`${table.capacity} - ${table.currentOccupancy} > 0`,
+      },
+      orderBy: {
+        roomNumber: "asc",
+      },
     });
   };
 
   // --- ADMIN QUERIES ---
   const getScopedRooms = async (scope: AdminScope) => {
     return await db.query.room.findMany({
-      where: and(...applyRoomScope(scope)),
-      with: { hostel: { columns: { name: true } } },
-      orderBy: asc(room.roomNumber),
+      where: {
+        ...applyRoomScope(scope),
+      },
+      with: {
+        hostel: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+      orderBy: { roomNumber: "asc" },
     });
   };
 
   const getRoomByIdScoped = async (id: number, scope: AdminScope) => {
     return await db.query.room.findFirst({
-      where: and(eq(room.id, id), ...applyRoomScope(scope)),
+      where: {
+        id,
+        ...applyRoomScope(scope),
+      },
     });
   };
 
   const getRoomStatusCount = async (scope: AdminScope) => {
-    const {
-      startOfThisMonth,
-      startOfThisWeek,
-    } = getTimePeriod();
+    const { startOfThisMonth, startOfThisWeek } = getTimePeriod();
 
     const [result] = await db
       .select({
         vacant: countDistinct(sql`CASE WHEN ${room.status} = 'vacant' THEN ${room.id} END`),
-        fullyOccupied: countDistinct(sql`CASE WHEN ${room.status} = 'fully occupied' THEN ${room.id} END`),
-        partiallyOccupied: countDistinct(sql`CASE WHEN ${room.status} = 'partially occupied' THEN ${room.id} END`),
-        underMaintenance: countDistinct(sql`CASE WHEN ${room.status} = 'under maintenance' THEN ${room.id} END`),
+        fullyOccupied: countDistinct(
+          sql`CASE WHEN ${room.status} = 'fully occupied' THEN ${room.id} END`,
+        ),
+        partiallyOccupied: countDistinct(
+          sql`CASE WHEN ${room.status} = 'partially occupied' THEN ${room.id} END`,
+        ),
+        underMaintenance: countDistinct(
+          sql`CASE WHEN ${room.status} = 'under maintenance' THEN ${room.id} END`,
+        ),
         reserved: countDistinct(sql`CASE WHEN ${room.status} = 'reserved' THEN ${room.id} END`),
-        available: countDistinct(sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') THEN ${room.id} END`),
+        available: countDistinct(
+          sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') THEN ${room.id} END`,
+        ),
         allRooms: countDistinct(room.id),
         occupied: countDistinct(sql`CASE WHEN ${room.currentOccupancy} > 0 THEN ${room.id} END`),
-        prevTotalRooms: countDistinct(sql`CASE WHEN ${room.createdAt} < ${startOfThisMonth} THEN ${room.id} END`),
-        prevOccupied: countDistinct(sql`CASE WHEN ${room.status} = 'fully occupied' AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`),
-        prevAvailable: countDistinct(sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`),
-        prevMaintenance: countDistinct(sql`CASE WHEN ${room.status} = 'under maintenance' AND ${room.updatedAt} < ${startOfThisWeek} THEN ${room.id} END`),
+        prevTotalRooms: countDistinct(
+          sql`CASE WHEN ${room.createdAt} < ${startOfThisMonth} THEN ${room.id} END`,
+        ),
+        prevOccupied: countDistinct(
+          sql`CASE WHEN ${room.status} = 'fully occupied' AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`,
+        ),
+        prevAvailable: countDistinct(
+          sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`,
+        ),
+        prevMaintenance: countDistinct(
+          sql`CASE WHEN ${room.status} = 'under maintenance' AND ${room.updatedAt} < ${startOfThisWeek} THEN ${room.id} END`,
+        ),
       })
       .from(room)
-      .where(and(...applyRoomScope(scope)));
+      .where(and(...applyRoomScopeSql(scope)));
 
     return {
       totalVacantRooms: Number(result?.vacant),
@@ -162,11 +210,15 @@ export async function roomQueries() {
       .query
       .allocation
       .findFirst({
-        where: and(
-          eq(allocation.studentId, studentId),
-          inArray(allocation.status, ["active", "pending"]),
-        ),
-        columns: { id: true, roomId: true, status: true },
+        where: {
+          studentId,
+          status: { in: ["active", "pending"] },
+        },
+        columns: {
+          id: true,
+          roomId: true,
+          status: true,
+        },
       });
     return activeAllocation;
   };
@@ -175,7 +227,10 @@ export async function roomQueries() {
     const rooms = await db
       .query
       .room
-      .findMany({ limit: 100, orderBy: asc(room.id) });
+      .findMany({
+        limit: 100,
+        orderBy: { roomNumber: "asc" },
+      });
     return rooms;
   };
 
@@ -183,14 +238,12 @@ export async function roomQueries() {
     const rooms = await db
       .query
       .room
-      .findMany({ where: inArray(room.id, ids) });
+      .findMany({ where: { id: { in: ids } } });
     return rooms;
   };
 
   const getOccupiedRoomsCount = async () => {
-    const count = await db
-      .query
-      .room
+    const count = await db.query.room
       .findMany()
       .then(rooms => rooms.filter(r => r.currentOccupancy > 0).length);
     return count;
@@ -200,7 +253,7 @@ export async function roomQueries() {
     const rooms = await db
       .query
       .room
-      .findMany({ where: eq(room.status, "under maintenance") });
+      .findMany({ where: { status: "under maintenance" } });
     return rooms;
   };
 
@@ -217,38 +270,89 @@ export async function roomQueries() {
       .query
       .room
       .findFirst({
-        where: and(
-          eq(room.roomNumber, roomNumber),
-          eq(room.hostelId, hostelId),
-        ),
+        where: {
+          roomNumber,
+          hostelId,
+        },
       });
-
     return existingRoom;
   };
 
-  const deleteRoomsByIds = async (ids: number[], scope: AdminScope) => {
+  const deleteRoomsByIds = async (ids: number[], scope: AdminScope, ctx: AuditContext) => {
     if (ids.length === 0) return [];
 
-    const deletedRooms = await db
-      .delete(room)
-      .where(and(inArray(room.id, ids), ...applyRoomScope(scope)))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const before = await tx
+        .query
+        .room
+        .findMany({
+          where: {
+            id: { in: ids },
+            ...applyRoomScope(scope),
+          },
+        });
 
-    return deletedRooms;
+      if (!before.length) return [];
+
+      const deleted = await tx
+        .delete(room)
+        .where(and(inArray(room.id, ids), ...applyRoomScopeSql(scope)))
+        .returning();
+
+      if (deleted.length) {
+        await logAudit(tx, ctx, {
+          action: "room.delete_bulk",
+          actionType: "DELETE",
+          entityType: "room",
+          entityId: null,
+          description: `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId} deleted ${deleted.length} rooms with IDs: ${deleted.map(r => r.id).join(", ")}`,
+          before,
+          after: null,
+        });
+      }
+    });
   };
 
   const editRoomById = async (
     roomId: number,
     data: Partial<typeof room.$inferInsert>,
     scope: AdminScope,
+    ctx: AuditContext,
   ) => {
-    const [updatedRoom] = await db
-      .update(room)
-      .set(data)
-      .where(and(eq(room.id, roomId), ...applyRoomScope(scope)))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const targetRoom = await tx
+        .query
+        .room
+        .findFirst({
+          where: {
+            id: roomId,
+            ...applyRoomScope(scope),
+          },
+        });
 
-    return updatedRoom;
+      if (!targetRoom) return null;
+
+      const [updatedRoom] = await tx
+        .update(room)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(eq(room.id, roomId), ...applyRoomScopeSql(scope)))
+        .returning();
+
+      if (updatedRoom) {
+        await logAudit(tx, ctx, {
+          action: "room.update",
+          actionType: "UPDATE",
+          entityType: "room",
+          entityId: updatedRoom.id,
+          description: `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId} updated room with ID ${updatedRoom.id}`,
+          before: targetRoom,
+          after: updatedRoom,
+          diff: computeAuditDiff(redact(targetRoom), redact(updatedRoom)),
+        });
+      }
+
+      return updatedRoom;
+    });
   };
 
   const getAllHostels = async (gender: "male" | "female") => {
@@ -256,19 +360,16 @@ export async function roomQueries() {
       .query
       .hostel
       .findMany({
-        where: and(
-          eq(hostel.status, "active"),
-          exists(
-            db.select().from(room).where(
-              and(
-                eq(room.hostelId, hostel.id),
-                eq(room.allowedGender, gender),
-                inArray(room.status, ["vacant", "partially occupied"]),
-                gt(room.capacity, room.currentOccupancy),
-              ),
-            ),
-          ),
-        ),
+        where: {
+          status: "active",
+          RAW: (hostel, { sql }) => sql`EXISTS (
+          SELECT 1 FROM ${room}
+          WHERE ${room.hostelId} = ${hostel.id}
+          AND ${room.allowedGender} = ${gender}
+          AND ${room.status} IN ('vacant', 'partially occupied')
+          AND ${room.capacity} > ${room.currentOccupancy}
+          )`,
+        },
         columns: {
           id: true,
           name: true,
@@ -281,7 +382,7 @@ export async function roomQueries() {
         },
         with: {
           rooms: {
-            where: eq(room.allowedGender, gender),
+            where: { allowedGender: gender },
             columns: {
               amountPerYear: true,
               roomType: true,
@@ -293,8 +394,9 @@ export async function roomQueries() {
           },
         },
         extras: {
-          minimumRoomPrice: sql<number>`(SELECT MIN("room"."amount_per_year") FROM "room" WHERE "room"."hostel_id" = "hostel"."id")`.as("minimumRoomPrice"),
-          maximumRoomPrice: sql<number>`(SELECT MAX("room"."amount_per_year") FROM "room" WHERE "room"."hostel_id" = "hostel"."id")`.as("maximumRoomPrice"),
+          minimumRoomPrice: (hostel, { sql }) => sql<number>`SELECT MIN(amount_per_year) FROM ${room} WHERE ${room.hostelId} = ${hostel.id} AND ${room.allowedGender} = ${gender} AND ${room.status} IN ('vacant', 'partially occupied') AND ${room.capacity} > ${room.currentOccupancy}`,
+
+          maximumRoomPrice: (hostel, { sql }) => sql<number>`SELECT MAX(amount_per_year) FROM ${room} WHERE ${room.hostelId} = ${hostel.id} AND ${room.allowedGender} = ${gender} AND ${room.status} IN ('vacant', 'partially occupied') AND ${room.capacity} > ${room.currentOccupancy}`,
         },
       });
     return hostels;
@@ -312,20 +414,42 @@ export async function roomQueries() {
     return query;
   };
 
-  const addNewRoom = async (data: typeof room.$inferInsert, scope: AdminScope) => {
-    if (!scope.isPlatformAdmin) {
-      const targetHostel = await db.query.hostel.findFirst({
-        where: and(eq(hostel.id, data.hostelId), ...applyHostelScope(scope)),
-      });
-      if (!targetHostel) throw createError({ statusCode: 403, message: "Unauthorized hostel assignment" });
-    }
+  const addNewRoom = async (
+    data: typeof room.$inferInsert,
+    scope: AdminScope,
+    ctx: AuditContext,
+  ) => {
+    return await db.transaction(async (tx) => {
+      if (!scope.isPlatformAdmin) {
+        const targetHostel = await tx
+          .query
+          .hostel
+          .findFirst({
+            where: {
+              id: data.hostelId,
+              ...applyHostelScope(scope),
+            },
+          });
 
-    const [newRoom] = await db
-      .insert(room)
-      .values(data)
-      .returning();
+        if (!targetHostel) throw createError({ statusCode: 403, message: "Unauthorized hostel assignment" });
+      }
 
-    return newRoom;
+      const [newRoom] = await tx.insert(room).values(data).returning();
+
+      if (newRoom) {
+        await logAudit(tx, ctx, {
+          action: "room.create",
+          actionType: "CREATE",
+          entityType: "room",
+          entityId: newRoom.id,
+          description: `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId} created room with ID ${newRoom.id}`,
+          before: null,
+          after: newRoom,
+        });
+      }
+
+      return newRoom;
+    });
   };
 
   const getAllHostelsScoped = async (scope: AdminScope) => {
@@ -334,122 +458,184 @@ export async function roomQueries() {
     if (mode === "platform") return await db.query.hostel.findMany();
 
     if (mode === "company") {
-      return await db
-        .query
-        .hostel
-        .findMany({
-          where: eq(hostel.companyId, scope.companyId!),
-        });
+      return await db.query.hostel.findMany({
+        where: { companyId: scope.companyId! },
+      });
     }
 
     if (mode === "hostel" && scope.hostelId) {
       return await db.query.hostel.findMany({
-        where: eq(hostel.id, scope.hostelId),
+        where: { id: scope.hostelId },
       });
     }
 
     return [];
   };
 
-  const cancelAllocation = async (allocationId: number, scope: AdminScope) => {
+  const cancelAllocation = async (
+    allocationId: number,
+    scope: AdminScope,
+    ctx: AuditContext,
+  ) => {
     return await db.transaction(async (tx) => {
       const targetAllocation = await tx
         .query
         .allocation
         .findFirst({
-          where: eq(allocation.id, allocationId),
+          where: { id: allocationId },
           with: { room: true },
         });
 
       if (!targetAllocation) throw new Error("Allocation not found");
 
       const mode = getScopeMode(scope);
-      const isAuthorized = mode === "platform"
-        || (mode === "company" && targetAllocation.room.companyId === scope.companyId)
-        || (mode === "hostel" && targetAllocation.room.hostelId === scope.hostelId);
+      const isAuthorized
+        = mode === "platform"
+          || (mode === "company" && targetAllocation?.room?.companyId === scope.companyId)
+          || (mode === "hostel" && targetAllocation?.room?.hostelId === scope.hostelId);
 
       if (!isAuthorized) throw new Error("Unauthorized access to allocation");
 
+      if (targetAllocation.status === "cancelled") throw new Error("Allocation is already cancelled");
+
+      if (targetAllocation.status === "expired") throw new Error("Cannot cancel an expired allocation");
+
       const [updatedAllocation] = await tx
         .update(allocation)
-        .set({ status: "cancelled" })
+        .set({
+          status: "cancelled",
+          updatedAt: new Date(),
+        })
         .where(eq(allocation.id, allocationId))
         .returning();
 
-      const currentRoom = targetAllocation.room;
-      const newOccupancy = Math.max(0, currentRoom.currentOccupancy - 1);
-      const newStatus = newOccupancy === 0
-        ? "vacant"
-        : newOccupancy < currentRoom.capacity ? "partially occupied" : "fully occupied";
+      if (!updatedAllocation) {
+        throw createError({
+          status: 500,
+          message: "Failed to cancel allocation",
+        });
+      }
 
-      await tx
-        .update(room)
-        .set({
-          currentOccupancy: newOccupancy,
-          status: newStatus,
-        })
-        .where(eq(room.id, targetAllocation.roomId));
+      const shouldDecrement = ["active", "pending"].includes(targetAllocation.status);
+
+      if (shouldDecrement) {
+        const currentRoom = targetAllocation.room;
+
+        if (!currentRoom) {
+          throw createError({
+            status: 500,
+            message: "Associated room not found for allocation",
+          });
+        }
+
+        const newOccupancy = Math.max(0, currentRoom.currentOccupancy - 1);
+
+        let newStatus = currentRoom.status;
+
+        if (currentRoom.status !== "under maintenance") {
+          newStatus
+            = newOccupancy === 0
+              ? "vacant"
+              : newOccupancy < currentRoom.capacity
+                ? "partially occupied"
+                : "fully occupied";
+        }
+
+        const [updatedRoom] = await tx
+          .update(room)
+          .set({
+            currentOccupancy: newOccupancy,
+            status: newStatus,
+            allowedGender: sql`CASE WHEN ${room.currentOccupancy} - 1 <= 0 THEN 'unassigned' ELSE ${room.allowedGender} END`,
+            updatedAt: new Date(),
+          })
+          .where(eq(room.id, targetAllocation.roomId))
+          .returning();
+
+        if (!updatedRoom) {
+          throw createError({
+            status: 500,
+            message: "Failed to update room occupancy",
+          });
+        }
+
+        await logAudit(tx, ctx, {
+          action: "room.update",
+          actionType: "UPDATE",
+          entityType: "room",
+          entityId: currentRoom.id,
+          description: `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId} updated room with ID ${currentRoom.id} due to allocation cancellation`,
+          before: currentRoom,
+          after: updatedRoom,
+          diff: computeAuditDiff(redact(currentRoom), redact(updatedRoom)),
+        });
+      }
+
+      await logAudit(tx, ctx, {
+        action: "allocation.cancel",
+        actionType: "CANCEL_ALLOCATION",
+        entityType: "allocation",
+        entityId: updatedAllocation.id,
+        description: `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId} cancelled allocation with ID ${updatedAllocation.id}`,
+        before: targetAllocation,
+        after: updatedAllocation,
+        diff: computeAuditDiff(redact(targetAllocation), redact(updatedAllocation)),
+      });
 
       return updatedAllocation;
     });
   };
 
   const getRoomsInHostel = async (hostelId: number) => {
-    const rooms = await db
-      .query
-      .room
-      .findMany({
-        columns: {
-          id: true,
-          roomNumber: true,
-          floor: true,
-        },
-        where: eq(room.hostelId, hostelId),
-      });
+    const rooms = await db.query.room.findMany({
+      columns: {
+        id: true,
+        roomNumber: true,
+        floor: true,
+      },
+      where: { hostelId },
+    });
     return rooms;
   };
 
   const getAllocationByStudentId = async (studentId: number) => {
-    const allocations = await db
-      .query
-      .allocation
-      .findFirst({
-        where: and(
-          eq(allocation.studentId, studentId),
-          eq(allocation.status, "active"),
-        ),
-        with: {
-          room: {
-            columns: {
-              id: true,
-              roomNumber: true,
-              hostelId: true,
-            },
-            with: {
-              hostel: {
-                columns: {
-                  name: true,
-                  companyId: true,
-                },
-              },
-            },
+    const allocations = await db.query.allocation.findFirst({
+      where: {
+        studentId,
+        status: "active",
+      },
+      with: {
+        room: {
+          columns: {
+            id: true,
+            roomNumber: true,
+            hostelId: true,
           },
-          student: {
-            columns: {
-              id: true,
-              residencyStatus: true,
-            },
-            with: {
-              user: {
-                columns: {
-                  name: true,
-                  email: true,
-                },
+          with: {
+            hostel: {
+              columns: {
+                name: true,
+                companyId: true,
               },
             },
           },
         },
-      });
+        student: {
+          columns: {
+            id: true,
+            residencyStatus: true,
+          },
+          with: {
+            user: {
+              columns: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
     return allocations;
   };
 
@@ -462,11 +648,7 @@ export async function roomQueries() {
       })
       .from(room)
       .where(
-        and(
-          eq(room.hostelId, hostelId),
-          eq(room.allowedGender, gender),
-          eq(room.status, "vacant"),
-        ),
+        and(eq(room.hostelId, hostelId), eq(room.allowedGender, gender), eq(room.status, "vacant")),
       )
       .groupBy(room.roomType, room.amountPerYear);
 
@@ -487,31 +669,56 @@ export async function roomQueries() {
     return stats;
   };
 
-  const createNewHostel = async (data: typeof hostel.$inferInsert) => {
-    const [newHostel] = await db
-      .insert(hostel)
-      .values(data)
-      .returning();
-    return newHostel;
+  const createNewHostel = async (
+    data: typeof hostel.$inferInsert,
+    scope: AdminScope,
+    ctx: AuditContext,
+  ) => {
+    const canCreate = canManageHostels(scope);
+
+    if (!canCreate) {
+      throw createError({
+        statusCode: 403,
+        message: "Unauthorized to create hostel",
+      });
+    }
+
+    return await db.transaction(async (tx) => {
+      const [newHostel] = await tx.insert(hostel).values(data).returning();
+
+      if (newHostel) {
+        await logAudit(tx, ctx, {
+          action: "hostel.create",
+          actionType: "CREATE",
+          entityType: "hostel",
+          entityId: newHostel.id,
+          description: `${ctx.actor.actorType} with ID ${ctx.actor.actorUserId} created hostel with ID ${newHostel.id}`,
+          before: null,
+          after: newHostel,
+        });
+      }
+
+      return newHostel;
+    });
   };
 
   const getHostelByIdScoped = async (id: number, scope: AdminScope) => {
-    const hostelResult = await db
-      .query
-      .hostel
-      .findFirst({
-        where: and(eq(hostel.id, id), ...applyHostelScope(scope)),
-        columns: {
-          id: true,
-          name: true,
-          address: true,
-          contactNumber: true,
-          email: true,
-          primaryColor: true,
-          logoUrl: true,
-          status: true,
-        },
-      });
+    const hostelResult = await db.query.hostel.findFirst({
+      where: {
+        id,
+        ...applyHostelScope(scope),
+      },
+      columns: {
+        id: true,
+        name: true,
+        address: true,
+        contactNumber: true,
+        email: true,
+        primaryColor: true,
+        logoUrl: true,
+        status: true,
+      },
+    });
     return hostelResult;
   };
 
@@ -527,21 +734,37 @@ export async function roomQueries() {
     const offset = (page - 1) * limit;
 
     const searchCondition = searchTerm?.trim()
-      ? or(
-          like(hostel.name, `%${searchTerm}%`),
-          like(hostel.address, `%${searchTerm}%`),
-        )
+      ? or(like(hostel.name, `%${searchTerm}%`), like(hostel.address, `%${searchTerm}%`))
       : undefined;
 
     const roomStatsSubquery = db
       .select({
         hostelId: room.hostelId,
-        availableRooms: sql<number>`COUNT(*) FILTER (WHERE ${room.status} IN ('vacant', 'partially occupied') AND ${room.currentOccupancy} < ${room.capacity} AND ${room.allowedGender} = ${gender})`.as("availableRooms"),
-        minimumRoomPrice: sql<number>`MIN(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("minimumRoomPrice"),
-        maximumRoomPrice: sql<number>`MAX(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("maximumRoomPrice"),
-        roomTypes: sql<string[]>`ARRAY_AGG(DISTINCT ${room.roomType}::text) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("roomTypes"),
-        totalCapacity: sql<number>`SUM(${room.capacity}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("totalCapacity"),
-        currentOccupancy: sql<number>`SUM(${room.currentOccupancy}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as("currentOccupancy"),
+        availableRooms:
+          sql<number>`COUNT(*) FILTER (WHERE ${room.status} IN ('vacant', 'partially occupied') AND ${room.currentOccupancy} < ${room.capacity} AND ${room.allowedGender} = ${gender})`.as(
+            "availableRooms",
+          ),
+        minimumRoomPrice:
+          sql<number>`MIN(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as(
+            "minimumRoomPrice",
+          ),
+        maximumRoomPrice:
+          sql<number>`MAX(${room.amountPerYear}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as(
+            "maximumRoomPrice",
+          ),
+        roomTypes: sql<
+          string[]
+        >`ARRAY_AGG(DISTINCT ${room.roomType}::text) FILTER (WHERE ${room.allowedGender} = ${gender})`.as(
+          "roomTypes",
+        ),
+        totalCapacity:
+          sql<number>`SUM(${room.capacity}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as(
+            "totalCapacity",
+          ),
+        currentOccupancy:
+          sql<number>`SUM(${room.currentOccupancy}) FILTER (WHERE ${room.allowedGender} = ${gender})`.as(
+            "currentOccupancy",
+          ),
       })
       .from(room)
       .groupBy(room.hostelId)
@@ -550,12 +773,10 @@ export async function roomQueries() {
     const whereConditions = [
       eq(hostel.status, "active"),
       exists(
-        db.select().from(room).where(
-          and(
-            eq(room.hostelId, hostel.id),
-            eq(room.allowedGender, gender),
-          ),
-        ),
+        db
+          .select()
+          .from(room)
+          .where(and(eq(room.hostelId, hostel.id), eq(room.allowedGender, gender))),
       ),
     ];
 
@@ -588,12 +809,24 @@ export async function roomQueries() {
         status: hostel.status,
         companyId: hostel.companyId,
         joinCode: hostel.joinCode,
-        minimumRoomPrice: sql<number>`COALESCE(${roomStatsSubquery.minimumRoomPrice}, 0)`.as("minimumRoomPrice"),
-        maximumRoomPrice: sql<number>`COALESCE(${roomStatsSubquery.maximumRoomPrice}, 0)`.as("maximumRoomPrice"),
-        availableRooms: sql<number>`COALESCE(${roomStatsSubquery.availableRooms}, 0)`.as("availableRooms"),
-        roomTypes: sql<string[]>`COALESCE(${roomStatsSubquery.roomTypes}, ARRAY[]::text[])`.as("roomTypes"),
-        totalCapacity: sql<number>`COALESCE(${roomStatsSubquery.totalCapacity}, 0)`.as("totalCapacity"),
-        currentOccupancy: sql<number>`COALESCE(${roomStatsSubquery.currentOccupancy}, 0)`.as("currentOccupancy"),
+        minimumRoomPrice: sql<number>`COALESCE(${roomStatsSubquery.minimumRoomPrice}, 0)`.as(
+          "minimumRoomPrice",
+        ),
+        maximumRoomPrice: sql<number>`COALESCE(${roomStatsSubquery.maximumRoomPrice}, 0)`.as(
+          "maximumRoomPrice",
+        ),
+        availableRooms: sql<number>`COALESCE(${roomStatsSubquery.availableRooms}, 0)`.as(
+          "availableRooms",
+        ),
+        roomTypes: sql<string[]>`COALESCE(${roomStatsSubquery.roomTypes}, ARRAY[]::text[])`.as(
+          "roomTypes",
+        ),
+        totalCapacity: sql<number>`COALESCE(${roomStatsSubquery.totalCapacity}, 0)`.as(
+          "totalCapacity",
+        ),
+        currentOccupancy: sql<number>`COALESCE(${roomStatsSubquery.currentOccupancy}, 0)`.as(
+          "currentOccupancy",
+        ),
       })
       .from(hostel)
       .leftJoin(roomStatsSubquery, eq(hostel.id, roomStatsSubquery.hostelId))
@@ -649,12 +882,20 @@ export async function roomQueries() {
   };
 }
 
-type RoomWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getScopedRooms"]>>;
+type RoomWithRelations = Awaited<
+  ReturnType<Awaited<ReturnType<typeof roomQueries>>["getScopedRooms"]>
+>;
 
 export type Room = NonNullable<RoomWithRelations>[number];
 
-export type HostelRoomType = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getAvailableRoomsForStudent"]>>>[number];
+export type HostelRoomType = NonNullable<
+  Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getAvailableRoomsForStudent"]>>
+>[number];
 
-export type AdminRoomStats = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getRoomStatusCount"]>>;
+export type AdminRoomStats = Awaited<
+  ReturnType<Awaited<ReturnType<typeof roomQueries>>["getRoomStatusCount"]>
+>;
 
-export type PaginatedHostel = Awaited<ReturnType<Awaited<ReturnType<typeof roomQueries>>["getHostelsPaginated"]>>;
+export type PaginatedHostel = Awaited<
+  ReturnType<Awaited<ReturnType<typeof roomQueries>>["getHostelsPaginated"]>
+>;

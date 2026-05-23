@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
     const flattenUsers = users.map((u) => {
       const hostelName
-        = u.student?.allocation?.room?.hostel?.name
+        = u.student?.allocations?.[0]?.room?.hostel?.name
           || u.admin?.hostel?.name
           || "N/A";
 

@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm";
 import { pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -48,34 +47,3 @@ export const notificationRead = pgTable("notification_read", t => ({
 }), table => [
   uniqueIndex("notification_read_admin_notification_unique").on(table.adminId, table.notificationId),
 ]);
-
-export const notificationRelations = relations(notification, ({ one, many }) => ({
-  company: one(company, {
-    fields: [notification.companyId],
-    references: [company.id],
-  }),
-  hostel: one(hostel, {
-    fields: [notification.hostelId],
-    references: [hostel.id],
-  }),
-  actorUser: one(user, {
-    fields: [notification.actorUserId],
-    references: [user.id],
-  }),
-  actorAdmin: one(admin, {
-    fields: [notification.actorAdminId],
-    references: [admin.id],
-  }),
-  reads: many(notificationRead),
-}));
-
-export const notificationReadRelations = relations(notificationRead, ({ one }) => ({
-  notification: one(notification, {
-    fields: [notificationRead.notificationId],
-    references: [notification.id],
-  }),
-  admin: one(admin, {
-    fields: [notificationRead.adminId],
-    references: [admin.id],
-  }),
-}));

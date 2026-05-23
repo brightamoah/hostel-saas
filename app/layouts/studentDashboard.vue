@@ -22,12 +22,12 @@ const links = computed(() => [[
     to: { name: "student-dashboard" },
     onSelect: () => open.value = false,
   },
-  // {
-  //   label: "Rooms",
-  //   icon: "i-lucide-building-2",
-  //   to: { name: "student-rooms" },
-  //   onSelect: () => open.value = false,
-  // },
+  {
+    label: "Rooms",
+    icon: "i-lucide-building-2",
+    to: { name: "student-rooms" },
+    onSelect: () => open.value = false,
+  },
   {
     label: "Visitors",
     icon: "i-lucide-users",

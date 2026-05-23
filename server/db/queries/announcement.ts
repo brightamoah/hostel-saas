@@ -1,15 +1,17 @@
 import type { AdminScope, AnnouncementInsert, AuditContext } from "~~/shared/types";
 
 import { useDB } from "~~/server/utils/db";
-import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 
 import { announcement, announcementReads } from "../schema";
 import { auditLogQueries } from "./auditLog";
 
 const announcementWithRelations = {
-  orderBy: desc(announcement.postedAt),
+  orderBy: {
+    postedAt: "desc",
+  },
   with: {
-    postedByAdmin: {
+    admin: {
       with: {
         user: {
           columns: {
@@ -21,9 +23,9 @@ const announcementWithRelations = {
         },
       },
     },
-    targetHostel: true,
-    targetRoom: true,
-    targetUser: {
+    hostel: true,
+    room: true,
+    user: {
       columns: {
         id: true,
         name: true,
@@ -39,7 +41,38 @@ export async function announcementQueries() {
 
   const { logAudit } = await auditLogQueries();
 
+  type AnnouncementFilter = NonNullable<NonNullable<Parameters<typeof db.query.announcement.findMany>[0]>["where"]>;
+
   const applyAnnouncementScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return {};
+
+    if (mode === "company") return { companyId: scope.companyId! };
+
+    if (mode === "hostel") {
+      return {
+        OR: [
+          { targetHostelId: scope.hostelId! },
+          { postedBy: scope.adminData.id },
+          {
+            AND: [
+              { companyId: scope.companyId! },
+              {
+                targetHostelId: { isNull: true as const },
+              },
+              {
+                targetAudience: { in: ["all", "admins"] as const },
+              },
+            ],
+          },
+        ],
+      } as AnnouncementFilter;
+    }
+
+    return { RAW: sql`FALSE` };
+  };
+
+  const applyAnnouncementScopeOld = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
     if (mode === "platform") return [];
 
@@ -57,8 +90,7 @@ export async function announcementQueries() {
           ),
           and(
             isNull(announcement.companyId),
-            inArray(announcement.targetAudience, ["all", "admins"],
-            ),
+            inArray(announcement.targetAudience, ["all", "admins"]),
           ),
         ),
       ];
@@ -77,10 +109,7 @@ export async function announcementQueries() {
       companyId: scope.isPlatformAdmin ? data.companyId : scope.companyId!,
     };
 
-    const [newAnnouncement] = await db
-      .insert(announcement)
-      .values(payload)
-      .returning();
+    const [newAnnouncement] = await db.insert(announcement).values(payload).returning();
 
     if (newAnnouncement) {
       await logAudit(db, ctx, {
@@ -105,10 +134,10 @@ export async function announcementQueries() {
     ctx: AuditContext,
   ) => {
     const before = await db.query.announcement.findFirst({
-      where: and(
-        eq(announcement.id, announcementId),
+      where: {
+        id: announcementId,
         ...applyAnnouncementScope(scope),
-      ),
+      },
     });
 
     if (!before) return null;
@@ -119,10 +148,7 @@ export async function announcementQueries() {
         ...data,
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(announcement.id, announcementId),
-        ...applyAnnouncementScope(scope),
-      ))
+      .where(and(eq(announcement.id, announcementId), ...applyAnnouncementScopeOld(scope)))
       .returning();
 
     if (updatedAnnouncement) {
@@ -167,20 +193,17 @@ export async function announcementQueries() {
     ctx: AuditContext,
   ) => {
     const before = await db.query.announcement.findFirst({
-      where: and(
-        eq(announcement.id, announcementId),
+      where: {
+        id: announcementId,
         ...applyAnnouncementScope(scope),
-      ),
+      },
     });
 
     if (!before) return null;
 
     const [deletedAnnouncement] = await db
       .delete(announcement)
-      .where(and(
-        eq(announcement.id, announcementId),
-        ...applyAnnouncementScope(scope),
-      ))
+      .where(and(eq(announcement.id, announcementId), ...applyAnnouncementScopeOld(scope)))
       .returning();
 
     if (deletedAnnouncement) {
@@ -204,36 +227,35 @@ export async function announcementQueries() {
 
     return await db.query.announcement.findMany({
       ...announcementWithRelations,
-      where: and(...applyAnnouncementScope(scope)),
-      orderBy: desc(announcement.postedAt),
+      where: applyAnnouncementScope(scope),
+      orderBy: {
+        postedAt: "desc",
+      },
       extras: {
-        isRead: sql<boolean>`EXISTS (
-        SELECT 1 FROM ${announcementReads} ar
-        WHERE ar.announcement_id = ${announcement.id}
-        AND ar.user_id = ${userId}
-      )`.as("is_read"),
+        isRead: (announcement, { sql }) => sql<boolean>`EXISTS (
+          SELECT 1 FROM ${announcementReads} ar
+          WHERE ar.announcement_id = ${announcement.id}
+          AND ar.user_id = ${userId}
+        )`,
       },
     });
   };
 
   const getAnnouncementById = async (announcementId: number, scope: AdminScope) => {
-    return await db
-      .query
-      .announcement
-      .findFirst({
-        ...announcementWithRelations,
-        where: and(
-          eq(announcement.id, announcementId),
-          ...applyAnnouncementScope(scope),
-        ),
-        extras: {
-          isRead: sql<boolean>`EXISTS (
+    return await db.query.announcement.findFirst({
+      ...announcementWithRelations,
+      where: {
+        id: announcementId,
+        ...applyAnnouncementScope(scope),
+      },
+      extras: {
+        isRead: sql<boolean>`EXISTS (
           SELECT 1 FROM ${announcementReads} ar
           WHERE ar.announcement_id = ${announcement.id}
           AND ar.user_id = ${scope.userId}
         )`.as("is_read"),
-        },
-      });
+      },
+    });
   };
 
   const updateAnnouncementReadStatus = async (
@@ -270,10 +292,12 @@ export async function announcementQueries() {
     else {
       const deletedReads = await db
         .delete(announcementReads)
-        .where(and(
-          eq(announcementReads.announcementId, announcementId),
-          eq(announcementReads.userId, userId),
-        ))
+        .where(
+          and(
+            eq(announcementReads.announcementId, announcementId),
+            eq(announcementReads.userId, userId),
+          ),
+        )
         .returning();
 
       if (deletedReads.length > 0) {
@@ -297,51 +321,61 @@ export async function announcementQueries() {
     roomId: number | null | undefined,
     companyId: number,
   ) => {
-    const audienceFilters = [
-      and(
-        isNull(announcement.companyId),
-        inArray(announcement.targetAudience, ["students", "all"]),
-      ),
-      and(
-        inArray(announcement.targetAudience, ["students", "all"]),
-        eq(announcement.companyId, companyId),
-        isNull(announcement.targetHostelId),
-      ),
-      and(
-        eq(announcement.targetAudience, "user"),
-        eq(announcement.targetUserId, userId),
-      ),
+    const audienceFilters: AnnouncementFilter[] = [
+      {
+        AND: [
+          { companyId: { isNull: true } },
+          { targetAudience: { in: ["students", "all"] } },
+        ],
+      },
+      {
+        AND: [
+          { targetAudience: { in: ["students", "all"] } },
+          { companyId },
+          { targetHostelId: { isNull: true } },
+        ],
+      },
+      {
+        AND: [
+          { targetAudience: "user" },
+          { targetUserId: userId },
+        ],
+      },
     ];
 
     if (hostelId) {
-      audienceFilters.push(
-        and(
-          eq(announcement.companyId, companyId),
-          eq(announcement.targetHostelId, hostelId),
-          inArray(announcement.targetAudience, ["hostel", "all", "students"]),
-        ),
-      );
+      audienceFilters.push({
+        AND: [
+          { companyId },
+          { targetHostelId: hostelId as number },
+          { targetAudience: { in: ["hostel", "all", "students"] } },
+        ],
+      });
     }
 
     if (roomId) {
-      audienceFilters.push(
-        and(
-          eq(announcement.targetAudience, "room"),
-          eq(announcement.targetRoomId, roomId),
-        ),
-      );
+      audienceFilters.push({
+        AND: [
+          { targetAudience: "room" },
+          { targetRoomId: roomId },
+        ],
+      });
     }
 
     const result = await db.query.announcement.findMany({
       ...announcementWithRelations,
-      where: or(...audienceFilters),
-      orderBy: desc(announcement.postedAt),
+      where: {
+        OR: audienceFilters,
+      },
+      orderBy: {
+        postedAt: "desc",
+      },
       extras: {
-        isRead: sql<boolean>`EXISTS (
+        isRead: (announcement, { sql }) => sql<boolean>`EXISTS (
         SELECT 1 FROM ${announcementReads} ar
         WHERE ar.announcement_id = ${announcement.id}
         AND ar.user_id = ${userId}
-      )`.as("is_read"),
+      )`,
       },
     });
 
@@ -359,6 +393,8 @@ export async function announcementQueries() {
   };
 }
 
-type AnnouncementWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof announcementQueries>>["getAnnouncementById"]>>;
+type AnnouncementWithRelations = Awaited<
+  ReturnType<Awaited<ReturnType<typeof announcementQueries>>["getAnnouncementById"]>
+>;
 
 export type AnnouncementType = NonNullable<AnnouncementWithRelations>;

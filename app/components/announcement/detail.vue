@@ -96,21 +96,21 @@ function openEditModal(announcementId: number) {
     <div class="flex sm:flex-row flex-col justify-between gap-1 p-4 sm:px-6 border-default border-b">
       <div class="flex items-start gap-4 sm:my-1.5">
         <UAvatar
-          :src="announcement.postedByAdmin.user.image!"
-          :text="generateInitials(announcement.postedByAdmin.user.name)"
-          :alt="announcement.postedByAdmin.user.name"
-          :style="`background-color: ${generateUserColor(announcement.postedByAdmin.user.id)}`"
+          :src="announcement?.admin?.user?.image!"
+          :text="generateInitials(announcement?.admin?.user?.name!)"
+          :alt="announcement?.admin?.user?.name"
+          :style="`background-color: ${generateUserColor(announcement?.admin?.user?.id!)}`"
           :ui="{ fallback: 'text-white' }"
           size="xl"
         />
 
         <div class="min-w-0">
           <p class="font-semibold text-highlighted">
-            {{ announcement.postedByAdmin.user.name }}
+            {{ announcement?.admin?.user?.name }}
           </p>
 
           <p class="text-muted">
-            {{ announcement.postedByAdmin.user.email }}
+            {{ announcement?.admin?.user?.email }}
           </p>
         </div>
       </div>

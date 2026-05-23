@@ -246,7 +246,7 @@ export async function statsQueries() {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const revenueTrendQuery = db.select({
-      month: sql<string>`TO_CHAR(DATE_TRUNC('month', ${payment.paymentDate}), 'Mon YYYY')`,
+      month: sql<string>`TO_CHAR(DATE_TRUNC('month', ${payment.paymentDate}), 'YYYY-MM')`,
       amount: sql<number>`COALESCE(SUM(${payment.amount}), 0)::float`,
     })
       .from(payment)
@@ -279,32 +279,17 @@ export async function statsQueries() {
       revenueTrendQuery,
     ]);
 
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
     const filledRevenueTrend = Array.from({ length: 6 }).map((_, index) => {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - index));
 
-      const monthStr = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
       // Match with the database result, or default to 0
-      const found = (revenueTrend || []).find(t => t.month === monthStr);
+      const found = (revenueTrend || []).find(t => t.month === monthKey);
 
       return {
-        month: monthStr,
+        month: monthKey,
         amount: found ? Number(found.amount) : 0,
       };
     });

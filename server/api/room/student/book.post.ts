@@ -67,6 +67,10 @@ export default defineEventHandler(async (event) => {
       selectedHostelId: allocation.hostel.id,
       selectedHostelSlug: allocation.hostel.slug,
       companyId: allocation.hostel.companyId,
+      user: {
+        ...session.user,
+        companyId: allocation.hostel.companyId,
+      },
       portal: "public",
     });
 

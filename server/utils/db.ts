@@ -1,6 +1,8 @@
+import { Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 
-import * as schema from "../db/schema/index";
+import { relations } from "../db/relations";
+import * as schema from "../db/schema";
 
 export function useDB() {
   const runtimeConfig = useRuntimeConfig();
@@ -9,10 +11,14 @@ export function useDB() {
 
   if (!databaseUrl) throw new Error("Missing runtimeConfig.databaseUrl");
 
-  const db = drizzle(databaseUrl, {
+  const pool = new Pool({ connectionString: databaseUrl });
+
+  const db = drizzle({
+    client: pool,
+    relations,
     schema,
     casing: "snake_case",
-    // logger: import.meta.dev,
+    logger: import.meta.dev,
   });
 
   if (!db) throw new Error("Database not initialized");

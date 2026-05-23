@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm";
 import { pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { user } from "./user";
@@ -19,10 +18,3 @@ export const authHandoffToken = pgTable("auth_handoff_token", t => ({
 }), table => [
   uniqueIndex("auth_handoff_token_hash_unique").on(table.tokenHash),
 ]);
-
-export const authHandoffTokenRelations = relations(authHandoffToken, ({ one }) => ({
-  user: one(user, {
-    fields: [authHandoffToken.userId],
-    references: [user.id],
-  }),
-}));

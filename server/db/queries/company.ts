@@ -10,16 +10,25 @@ export async function companyQueries() {
   const { db } = useDB();
   const { logAudit } = await auditLogQueries();
 
-  const applyCompanyScope = (scope: AdminScope) => {
+  const applyCompanyScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
     if (mode === "platform") return [];
     if (mode === "company" && scope.companyId) return [eq(company.id, scope.companyId)];
     return [sql`FALSE`];
   };
 
+  const applyCompanyScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return {};
+    if (mode === "company" && scope.companyId) return { id: scope.companyId };
+    return { RAW: () => sql`FALSE` };
+  };
+
   const getScopedCompanyProfile = async (scope: AdminScope) => {
     return await db.query.company.findFirst({
-      where: and(...applyCompanyScope(scope)),
+      where: {
+        ...applyCompanyScope(scope),
+      },
       with: {
         hostels: true,
       },
@@ -42,13 +51,15 @@ export async function companyQueries() {
       .query
       .company
       .findFirst({
-        where: and(...applyCompanyScope(scope)),
+        where: {
+          ...applyCompanyScope(scope),
+        },
       });
 
     const [updated] = await db
       .update(company)
       .set({ ...data, updatedAt: new Date() })
-      .where(and(...applyCompanyScope(scope)))
+      .where(and(...applyCompanyScopeSql(scope)))
       .returning();
 
     if (updated && before) {
@@ -68,7 +79,7 @@ export async function companyQueries() {
   };
 
   const getCompanyStats = async (scope: AdminScope) => {
-    const filters = applyCompanyScope(scope);
+    const filters = applyCompanyScopeSql(scope);
 
     const [stats] = await db
       .select({
@@ -87,7 +98,6 @@ export async function companyQueries() {
 
   const getCompanyMembers = async (scope: AdminScope) => {
     const mode = getScopeMode(scope);
-    const whereConditions = [eq(companyMember.companyId, scope.companyId!)];
 
     if (mode === "hostel") {
       return await db
@@ -102,10 +112,21 @@ export async function companyQueries() {
     }
 
     return await db.query.companyMember.findMany({
-      where: and(...whereConditions),
+      where: {
+        AND: [
+          {
+            companyId: scope.companyId!,
+          },
+        ],
+      },
       with: {
         user: {
-          columns: { id: true, name: true, email: true, image: true },
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
         },
       },
     });
@@ -120,7 +141,9 @@ export async function companyQueries() {
   ) => {
     return await db.transaction(async (tx) => {
       const existingUser = await tx.query.user.findFirst({
-        where: (user, { eq }) => eq(user.email, data.email),
+        where: {
+          email: data.email,
+        },
         columns: {
           id: true,
         },
@@ -134,7 +157,9 @@ export async function companyQueries() {
       }
 
       const existingCompany = await tx.query.company.findFirst({
-        where: (company, { eq }) => eq(company.slug, data.companySlug),
+        where: {
+          slug: data.companySlug,
+        },
         columns: {
           id: true,
         },
@@ -229,7 +254,9 @@ export async function companyQueries() {
         }
 
         const existingHostel = await tx.query.hostel.findFirst({
-          where: (hostel, { eq }) => eq(hostel.slug, hostelSlug),
+          where: {
+            slug: hostelSlug,
+          },
           columns: { id: true },
         });
 
@@ -343,7 +370,9 @@ export async function companyQueries() {
 
   const getUserMembershipByUserId = async (userId: number) => {
     const membership = await db.query.companyMember.findFirst({
-      where: (membership, { eq }) => eq(membership.userId, userId),
+      where: {
+        userId,
+      },
       columns: {
         id: true,
         companyId: true,

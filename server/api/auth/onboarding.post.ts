@@ -1,6 +1,5 @@
-import { student } from "~~/server/db/schema";
+import { userQueries } from "~~/server/db/queries";
 import { handleError } from "~~/server/utils/errorHandler";
-import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,7 +16,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { db } = useDB();
+    const { getStudentByUserId, createNewStudent } = await userQueries();
 
     const rawBody = await readBody(event);
 
@@ -33,6 +32,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const userId = session.user.id;
+
     const {
       gender,
       dateOfBirth,
@@ -44,9 +45,7 @@ export default defineEventHandler(async (event) => {
       healthConditions,
     } = parsed.data;
 
-    const existingStudent = await db.query.student.findFirst({
-      where: eq(student.userId, session.user.id),
-    });
+    const existingStudent = await getStudentByUserId(userId);
 
     if (existingStudent) {
       errorMessage = "Student details already exist";
@@ -63,21 +62,20 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const [newStudent] = await db
-      .insert(student)
-      .values({
-        userId: session.user.id,
-        address,
-        dateOfBirth: dateOfBirth.toDateString(),
-        emergencyContactEmail,
-        emergencyContactName,
-        emergencyContactPhoneNumber,
-        healthConditions,
-        gender,
-        phoneNumber,
-        residencyStatus: "inactive",
-      })
-      .returning();
+    const studentData = {
+      userId: session.user.id,
+      address,
+      dateOfBirth: dateOfBirth.toDateString(),
+      emergencyContactEmail,
+      emergencyContactName,
+      emergencyContactPhoneNumber,
+      healthConditions,
+      gender,
+      phoneNumber,
+      residencyStatus: "inactive",
+    } satisfies StudentInsert;
+
+    const newStudent = await createNewStudent(studentData);
 
     if (!newStudent) {
       errorMessage = "Failed to save student details";

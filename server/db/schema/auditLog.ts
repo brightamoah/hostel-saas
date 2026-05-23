@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm";
 import { index, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -81,23 +80,3 @@ export const auditLog = pgTable("audit_log", t => ({
   index("audit_log_entity_lookup_idx").on(table.companyId, table.entityType, table.entityId),
   index("audit_log_actor_idx").on(table.companyId, table.actorType, table.actorUserId, table.actorAdminId),
 ]);
-
-export const auditLogRelations = relations(auditLog, ({ one }) => ({
-  company: one(company, {
-    fields: [auditLog.companyId],
-    references: [company.id],
-  }),
-  hostel: one(hostel, {
-    fields: [auditLog.hostelId],
-    references: [hostel.id],
-  }),
-  actorUser: one(user, {
-    fields: [auditLog.actorUserId],
-    references: [user.id],
-  }),
-  actorAdmin: one(admin, {
-    fields: [auditLog.actorAdminId],
-    references: [admin.id],
-  }),
-
-}));

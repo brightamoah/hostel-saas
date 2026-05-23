@@ -93,7 +93,7 @@ function formatAnnouncementDate(dateStr: string | Date) {
           class="text-xs truncate"
           :class="[!announcement.isRead && 'font-semibold']"
         >
-          from {{ announcement.postedByAdmin.user.name }}
+          from {{ announcement?.admin?.user?.name }}
         </p>
 
         <div

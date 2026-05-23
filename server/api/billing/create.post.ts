@@ -63,7 +63,15 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const targetHostelId = studentAllocation.room.hostelId;
+    const targetHostelId = studentAllocation?.room?.hostelId;
+
+    if (!targetHostelId) {
+      throw createError({
+        statusCode: 400,
+        message: "Student's room allocation is missing hostel information.",
+      });
+    }
+
     const mode = getScopeMode(scope);
 
     if (mode === "hostel" && hostelId !== targetHostelId) {
@@ -73,7 +81,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (mode === "company" && studentAllocation.room.hostel.companyId !== companyId) {
+    if (mode === "company" && studentAllocation?.room?.hostel?.companyId !== companyId) {
       throw createError({
         statusCode: 403,
         message: "Unauthorized: You can only create bills for students in your company.",
@@ -113,7 +121,7 @@ export default defineEventHandler(async (event) => {
       status: "unpaid",
       dueDate: dueDate.toString(),
       type,
-      companyId: isPlatformAdmin ? studentAllocation.room.hostel.companyId : companyId!,
+      companyId: isPlatformAdmin ? studentAllocation?.room!.hostel!.companyId : companyId!,
     }, auditContext);
 
     log.audit({
@@ -125,13 +133,13 @@ export default defineEventHandler(async (event) => {
     });
 
     if (sendNotification) {
-      const studentEmail = studentAllocation.student.user.email;
-      const studentName = studentAllocation.student.user.name;
-      const hostelName = studentAllocation.room.hostel.name;
+      const studentEmail = studentAllocation?.student?.user?.email;
+      const studentName = studentAllocation?.student?.user?.name;
+      const hostelName = studentAllocation?.room?.hostel?.name;
 
       const billingTemplate = getBillingTemplate({
-        studentName,
-        hostelName,
+        studentName: studentName ?? "Student",
+        hostelName: hostelName ?? "Hostel",
         amount: formatCurrency(amount),
         purpose: type,
         dueDate: formatDate(dueDate.toString()),
@@ -156,7 +164,7 @@ export default defineEventHandler(async (event) => {
 
           await mailer.send({
             from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-            to: { name: studentName, email: studentEmail },
+            to: { name: studentName!, email: studentEmail! },
             subject: "New Billing Created - Kings Hostel Management",
             html: billingTemplate.html,
             text: billingTemplate.text,

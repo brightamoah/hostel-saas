@@ -72,32 +72,34 @@ const visitorItems = computed(() => [
 const studentItems = computed(() => [
   {
     label: "Student Name",
-    value: visitor.student.user.name,
+    value: visitor?.student?.user?.name,
     icon: "i-lucide-user",
   },
   {
     label: "Student ID",
-    value: visitor.student.allocation?.studentId || "N/A",
+    value: visitor?.student?.allocations?.[0]?.studentId || "N/A",
     icon: "i-lucide-id-card",
   },
   {
     label: "Room Number",
-    value: visitor.student.allocation ? `${visitor.student.allocation.room.roomNumber} (${visitor.student.allocation.room.roomType})` : "N/A",
+    value: visitor?.student?.allocations
+      ? `${visitor?.student?.allocations?.[0]?.room?.roomNumber} (${visitor?.student?.allocations?.[0]?.room?.roomType})`
+      : "N/A",
     icon: "i-lucide-door-open",
   },
   {
     label: "Hostel",
-    value: visitor.student.allocation?.room.hostel.name || "N/A",
+    value: visitor?.student?.allocations?.[0]?.room?.hostel?.name || "N/A",
     icon: "i-lucide-building",
   },
   {
     label: "Email Address",
-    value: visitor.student.user.email,
+    value: visitor?.student?.user?.email,
     icon: "i-lucide-mail",
   },
   {
     label: "Phone Number",
-    value: visitor.student.phoneNumber,
+    value: visitor?.student?.phoneNumber,
     icon: "i-lucide-phone-call",
   },
 ]);

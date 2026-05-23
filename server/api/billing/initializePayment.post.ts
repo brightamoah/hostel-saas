@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
         description: billing.description,
         phoneNumber,
         billingType: billing.type,
-        studentName: billing.student.user.name,
+        studentName: billing.student!.user!.name,
         amountGHS: totalAmount.toFixed(2),
         custom_fields: [
           {
@@ -88,7 +88,7 @@ export default defineEventHandler(async (event) => {
           {
             display_name: "Student Name",
             variable_name: "student_name",
-            value: billing.student.user.name,
+            value: billing.student!.user!.name,
           },
           {
             display_name: "Phone Number",

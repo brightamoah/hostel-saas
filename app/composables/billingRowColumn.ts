@@ -104,7 +104,7 @@ export function useBillingRowColumn(
           accessorFn: (row) => {
             const student = row.student;
             if (!student) return "N/A";
-            return `${student.user.name} ${student.user.email}`;
+            return `${student?.user?.name} ${student?.user?.email}`;
           },
           header: createSortableHeader("Student", UButton),
           cell: ({ row }) => {
@@ -114,17 +114,17 @@ export function useBillingRowColumn(
 
             return h("div", { class: "flex items-center gap-3" }, [
               h(UAvatar, {
-                src: student.user.image,
-                text: generateInitials(student.user.name),
-                alt: student.user.name,
+                src: student?.user?.image,
+                text: generateInitials(student?.user?.name || student?.user?.email || "User"),
+                alt: student?.user?.name,
                 class: "w-8 h-8 rounded-full object-cover shrink-0",
                 size: "lg",
-                style: `background-color: ${generateUserColor(student.userId)}`,
+                style: `background-color: ${generateUserColor(student?.userId)}`,
                 ui: { fallback: "text-white" },
               }),
               h("div", { class: "min-w-0" }, [
-                h("p", { class: "font-medium text-highlighted truncate" }, student.user.name),
-                h("p", { class: "truncate text-muted max-w-[140px]" }, `${student.user.email}`),
+                h("p", { class: "font-medium text-highlighted truncate" }, student?.user?.name),
+                h("p", { class: "truncate text-muted max-w-[140px]" }, `${student?.user?.email}`),
               ]),
             ]);
           },

@@ -95,8 +95,6 @@ export default defineNuxtConfig({
       link: [
         { rel: "icon", type: "image/svg+xml", href: "/logo.svg" },
       ],
-      titleTemplate: `%s - ${env.NUXT_EMAIL_FROM_NAME}`,
-
       meta: [
         { name: "viewport", content: "width=device-width, initial-scale=1" },
         { name: "robots", content: "index, follow" },
@@ -185,7 +183,7 @@ export default defineNuxtConfig({
       paystackBaseUrl: env.NUXT_PAYSTACK_BASE_URL,
       adminBaseUrl: env.NUXT_PUBLIC_ADMIN_BASE_URL,
       siteBaseUrl: env.NUXT_PUBLIC_SITE_BASE_URL,
-
+      emailFromName: env.NUXT_EMAIL_FROM_NAME,
     },
     session: {
       password: env.NUXT_SESSION_PASSWORD,
@@ -194,6 +192,7 @@ export default defineNuxtConfig({
         maxAge: 60 * 60 * 24 * 1, // 1 day in seconds
       },
     },
+    supportEmail: env.NUXT_SUPPORT_EMAIL,
     sessionName: env.NUXT_SESSION_NAME,
     sessionPassword: env.NUXT_SESSION_PASSWORD,
     adminSessionName: env.NUXT_ADMIN_SESSION_NAME,

@@ -1,11 +1,35 @@
-import type { AdminScope, FailedAttempts, Period } from "~~/shared/types";
+import type { AdminScope, FailedAttempts, Period, StudentInsert } from "~~/shared/types";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { canManageAdmins, getScopeMode } from "~~/server/utils/permissionScope";
-import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, lt, ne, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  exists,
+  gt,
+  inArray,
+  isNotNull,
+  lt,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
 
-import { admin, allocation, billing, loginAttempts, maintenanceRequest, room, student, user, visitor, visitorLogs } from "../schema";
+import {
+  admin,
+  allocation,
+  billing,
+  loginAttempts,
+  maintenanceRequest,
+  room,
+  student,
+  user,
+  visitor,
+} from "../schema";
 
 const ATTEMPT_WINDOW_MINUTES = 15;
 type Allocation = typeof allocation.$inferSelect;
@@ -24,7 +48,7 @@ const userWithRelations = {
   with: {
     student: {
       with: {
-        allocation: {
+        allocations: {
           with: {
             room: {
               with: {
@@ -58,7 +82,7 @@ const studentWithRelations = {
         lastLogin: true,
       },
     },
-    allocation: {
+    allocations: {
       with: {
         room: {
           with: {
@@ -93,11 +117,11 @@ const studentWithRelations = {
     maintenanceRequests: true,
     complaints: true,
     visitors: {
-      where: eq(visitor.visitDate, today),
-      orderBy: desc(visitor.visitDate),
+      where: { visitDate: today },
+      orderBy: { visitDate: "desc" },
       with: {
         visitorLogs: {
-          orderBy: desc(visitorLogs.timestamp),
+          orderBy: { timestamp: "desc" },
           with: {
             admin: {
               columns: {},
@@ -154,6 +178,14 @@ export async function userQueries() {
 
   const applyAdminTableScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
+    if (mode === "platform") return {};
+    if (mode === "company") return { companyId: scope.companyId! };
+    if (mode === "hostel") return { hostelId: scope.hostelId! };
+    return { RAW: () => sql`FALSE` };
+  };
+
+  const applyAdminTableScopeSql = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
     if (mode === "platform") return [];
     if (mode === "company") return [eq(admin.companyId, scope.companyId!)];
     if (mode === "hostel") return [eq(admin.hostelId, scope.hostelId!)];
@@ -168,13 +200,11 @@ export async function userQueries() {
       // Logic: Students assigned to rooms in the admin's hostel
       return [
         exists(
-          db.select()
+          db
+            .select()
             .from(allocation)
             .innerJoin(room, eq(allocation.roomId, room.id))
-            .where(and(
-              eq(allocation.studentId, student.id),
-              eq(room.hostelId, scope.hostelId!),
-            )),
+            .where(and(eq(allocation.studentId, student.id), eq(room.hostelId, scope.hostelId!))),
         ),
       ];
     }
@@ -188,28 +218,33 @@ export async function userQueries() {
    * @returns A promise that resolves when the user's last login has been successfully updated.
    */
   async function updateUserLastLogin(userId: number) {
-    await db.update(user).set({
-      lastLogin: new Date(),
-    }).where(eq(user.id, userId));
+    await db
+      .update(user)
+      .set({
+        lastLogin: new Date(),
+      })
+      .where(eq(user.id, userId));
   }
 
   const getUserByEmail = async (email: string) => {
     const existingUser = await db.query.user.findFirst({
-      where: eq(user.email, email.toLowerCase().trim()),
+      where: {
+        email: email.toLowerCase().trim(),
+      },
     });
     return existingUser;
   };
 
   const getUserById = async (id: number) => {
     const existingUser = await db.query.user.findFirst({
-      where: eq(user.id, id),
+      where: { id },
     });
     return existingUser;
   };
 
   const getStudentIdByUserId = async (userId: number) => {
     const studentRecord = await db.query.student.findFirst({
-      where: eq(student.userId, userId),
+      where: { userId },
       columns: { id: true },
     });
     return studentRecord;
@@ -218,17 +253,13 @@ export async function userQueries() {
   async function cleanupExpiredVerificationTokens() {
     const now = new Date();
 
-    const result = await db.update(user)
+    const result = await db
+      .update(user)
       .set({
         verificationToken: null,
         verificationTokenExpiresAt: null,
       })
-      .where(
-        and(
-          isNotNull(user.verificationToken),
-          lt(user.verificationTokenExpiresAt, now),
-        ),
-      );
+      .where(and(isNotNull(user.verificationToken), lt(user.verificationTokenExpiresAt, now)));
     return result;
   }
 
@@ -252,67 +283,93 @@ export async function userQueries() {
     return result?.value ?? 0;
   };
 
-  const recordLoginAttempt = async (userId: number | null, ip: string, success = false): Promise<void> => {
-    await db
-      .insert(loginAttempts)
-      .values({
-        userId,
-        ip,
-        timestamp: new Date(),
-        success,
-      });
+  const recordLoginAttempt = async (
+    userId: number | null,
+    ip: string,
+    success = false,
+  ): Promise<void> => {
+    await db.insert(loginAttempts).values({
+      userId,
+      ip,
+      timestamp: new Date(),
+      success,
+    });
   };
 
   const getStudentByUserId = async (id: number) => {
-    const existingStudent = await db.query.student.findFirst({
-      where: eq(student.userId, id),
-    });
+    const existingStudent = await db
+      .query
+      .student
+      .findFirst({
+        where: { userId: id },
+      });
     return existingStudent;
   };
 
   const getOnboardedStudent = async (id: number) => {
-    const existingStudent = await db.query.student.findFirst({
-      where: eq(student.userId, id),
-    });
+    const existingStudent = await db
+      .query
+      .student
+      .findFirst({
+        where: { userId: id },
+      });
     return existingStudent;
   };
 
   const getUsers = async (scope: AdminScope) => {
     const mode = getScopeMode(scope);
 
-    const {
-      startOfToday,
-      startOfThisWeek,
-      startOfThisMonth,
-    } = getTimePeriod();
+    const { startOfToday, startOfThisWeek, startOfThisMonth } = getTimePeriod();
 
-    const userFilter = mode === "platform"
-      ? sql`TRUE`
-      : or(
-          exists(db.select().from(admin).where(and(eq(admin.userId, user.id), ...applyAdminTableScope(scope)))),
-          exists(db.select().from(student).where(and(eq(student.userId, user.id), ...applyStudentTableScope(scope)))),
-        );
+    const userFilter
+      = mode === "platform"
+        ? sql`TRUE`
+        : or(
+            exists(
+              db
+                .select()
+                .from(admin)
+                .where(and(eq(admin.userId, user.id), ...applyAdminTableScopeSql(scope))),
+            ),
+            exists(
+              db
+                .select()
+                .from(student)
+                .where(and(eq(student.userId, user.id), ...applyStudentTableScope(scope))),
+            ),
+          );
 
     const [users, [stat]] = await Promise.all([
       db.query.user.findMany({
-        where: userFilter,
-        orderBy: asc(user.id),
+        where: {
+          RAW: userFilter,
+        },
+        orderBy: { id: "asc" },
         ...userWithRelations,
       }),
 
-      db.select({
-        totalNow: count(user.id),
-        totalPrevMonth: count(sql`CASE WHEN ${user.createdAt} < ${startOfThisMonth} THEN 1 END`),
+      db
+        .select({
+          totalNow: count(user.id),
+          totalPrevMonth: count(sql`CASE WHEN ${user.createdAt} < ${startOfThisMonth} THEN 1 END`),
 
-        studentsNow: count(sql`CASE WHEN ${user.role} = 'student' THEN 1 END`),
-        studentsPrevMonth: count(sql`CASE WHEN ${user.role} = 'student' AND ${user.createdAt} < ${startOfThisMonth} THEN 1 END`),
+          studentsNow: count(sql`CASE WHEN ${user.role} = 'student' THEN 1 END`),
+          studentsPrevMonth: count(
+            sql`CASE WHEN ${user.role} = 'student' AND ${user.createdAt} < ${startOfThisMonth} THEN 1 END`,
+          ),
 
-        adminsNow: count(sql`CASE WHEN ${user.role} = 'admin' THEN 1 END`),
-        adminsPrevWeek: count(sql`CASE WHEN ${user.role} = 'admin' AND ${user.createdAt} < ${startOfThisWeek} THEN 1 END`),
+          adminsNow: count(sql`CASE WHEN ${user.role} = 'admin' THEN 1 END`),
+          adminsPrevWeek: count(
+            sql`CASE WHEN ${user.role} = 'admin' AND ${user.createdAt} < ${startOfThisWeek} THEN 1 END`,
+          ),
 
-        activeNow: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' THEN 1 END`),
-        activeNotUpdatedToday: count(sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' AND ${student.updatedAt} < ${startOfToday} THEN 1 END`),
-      })
+          activeNow: count(
+            sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' THEN 1 END`,
+          ),
+          activeNotUpdatedToday: count(
+            sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' AND ${student.updatedAt} < ${startOfToday} THEN 1 END`,
+          ),
+        })
         .from(user)
         .leftJoin(student, eq(student.userId, user.id))
         .where(userFilter),
@@ -346,53 +403,60 @@ export async function userQueries() {
   };
 
   const getTotalStudents = async () => {
-    const count = await db
-      .query
-      .user
-      .findMany({ where: eq(user.role, "student") })
+    const count = await db.query.user
+      .findMany({
+        where: {
+          role: "student",
+        },
+      })
       .then(students => students.length);
     return count;
   };
 
   const getTotalAdmins = async () => {
-    const count = await db
-      .query
-      .admin
-      .findMany()
-      .then(admins => admins.length);
+    const count = await db.query.admin.findMany().then(admins => admins.length);
     return count;
   };
 
   const getActiveStudentsCount = async () => {
-    const count = await db
-      .query
-      .student
-      .findMany({ where: eq(student.residencyStatus, "active") });
+    const count = await db.query.student.findMany({
+      where: {
+        residencyStatus: "active",
+      },
+    });
     return count.length;
   };
 
   const getAdminByUserId = async (userId: number, activeOnly = false, scope: AdminScope) => {
     return await db.query.admin.findFirst({
-      where: and(
-        eq(admin.userId, userId),
-        activeOnly ? eq(admin.status, "active") : sql`TRUE`,
-        ...applyAdminTableScope(scope),
-      ),
+      where: {
+        AND: [
+          { userId },
+          activeOnly ? { status: "active" } : { RAW: () => sql`TRUE` },
+          { ...applyAdminTableScope(scope) },
+        ],
+      },
     });
   };
 
   const getAdminByUserIdUnscoped = async (userId: number, activeOnly = false) => {
     return await db.query.admin.findFirst({
-      where: and(
-        eq(admin.userId, userId),
-        activeOnly ? eq(admin.status, "active") : sql`TRUE`,
-      ),
+      where: {
+        AND: [
+          { userId },
+          activeOnly
+            ? { status: "active" }
+            : { RAW: () => sql`TRUE` },
+        ],
+      },
     });
   };
 
   const checkIfUserExists = async (email: string): Promise<boolean> => {
     const existingUser = await db.query.user.findFirst({
-      where: eq(user.email, email),
+      where: {
+        email: email.toLowerCase().trim(),
+      },
     });
     return !!existingUser;
   };
@@ -400,10 +464,7 @@ export async function userQueries() {
   const deleteUsersByIds = async (ids: number[]) => {
     if (ids.length === 0) return [];
 
-    const deletedUsers = await db
-      .delete(user)
-      .where(inArray(user.id, ids))
-      .returning();
+    const deletedUsers = await db.delete(user).where(inArray(user.id, ids)).returning();
 
     return deletedUsers;
   };
@@ -438,13 +499,17 @@ export async function userQueries() {
     return users;
   };
 
-  const createOrUpdateAdminForUser = async (userId: number, payload: {
-    phoneNumber?: string;
-    department?: string;
-    accessLevel?: "regular" | "super" | "support";
-    hostelId?: number | null;
-    companyId?: number | null;
-  }, scope: AdminScope) => {
+  const createOrUpdateAdminForUser = async (
+    userId: number,
+    payload: {
+      phoneNumber?: string;
+      department?: string;
+      accessLevel?: "regular" | "super" | "support";
+      hostelId?: number | null;
+      companyId?: number | null;
+    },
+    scope: AdminScope,
+  ) => {
     if (!canManageAdmins(scope)) {
       throw createError({
         statusCode: 403,
@@ -454,10 +519,14 @@ export async function userQueries() {
 
     return await db.transaction(async (tx) => {
       const existingAdmin = await tx.query.admin.findFirst({
-        where: eq(admin.userId, userId),
+        where: { userId },
       });
 
-      if (existingAdmin && getScopeMode(scope) !== "platform" && existingAdmin.companyId !== scope.companyId) {
+      if (
+        existingAdmin
+        && getScopeMode(scope) !== "platform"
+        && existingAdmin.companyId !== scope.companyId
+      ) {
         throw new Error("Target user is outside your company scope");
       }
 
@@ -498,7 +567,7 @@ export async function userQueries() {
 
   const getStudentForDashboardByUserId = async (userId: number) => {
     const studentRecord = await db.query.student.findFirst({
-      where: eq(student.userId, userId),
+      where: { userId },
       ...studentWithRelations,
     });
 
@@ -506,18 +575,15 @@ export async function userQueries() {
 
     const studentId = studentRecord.id;
 
-    const bestAllocation = await db
-      .query
-      .allocation
-      .findFirst({
-        where: eq(allocation.studentId, studentId),
-        orderBy: [
-          asc(sql`CASE WHEN ${allocation.status} IN ('active', 'pending') THEN 1 ELSE 2 END`),
-          desc(allocation.allocationDate),
-          desc(allocation.id),
-        ],
-        ...bestAllocationWithRelations,
-      });
+    const bestAllocation = await db.query.allocation.findFirst({
+      where: { studentId },
+      orderBy: allocation => [
+        asc(sql`CASE WHEN ${allocation.status} IN ('active', 'pending') THEN 1 ELSE 2 END`),
+        desc(allocation.allocationDate),
+        desc(allocation.id),
+      ],
+      ...bestAllocationWithRelations,
+    });
 
     const studentRecordWithBestAllocation = {
       ...studentRecord,
@@ -532,24 +598,19 @@ export async function userQueries() {
         })
 
         .from(billing)
-        .where(and(
-          eq(billing.studentId, studentId),
-          ne(billing.status, "cancelled"),
-        )),
+        .where(and(eq(billing.studentId, studentId), ne(billing.status, "cancelled"))),
 
       db
         .select({ count: count() })
         .from(maintenanceRequest)
-        .where(and(
-          eq(maintenanceRequest.studentId, studentId),
-          eq(maintenanceRequest.status, "pending"),
-        )),
-
-      db.select({ count: count() })
-        .from(visitor)
         .where(
-          eq(visitor.studentId, studentId),
+          and(
+            eq(maintenanceRequest.studentId, studentId),
+            eq(maintenanceRequest.status, "pending"),
+          ),
         ),
+
+      db.select({ count: count() }).from(visitor).where(eq(visitor.studentId, studentId)),
     ]);
 
     const totalBilled = Number.parseFloat(billingStats?.totalBilled || "0");
@@ -572,7 +633,7 @@ export async function userQueries() {
 
   const getUser = async (userId: number) => {
     const userRecord = await db.query.user.findFirst({
-      where: eq(user.id, userId),
+      where: { id: userId },
       ...userWithRelations,
     });
     return userRecord;
@@ -580,26 +641,25 @@ export async function userQueries() {
 
   const getStudentWithRelations = async (userId: number) => {
     const studentRecord = await db.query.student.findFirst({
-      where: eq(student.userId, userId),
+      where: { userId },
       ...studentWithRelations,
     });
     return studentRecord;
   };
 
   const getStudentGenderByUserId = async (userId: number) => {
-    const gender = await db
-      .query
-      .student
-      .findFirst({
-        where: eq(student.userId, userId),
-        columns: { gender: true },
-      });
+    const gender = await db.query.student.findFirst({
+      where: { userId },
+      columns: { gender: true },
+    });
     return gender;
   };
 
   const getUserProfile = async (userId: number) => {
     const userRecord = await db.query.user.findFirst({
-      where: eq(user.id, userId),
+      where: {
+        id: userId,
+      },
       columns: {
         id: true,
         email: true,
@@ -607,6 +667,8 @@ export async function userQueries() {
         role: true,
         emailVerified: true,
         createdAt: true,
+        lastLogin: true,
+        image: true,
       },
       extras: {
         hostel: sql<string>`COALESCE(
@@ -614,7 +676,10 @@ export async function userQueries() {
           (SELECT h2.name FROM student s JOIN hostel h2 ON s.hostel_id = h2.id WHERE s.user_id = ${userId} LIMIT 1)
         )`.as("hostel"),
 
-        company: sql<string>`(SELECT c.name FROM admin a JOIN company c ON a.company_id = c.id WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1)`.as("company"),
+        company:
+          sql<string>`(SELECT c.name FROM admin a JOIN company c ON a.company_id = c.id WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1)`.as(
+            "company",
+          ),
         phoneNumber: sql<string>`COALESCE(
           (SELECT a.phone_number FROM admin a WHERE a.user_id = ${userId} AND a.status = 'active' LIMIT 1),
           (SELECT s.phone_number FROM student s WHERE s.user_id = ${userId} LIMIT 1)
@@ -667,7 +732,7 @@ export async function userQueries() {
           (SELECT s.phone_number FROM student s WHERE s.user_id = ${userId} LIMIT 1)
         )`.as("phoneNumber"),
       },
-      where: eq(user.id, userId),
+      where: { id: userId },
     });
     return userRecord;
   };
@@ -704,6 +769,38 @@ export async function userQueries() {
     }
   };
 
+  const createNewStudent = async (data: StudentInsert) => {
+    const [newStudent] = await db
+      .insert(student)
+      .values({
+        userId: data.userId,
+        address: data.address,
+        dateOfBirth: data.dateOfBirth,
+        emergencyContactEmail: data.emergencyContactEmail,
+        emergencyContactName: data.emergencyContactName,
+        emergencyContactPhoneNumber: data.emergencyContactPhoneNumber,
+        healthConditions: data.healthConditions,
+        gender: data.gender,
+        phoneNumber: data.phoneNumber,
+        residencyStatus: data.residencyStatus,
+      })
+      .returning();
+
+    return newStudent;
+  };
+
+  const getStudentCompanyId = async (studentId: number) => {
+    const result = await db.query.student.findFirst({
+      where: { id: studentId },
+      columns: {
+        companyId: true,
+        userId: true,
+        residencyStatus: true,
+      },
+    });
+    return result;
+  };
+
   return {
     updateUserLastLogin,
     cleanupExpiredVerificationTokens,
@@ -734,15 +831,23 @@ export async function userQueries() {
     updateUserProfile,
     updatePhoneNumber,
     getUserExtended,
+    createNewStudent,
+    getStudentCompanyId,
   };
 }
 
-type StudentWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getStudentForDashboardByUserId"]>>;
+type StudentWithRelations = Awaited<
+  ReturnType<Awaited<ReturnType<typeof userQueries>>["getStudentForDashboardByUserId"]>
+>;
 export type StudentDashboard = NonNullable<StudentWithRelations>;
 
-export type UserStats = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUsers"]>>["stats"];
+export type UserStats = Awaited<
+  ReturnType<Awaited<ReturnType<typeof userQueries>>["getUsers"]>
+>["stats"];
 
-export type UserProfileType = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUserProfile"]>>;
+export type UserProfileType = Awaited<
+  ReturnType<Awaited<ReturnType<typeof userQueries>>["getUserProfile"]>
+>;
 
 // type UserWithRelations = Awaited<ReturnType<Awaited<ReturnType<typeof userQueries>>["getUser"]>>;
 // export type UserWR = NonNullable<UserWithRelations>;

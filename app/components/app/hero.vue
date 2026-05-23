@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { faqItems } from "~/data/faq";
+
 const { loggedIn, user } = usePortalUserSession();
 const config = useRuntimeConfig();
 
@@ -29,14 +31,12 @@ const features = ref([
   {
     icon: "i-lucide-bed",
     title: "Smart Room Management",
-    description:
-      "Intelligent room allocation, maintenance tracking, and occupancy optimization.",
+    description: "Intelligent room allocation, maintenance tracking, and occupancy optimization.",
   },
   {
     icon: "i-lucide-users",
     title: "Resident Portal",
-    description:
-      "Self-service portal for bookings, payments, and communication.",
+    description: "Self-service portal for bookings, payments, and communication.",
   },
   {
     icon: "i-lucide-credit-card",
@@ -46,8 +46,7 @@ const features = ref([
   {
     icon: "i-lucide-bar-chart-3",
     title: "Analytics Dashboard",
-    description:
-      "Real-time insights and reporting for better decision making.",
+    description: "Real-time insights and reporting for better decision making.",
   },
   {
     icon: "i-lucide-shield-check",
@@ -79,11 +78,14 @@ const features = ref([
     >
       <template #description>
         <span class="hidden md:inline">
-          Seamless Hostel Management for Everyone. Easily book rooms, manage tenants, and track payments. Whether you're a resident or an admin, our system keeps everything organized and hassle-free!
+          Seamless Hostel Management for Everyone. Easily book rooms, manage tenants, and track
+          payments. Whether you're a resident or an admin, our system keeps everything organized and
+          hassle-free!
         </span>
 
         <span class="md:hidden inline">
-          Seamless Hostel Management for Everyone. Easily book rooms, manage tenants, and track payments all in one place.
+          Seamless Hostel Management for Everyone. Easily book rooms, manage tenants, and track
+          payments all in one place.
         </span>
       </template>
 
@@ -155,7 +157,10 @@ const features = ref([
 
     <div class="linebreak" />
 
-    <AppFaq id="faq" />
+    <AppFaq
+      id="faq"
+      :faq-items
+    />
 
     <div class="linebreak" />
 
@@ -163,6 +168,4 @@ const features = ref([
   </div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -1,6 +1,6 @@
 import type { MediaAttachment } from "~~/shared/types";
 
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -70,38 +70,3 @@ export const maintenanceResponse = pgTable("maintenance_response", t => ({
 }), () => [
   check("chk_response_text", sql`char_length(response_text) > 0`),
 ]);
-
-export const maintenanceRequestRelations = relations(maintenanceRequest, ({ one, many }) => ({
-  student: one(student, {
-    fields: [maintenanceRequest.studentId],
-    references: [student.id],
-  }),
-  room: one(room, {
-    fields: [maintenanceRequest.roomId],
-    references: [room.id],
-  }),
-  hostel: one(hostel, {
-    fields: [maintenanceRequest.hostelId],
-    references: [hostel.id],
-  }),
-  responses: many(maintenanceResponse),
-  company: one(company, {
-    fields: [maintenanceRequest.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const maintenanceResponseRelations = relations(maintenanceResponse, ({ one }) => ({
-  maintenanceRequest: one(maintenanceRequest, {
-    fields: [maintenanceResponse.maintenanceRequestId],
-    references: [maintenanceRequest.id],
-  }),
-  responder: one(user, { // The user (admin/staff) who responded
-    fields: [maintenanceResponse.responderId],
-    references: [user.id],
-  }),
-  company: one(company, {
-    fields: [maintenanceResponse.companyId],
-    references: [company.id],
-  }),
-}));

@@ -1,11 +1,11 @@
-import type { AdminScope, InsertEditVisitor, Period, VisitorCreate } from "~~/shared/types";
+import type { AdminScope, Allocation, InsertEditVisitor, Period, VisitorCreate } from "~~/shared/types";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, count, desc, eq, inArray, or, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 
-import { allocation, visitor, visitorLogs } from "../schema";
+import { visitor } from "../schema";
 
 const visitorWithRelations = {
   with: {
@@ -21,14 +21,16 @@ const visitorWithRelations = {
             image: true,
           },
         },
-        allocation: {
-          where: or(eq(allocation.status, "active"), eq(allocation.status, "pending")),
+        allocations: {
+          where: {
+            status: { in: ["active", "pending"] as Allocation["status"][] },
+          },
           with: {
             room: {
               columns: {
                 roomNumber: true,
-                building: true,
                 roomType: true,
+                hostelId: true,
               },
               with: {
                 hostel: {
@@ -48,7 +50,7 @@ const visitorWithRelations = {
       },
     },
     visitorLogs: {
-      orderBy: desc(visitorLogs.timestamp),
+      orderBy: { timestamp: "desc" },
       with: {
         admin: {
           columns: {},
@@ -82,7 +84,7 @@ const visitorWithRelations = {
 export async function visitorQueries() {
   const { db } = useDB();
 
-  const applyVisitorScope = (scope: AdminScope) => {
+  const applyVisitorScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
     if (mode === "platform") return [];
     if (mode === "company" && scope.companyId) {
@@ -94,18 +96,33 @@ export async function visitorQueries() {
     return [sql`FALSE`];
   };
 
+  const applyVisitorScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+    if (mode === "platform") return {};
+    if (mode === "company" && scope.companyId) {
+      return { companyId: scope.companyId };
+    }
+    if (mode === "hostel" && scope.hostelId) {
+      return { hostelId: scope.hostelId };
+    }
+    return { RAW: () => sql`FALSE` };
+  };
+
   const getScopedVisitors = async (scope: AdminScope) => {
     return await db.query.visitor.findMany({
       ...visitorWithRelations,
-      where: and(...applyVisitorScope(scope)),
-      orderBy: desc(visitor.visitDate),
+      where: { ...applyVisitorScope(scope) },
+      orderBy: { visitDate: "desc" },
     });
   };
 
   const getVisitorById = async (visitorId: number, scope: AdminScope) => {
     return await db.query.visitor.findFirst({
       ...visitorWithRelations,
-      where: and(eq(visitor.id, visitorId), ...applyVisitorScope(scope)),
+      where: {
+        id: visitorId,
+        ...applyVisitorScope(scope),
+      },
     });
   };
 
@@ -139,7 +156,7 @@ export async function visitorQueries() {
         pendingAbs: count(sql`CASE WHEN ${visitor.status} = 'pending' THEN 1 END`),
       })
       .from(visitor)
-      .where(and(...applyVisitorScope(scope)));
+      .where(and(...applyVisitorScopeSql(scope)));
 
     return {
       totalVisitors: {
@@ -170,7 +187,10 @@ export async function visitorQueries() {
       .query
       .visitor
       .findMany({
-        where: and(inArray(visitor.id, visitorIds), ...applyVisitorScope(scope)),
+        where: {
+          id: { in: visitorIds },
+          ...applyVisitorScope(scope),
+        },
         ...visitorWithRelations,
       });
     return visitors;
@@ -181,17 +201,20 @@ export async function visitorQueries() {
 
     const deleteResult = await db
       .delete(visitor)
-      .where(and(inArray(visitor.id, visitorIds), ...applyVisitorScope(scope)))
+      .where(and(inArray(visitor.id, visitorIds), ...applyVisitorScopeSql(scope)))
       .returning();
     return deleteResult;
   };
 
   const getVisitorsForStudent = async (studentId: number) => {
-    return await db.query.visitor.findMany({
-      where: eq(visitor.studentId, studentId),
-      ...visitorWithRelations,
-      orderBy: desc(visitor.visitDate),
-    });
+    return await db
+      .query
+      .visitor
+      .findMany({
+        where: { studentId },
+        ...visitorWithRelations,
+        orderBy: { visitDate: "desc" },
+      });
   };
 
   const getVisitorStatusCountForStudent = async (studentId: number) => {
@@ -252,10 +275,13 @@ export async function visitorQueries() {
   };
 
   const getVisitorForStudentById = (visitorId: number) => {
-    return db.query.visitor.findFirst({
-      ...visitorWithRelations,
-      where: eq(visitor.id, visitorId),
-    });
+    return db
+      .query
+      .visitor
+      .findFirst({
+        ...visitorWithRelations,
+        where: { id: visitorId },
+      });
   };
 
   const createVisitor = async (data: VisitorCreate) => {

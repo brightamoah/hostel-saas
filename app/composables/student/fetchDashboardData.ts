@@ -37,6 +37,8 @@ export function useFetchStudentDashboardData() {
     refresh,
   );
 
+  const hostelSlug = computed(() => student.value.allocation?.room?.hostel?.slug ?? "");
+
   return {
     student,
     data,
@@ -45,6 +47,7 @@ export function useFetchStudentDashboardData() {
     isLoading,
     canResend,
     roomsInHostel,
+    hostelSlug,
     refresh,
     handleRefresh,
   };

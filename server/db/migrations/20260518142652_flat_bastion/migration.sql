@@ -1,0 +1,1 @@
+ALTER TABLE "allocation" ALTER COLUMN "hostel_id" SET NOT NULL;

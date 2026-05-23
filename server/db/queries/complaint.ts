@@ -4,7 +4,7 @@ import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, count, countDistinct, desc, eq, sql } from "drizzle-orm";
+import { and, count, countDistinct, eq, sql } from "drizzle-orm";
 
 import { complaint, complaintResponse } from "../schema";
 import { auditLogQueries } from "./auditLog";
@@ -24,7 +24,9 @@ const complaintWithRelations = {
     room: true,
     hostel: true,
     responses: {
-      orderBy: desc(complaintResponse.responseDate),
+      orderBy: {
+        responseDate: "desc",
+      },
       with: {
         responder: {
           columns: {
@@ -44,7 +46,7 @@ export async function complaintQueries() {
 
   const { logAudit } = await auditLogQueries();
 
-  const applyComplaintScope = (scope: AdminScope) => {
+  const applyComplaintScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
 
     if (mode === "platform") return [];
@@ -55,24 +57,39 @@ export async function complaintQueries() {
     return [sql`FALSE`];
   };
 
+  const applyComplaintScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return {};
+    if (mode === "company" && scope.companyId) return { companyId: scope.companyId };
+
+    if (mode === "hostel" && scope.hostelId) return { hostelId: scope.hostelId };
+
+    return { RAW: () => sql`FALSE` };
+  };
+
   const getAllComplaintsScoped = async (scope: AdminScope) => {
     return await db
       .query
       .complaint
       .findMany({
         ...complaintWithRelations,
-        where: and(...applyComplaintScope(scope)),
-        orderBy: desc(complaint.createdAt),
+        where: {
+          ...applyComplaintScope(scope),
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
   };
 
   const getComplaintById = async (complaintId: number, scope: AdminScope) => {
     return await db.query.complaint.findFirst({
       ...complaintWithRelations,
-      where: and(
-        eq(complaint.id, complaintId),
+      where: {
+        id: complaintId,
         ...applyComplaintScope(scope),
-      ),
+      },
     });
   };
 
@@ -86,7 +103,7 @@ export async function complaintQueries() {
       startOfLastMonth,
     } = getTimePeriod();
 
-    const filters = applyComplaintScope(scope);
+    const filters = applyComplaintScopeSql(scope);
 
     const [result] = await db
       .select({
@@ -155,10 +172,10 @@ export async function complaintQueries() {
       const responderId = scope.userId;
 
       const target = await tx.query.complaint.findFirst({
-        where: and(
-          eq(complaint.id, complaintId),
+        where: {
+          id: complaintId,
           ...applyComplaintScope(scope),
-        ),
+        },
       });
 
       if (!target) throw new Error("Complaint not found or unauthorized access.");
@@ -251,7 +268,9 @@ export async function complaintQueries() {
 
   const getComplaintByIdNoScope = async (complaintId: number) => {
     return await db.query.complaint.findFirst({
-      where: eq(complaint.id, complaintId),
+      where: {
+        id: complaintId,
+      },
     });
   };
 
@@ -268,8 +287,12 @@ export async function complaintQueries() {
     const [list, [stats]] = await Promise.all([
       db.query.complaint.findMany({
         ...complaintWithRelations,
-        where: eq(complaint.studentId, studentId),
-        orderBy: desc(complaint.createdAt),
+        where: {
+          studentId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
       }),
 
       db
@@ -358,10 +381,10 @@ export async function complaintQueries() {
     ctx: AuditContext,
   ) => {
     const before = await db.query.complaint.findFirst({
-      where: and(
-        eq(complaint.id, complaintId),
-        eq(complaint.studentId, studentId),
-      ),
+      where: {
+        id: complaintId,
+        studentId,
+      },
     });
 
     const allowedFields: (keyof ComplaintInsert)[] = [
@@ -415,10 +438,10 @@ export async function complaintQueries() {
 
   const getComplaintForStudentById = async (complaintId: number, studentId: number) => {
     return await db.query.complaint.findFirst({
-      where: and(
-        eq(complaint.id, complaintId),
-        eq(complaint.studentId, studentId),
-      ),
+      where: {
+        id: complaintId,
+        studentId,
+      },
     });
   };
 

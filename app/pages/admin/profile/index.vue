@@ -56,10 +56,10 @@ const settingsItems: ProfileSettingsItem[] = [
       class="mb-6"
     />
 
-    <div class="flex gap-8">
+    <div class="flex lg:flex-row flex-col gap-8">
       <SettingsUserCard />
 
-      <div class="flex-1 gap-8 grid grid-cols-3">
+      <div class="flex-1 gap-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
         <SettingsCard
           v-for="item in settingsItems"
           :key="item.id"

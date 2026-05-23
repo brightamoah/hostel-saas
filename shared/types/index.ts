@@ -532,7 +532,7 @@ export type NotificationDTO = {
     email: string;
     image: string | null;
   };
-  isRead: boolean; // will become real when we add notification_read table
+  isRead: boolean;
   link: { name: string; query: Record<string, any> };
   createdAt: Date;
 };
@@ -612,6 +612,8 @@ export interface HostelDetailsResponse {
   roomTypes: string[];
   studentGender: "male" | "female";
 }
+
+export type StudentInsert = typeof student.$inferInsert;
 
 export type UseSessionEvent = Parameters<typeof useSession>[0];
 

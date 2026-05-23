@@ -33,11 +33,11 @@ const footerItems = [
         class="mb-4 rounded-full"
       />
 
-      <h2 class="mb-4 font-newsreader font-bold text-highlighted text-4xl lg:text-5xl tracking-tight">
+      <div class="mb-4 font-newsreader font-bold text-highlighted text-4xl lg:text-5xl tracking-tight">
         One platform,<br>
 
         <span class="text-primary">two powerful experiences</span>
-      </h2>
+      </div>
     </template>
 
     <template #description>

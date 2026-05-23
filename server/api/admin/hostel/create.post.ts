@@ -54,7 +54,9 @@ defineRouteMeta({
 });
 
 export default defineEventHandler(async (event) => {
-  const { companyId, companyRole } = await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
+
+  const { companyId, companyRole, hostelId } = scope;
 
   if (companyRole !== "owner") {
     throw createError({
@@ -67,6 +69,13 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       message: "Your account is not associated with a company. Please contact support.",
+    });
+  }
+
+  if (!hostelId) {
+    throw createError({
+      statusCode: 400,
+      message: "Your account is not associated with a hostel. Please contact support.",
     });
   }
 
@@ -92,6 +101,16 @@ export default defineEventHandler(async (event) => {
 
     const { createNewHostel } = await roomQueries();
 
+    const auditContext = getAuditContext({
+      event,
+      kind: "admin",
+      scope,
+      target: {
+        companyId,
+        hostelId,
+      },
+    });
+
     const newHostel = await createNewHostel({
       name,
       slug,
@@ -103,7 +122,7 @@ export default defineEventHandler(async (event) => {
       logoUrl,
       joinCode,
       companyId,
-    });
+    }, scope, auditContext);
 
     return {
       success: true,

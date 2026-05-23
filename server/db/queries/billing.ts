@@ -4,7 +4,7 @@ import { computeAuditDiff } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, desc, eq, exists, gt, ne, sql } from "drizzle-orm";
+import { and, eq, exists, gt, ne, sql } from "drizzle-orm";
 
 import type { paymentMethod } from "../schema";
 
@@ -28,7 +28,6 @@ const billingWithRelations = {
     hostel: true,
     payments: true,
   },
-
 } as const;
 
 type PaymentMethodType = typeof paymentMethod.enumValues[number];
@@ -39,6 +38,15 @@ export async function billingQueries() {
   const { logAudit } = await auditLogQueries();
 
   const applyBillingScope = (scope: AdminScope) => {
+    const mode = getScopeMode(scope);
+
+    if (mode === "platform") return {};
+    if (mode === "company" && scope.companyId) return { companyId: scope.companyId };
+    if (mode === "hostel" && scope.hostelId) return { hostelId: scope.hostelId };
+    return { RAW: () => sql`FALSE` };
+  };
+
+  const applyBillingScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
 
     if (mode === "platform") return [];
@@ -52,12 +60,12 @@ export async function billingQueries() {
       .query
       .billing
       .findFirst({
-        where: and(
-          eq(billing.id, billingId),
+        where: {
+          id: billingId,
           ...applyBillingScope(scope),
-        ),
+        },
         extras: {
-          invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
+          invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
         },
         ...billingWithRelations,
       });
@@ -68,9 +76,11 @@ export async function billingQueries() {
       .query
       .billing
       .findFirst({
-        where: eq(billing.id, billingId),
+        where: {
+          id: billingId,
+        },
         extras: {
-          invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
+          invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
         },
         ...billingWithRelations,
       });
@@ -81,12 +91,16 @@ export async function billingQueries() {
       .query
       .billing
       .findMany({
-        where: and(...applyBillingScope(scope)),
+        where: {
+          ...applyBillingScope(scope),
+        },
         extras: {
-          invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
+          invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
         },
         ...billingWithRelations,
-        orderBy: desc(billing.createdAt),
+        orderBy: {
+          createdAt: "desc",
+        },
       });
   };
 
@@ -102,7 +116,7 @@ export async function billingQueries() {
 
     const mode = getScopeMode(scope);
 
-    const billingFilters = applyBillingScope(scope);
+    const billingFilters = applyBillingScopeSql(scope);
     const activeBillingFilters = [...billingFilters, ne(billing.status, "cancelled")];
 
     const [billingResult] = await db
@@ -187,12 +201,16 @@ export async function billingQueries() {
       .query
       .billing
       .findMany({
-        where: eq(billing.studentId, studentId),
+        where: {
+          studentId,
+        },
         extras: {
-          invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`.as("invoice_number"),
+          invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
         },
         ...billingWithRelations,
-        orderBy: desc(billing.createdAt),
+        orderBy: {
+          createdAt: "desc",
+        },
       });
   };
 
@@ -290,7 +308,9 @@ export async function billingQueries() {
       .query
       .payment
       .findFirst({
-        where: eq(payment.transactionReference, reference),
+        where: {
+          transactionReference: reference,
+        },
       });
     return result;
   };
@@ -336,7 +356,9 @@ export async function billingQueries() {
       .query
       .payment
       .findFirst({
-        where: eq(payment.transactionReference, reference),
+        where: {
+          transactionReference: reference,
+        },
       });
 
     if (!existingPayment) {
@@ -376,10 +398,10 @@ export async function billingQueries() {
       .query
       .payment
       .findFirst({
-        where: and(
-          eq(payment.transactionReference, reference),
-          eq(payment.billingId, billingId),
-        ),
+        where: {
+          transactionReference: reference,
+          billingId,
+        },
       });
 
     const [updatedPayment] = await db.update(payment)

@@ -150,7 +150,7 @@ export function useMaintenanceRowColumn(
       accessorFn: (row) => {
         const student = row.student;
         if (!student) return "N/A";
-        return `${student.user.name} ${student.user.email}`;
+        return `${student?.user?.name} ${student?.user?.email}`;
       },
       header: createSortableHeader("Student", UButton),
       cell: ({ row },
@@ -160,19 +160,19 @@ export function useMaintenanceRowColumn(
         if (!student) return h("span", "N/A");
 
         return h("div", { class: "flex flex-col" }, [
-          h("p", { class: "font-medium text-highlighted" }, student.user.name),
-          h("p", { class: "text-xs" }, `${student.user.email}`),
+          h("p", { class: "font-medium text-highlighted" }, student?.user?.name),
+          h("p", { class: "text-xs" }, `${student?.user?.email}`),
         ]);
       },
     },
     {
       id: "room",
-      accessorFn: row => row.room ? `${row.room.roomNumber} ${row.hostel.name}` : "N/A",
+      accessorFn: row => row.room ? `${row.room.roomNumber} ${row?.hostel?.name}` : "N/A",
       header: createSortableHeader("Room", UButton),
       filterFn: (row, columnId, filterValue) => {
         const room = row.original.room;
         const hostel = row.original.hostel;
-        const searchText = `${room.roomNumber} ${hostel.name}`.toLowerCase();
+        const searchText = `${room?.roomNumber} ${hostel?.name}`.toLowerCase();
         return searchText.includes(filterValue.toLowerCase());
       },
       cell: ({ row }) => {
@@ -180,8 +180,8 @@ export function useMaintenanceRowColumn(
         const hostel = row.original.hostel;
 
         return h("div", { class: "flex flex-col" }, [
-          h("p", { class: "font-medium text-highlighted" }, room.roomNumber),
-          h("p", { class: "text-sm" }, `${hostel.name}`),
+          h("p", { class: "font-medium text-highlighted" }, room?.roomNumber),
+          h("p", { class: "text-sm" }, `${hostel?.name}`),
         ]);
       },
     },

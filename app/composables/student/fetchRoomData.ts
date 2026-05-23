@@ -1,23 +1,23 @@
 import type { SelectMenuItem } from "@nuxt/ui";
 
 export function useFetchStudentRoomData(hostelSlug: Ref<string> | ComputedRef<string>) {
-  // const { user } = usePortalUserSession();
+  const { user } = usePortalUserSession();
 
-  // const { data, status, refresh } = useFetch<StudentRoomData>("/api/room/student/rooms", {
-  //   method: "GET",
-  //   key: computed(() => `roomData:${user.value?.role}`),
-  //   lazy: true,
-  //   cache: "default",
-  //   default: () => ({
-  //     rooms: [],
-  //     hostels: [],
-  //     totalRooms: 0,
-  //   }),
-  //   getCachedData: (key, nuxtApp, ctx) => {
-  //     if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
-  //     return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
-  //   },
-  // });
+  const { data: roomData, status: roomStatus, refresh: refreshRoomData } = useFetch<StudentRoomData>("/api/room/student/rooms", {
+    method: "GET",
+    key: computed(() => `roomData:${user.value?.role}`),
+    lazy: true,
+    cache: "default",
+    default: () => ({
+      rooms: [],
+      hostels: [],
+      totalRooms: 0,
+    }),
+    getCachedData: (key, nuxtApp, ctx) => {
+      if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
+      return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
+    },
+  });
 
   const { data, status, error, refresh } = useFetch<HostelDetailsResponse>(`/api/student/hostels/${hostelSlug.value}`, {
     method: "GET",
@@ -76,7 +76,11 @@ export function useFetchStudentRoomData(hostelSlug: Ref<string> | ComputedRef<st
     hostel,
     hostelItem,
     error,
+    roomStatus,
+    roomData,
+    refreshRoomData,
     refresh,
     handleRefresh,
+
   };
 }

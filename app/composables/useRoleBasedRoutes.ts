@@ -14,14 +14,14 @@ const routesByRole = {
   admin: defineRoleRoutes({
     profile: { name: "admin-profile" },
     visitors: { name: "admin-visitors" },
-    settings: { name: "admin-settings" },
+    settings: { name: "admin-profile-settings-security" },
     dashboard: { name: "admin-dashboard" },
     users: { name: "admin-users" },
   }),
   student: defineRoleRoutes({
     profile: { name: "student-profile" },
     visitors: { name: "student-visitors" },
-    settings: { name: "student-settings" },
+    settings: { name: "student-profile-settings-security" },
     dashboard: { name: "student-dashboard" },
     users: { name: "student-dashboard" },
   }),

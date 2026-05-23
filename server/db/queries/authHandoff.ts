@@ -30,10 +30,10 @@ export async function authHandoffQueries() {
       .query
       .authHandoffToken
       .findMany({
-        where: (table, { and, isNull, gt }) => and(
-          isNull(table.usedAt),
-          gt(table.expiresAt, new Date()),
-        ),
+        where: {
+          usedAt: { isNull: true },
+          expiresAt: { gt: new Date() },
+        },
         columns: { id: true, userId: true, tokenHash: true },
         limit: 50,
       });

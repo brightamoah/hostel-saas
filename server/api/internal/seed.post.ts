@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const seedPlatformAdminSchema = z.object({
   name: z.string().trim().min(2).max(255),
-  email: z.string().trim().email(),
+  email: z.email().trim().toLowerCase(),
   password: z.string().min(8).max(255),
   phoneNumber: z.string().trim().min(8).max(20),
 });
@@ -32,12 +32,16 @@ export default defineEventHandler(async (event) => {
 
   return await db.transaction(async (tx) => {
     const existing = await tx.query.user.findFirst({
-      where: (t, { eq }) => eq(t.email, normalizedEmail),
+      where: { email: normalizedEmail },
       columns: { id: true, email: true },
     });
 
     if (existing) {
-      return { success: true, created: false, message: "Platform admin already exists for this email." };
+      return {
+        success: true,
+        created: false,
+        message: "Platform admin already exists for this email.",
+      };
     }
 
     const passwordHash = await hash(password);

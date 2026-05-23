@@ -68,9 +68,9 @@ export const useAnnouncementStore = defineStore("announcementStore", () => {
       content: announcement.content,
       priority: announcement.priority,
       targetAudience: announcement.targetAudience,
-      targetHostelId: announcement.targetHostel?.id,
-      targetRoomId: announcement.targetRoom?.id,
-      targetUserId: announcement.targetUser?.id,
+      targetHostelId: announcement.targetHostelId ?? undefined,
+      targetRoomId: announcement.targetRoomId ?? undefined,
+      targetUserId: announcement.targetUserId ?? undefined,
     };
 
     editAnnouncementState.value = structuredClone(mappedState);

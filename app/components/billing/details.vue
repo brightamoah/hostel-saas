@@ -18,44 +18,44 @@ const detailCards = [
   [
     {
       label: "Billed To",
-      value: billing.student.user.name,
+      value: billing?.student?.user?.name,
       icon: "i-lucide-user",
     },
     {
       label: "",
-      value: billing.student.user.email,
+      value: billing?.student?.user?.email,
       icon: "i-lucide-mail",
     },
     {
       label: "",
-      value: billing.student.phoneNumber,
+      value: billing?.student?.phoneNumber,
       icon: "i-lucide-phone",
     },
     {
       label: "",
-      value: billing.student.address,
+      value: billing?.student?.address,
       icon: "i-lucide-map-pin",
     },
   ],
   [
     {
       label: "From",
-      value: billing.hostel.name,
+      value: billing?.hostel?.name,
       icon: "i-lucide-building",
     },
     {
       label: "",
-      value: billing.hostel.address,
+      value: billing?.hostel?.address,
       icon: "i-lucide-map-pin",
     },
     {
       label: "",
-      value: billing.hostel.contactNumber,
+      value: billing?.hostel?.contactNumber,
       icon: "i-lucide-phone",
     },
     {
       label: "",
-      value: billing.hostel.email,
+      value: billing?.hostel?.email,
       icon: "i-lucide-mail",
     },
   ],
@@ -126,7 +126,7 @@ async function handleDownload() {
         :invoice-number="billing.invoiceNumber"
         :date-issued="new Date(billing.dateIssued)"
         :due-date="billing.dueDate"
-        :hostel-address="billing.hostel.address"
+        :hostel-address="billing?.hostel?.address ?? ''"
         :status="billing.status"
       />
 

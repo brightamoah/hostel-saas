@@ -1,9 +1,9 @@
 import type { Allocation, AuditContext } from "~~/shared/types";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { auditLogQueries } from "../db/queries/auditLog";
-import { allocation, billing, hostel, room, student } from "../db/schema";
+import { allocation, billing, room, student } from "../db/schema";
 
 export async function bookRoom(
   studentId: number,
@@ -60,17 +60,17 @@ export async function bookRoom(
             .billing
             .findFirst({
               columns: { id: true },
-              where: and(
-                eq(billing.studentId, studentId),
-                eq(billing.status, "overdue"),
-              ),
+              where: {
+                studentId,
+                status: "overdue",
+              },
             }),
 
           tx.query.allocation.findFirst({
-            where: and(
-              eq(allocation.studentId, studentId),
-              inArray(allocation.status, ["active", "pending"]),
-            ),
+            where: {
+              studentId,
+              status: { in: ["active", "pending"] },
+            },
             columns: {
               id: true,
               status: true,
@@ -83,7 +83,9 @@ export async function bookRoom(
               gender: true,
               companyId: true,
             },
-            where: eq(student.id, studentId),
+            where: {
+              id: studentId,
+            },
           }),
         ]);
 
@@ -155,7 +157,7 @@ export async function bookRoom(
         }
 
         const hostelRecord = await tx.query.hostel.findFirst({
-          where: eq(hostel.id, targetRoom.hostelId),
+          where: { id: targetRoom.hostelId },
           columns: {
             id: true,
             name: true,
@@ -182,6 +184,7 @@ export async function bookRoom(
             companyId: hostelRecord.companyId,
             endDate: allocationEndDate,
             academicYear,
+            hostelId: targetRoom.hostelId,
           } satisfies typeof allocation.$inferInsert)
           .returning();
 

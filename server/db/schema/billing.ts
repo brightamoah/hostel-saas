@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -82,39 +82,4 @@ export const payment = pgTable("payment", t => ({
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-}));
-
-export const billingRelations = relations(billing, ({ one, many }) => ({
-  student: one(student, {
-    fields: [billing.studentId],
-    references: [student.id],
-  }),
-  allocation: one(allocation, {
-    fields: [billing.allocationId],
-    references: [allocation.id],
-  }),
-  hostel: one(hostel, {
-    fields: [billing.hostelId],
-    references: [hostel.id],
-  }),
-  payments: many(payment),
-  company: one(company, {
-    fields: [billing.companyId],
-    references: [company.id],
-  }),
-}));
-
-export const paymentRelations = relations(payment, ({ one }) => ({
-  student: one(student, {
-    fields: [payment.studentId],
-    references: [student.id],
-  }),
-  billing: one(billing, {
-    fields: [payment.billingId],
-    references: [billing.id],
-  }),
-  company: one(company, {
-    fields: [payment.companyId],
-    references: [company.id],
-  }),
 }));

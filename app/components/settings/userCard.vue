@@ -58,7 +58,7 @@ const userItems = computed<UserItem[]>(() => {
 <template>
   <UCard
     variant="subtle"
-    class="flex flex-col shadow-md w-fit min-w-64 max-w-80"
+    class="flex flex-col shadow-md w-full min-w-64 md:max-w-80"
     :ui="{
       body: 'p-3 sm:p-4',
     }"
@@ -120,7 +120,7 @@ const userItems = computed<UserItem[]>(() => {
               :color="userBadgeColor"
               class="justify-center items-center w-fit"
             >
-              {{ item.value }}
+              {{ item.value?.toString().toUpperCase() }}
             </UBadge>
 
             <span v-else>{{ item.value }}</span>

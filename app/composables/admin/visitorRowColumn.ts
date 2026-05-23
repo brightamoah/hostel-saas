@@ -302,19 +302,19 @@ export function useVisitorRowColumn(
       accessorFn: (row) => {
         const student = row.student;
         if (!student) return "N/A";
-        return `${student.user.name} ${student.user.email} ${student.allocation?.room.roomNumber} (${student.allocation?.room?.hostel?.name})`;
+        return `${student?.user?.name} ${student?.user?.email} ${student?.allocations?.[0]?.room?.roomNumber} (${student?.allocations?.[0]?.room?.hostel?.name})`;
       },
       header: createSortableHeader("Student", UButton),
       cell: ({ row }) => {
-        const studentUser = row.original.student?.user;
-        const studentAllocation = row.original.student?.allocation;
+        const studentUser = row?.original?.student?.user;
+        const studentAllocation = row?.original?.student?.allocations?.[0];
 
         if (!studentUser) return h("span", "N/A");
 
         return h("div", { class: "flex flex-col" }, [
           h("p", { class: "font-medium text-highlighted" }, studentUser.name),
           h("p", { class: "text-sm" }, `${studentUser.email}`),
-          studentAllocation && h("p", { class: "text-sm text-muted" }, `Room: ${studentAllocation.room.roomNumber} (${studentAllocation.room?.hostel?.name})`,
+          studentAllocation && h("p", { class: "text-sm text-muted" }, `Room: ${studentAllocation?.room?.roomNumber} (${studentAllocation?.room?.hostel?.name})`,
           ),
         ]);
       },

@@ -58,6 +58,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const auditContext = getAuditContext({
+      event,
+      kind: "admin",
+      scope,
+      target: {
+        companyId,
+        hostelId,
+      },
+    });
+
     const newRoom = await addNewRoom({
       amountPerYear,
       hostelId,
@@ -70,7 +80,7 @@ export default defineEventHandler(async (event) => {
       status,
       allowedGender,
       companyId,
-    }, scope);
+    }, scope, auditContext);
 
     if (!newRoom) {
       throw createError({

@@ -2,35 +2,24 @@
 import { en_gb } from "@nuxt/ui/locale";
 import { breakpointsTailwind, useBreakpoints } from "@vueuse/core";
 
-const { user } = usePortalUserSession();
+const runtimeConfig = useRuntimeConfig();
+
+const { userProfile } = useUser();
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const isMobile = breakpoints.smaller("md");
 
-const { data } = useFetch("/api/user/userProfile", {
-  method: "GET",
-  key: computed(() => `user-profile-${user.value?.id}`),
-  lazy: true,
-  cache: "default",
-  getCachedData: (key, nuxtApp, ctx) => {
-    if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
-    return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
-  },
-});
-
-const userProfile = computed<UserProfile | null>(() => {
-  const profile = data.value?.data;
-  if (!profile) return null;
-  return {
-    ...profile,
-    createdAt: new Date(profile.createdAt),
-  };
-});
-
-provide(isMobileKey, isMobile);
 provide(userProfileKey, userProfile);
+provide(isMobileKey, isMobile);
 
 const appLocale = useState("appLocale", () => en_gb);
+
+useHead({
+  titleTemplate: titleChunk =>
+    titleChunk
+      ? `${titleChunk} - ${runtimeConfig.public.emailFromName}`
+      : runtimeConfig.public.emailFromName,
+});
 </script>
 
 <template>

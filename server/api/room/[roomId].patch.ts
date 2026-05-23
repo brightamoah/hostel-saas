@@ -18,8 +18,10 @@ export default defineEventHandler(async (event) => {
 
     const { roomId, data } = body.data;
 
+    let originalRoom;
+
     if (data.roomNumber) {
-      const originalRoom = await getRoomByIdScoped(roomId, scope);
+      originalRoom = await getRoomByIdScoped(roomId, scope);
 
       if (!originalRoom) {
         throw createError({
@@ -38,7 +40,22 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const updatedRoom = await editRoomById(roomId, data, scope);
+    const auditContext = getAuditContext({
+      event,
+      kind: "admin",
+      scope,
+      target: {
+        companyId: originalRoom?.companyId ?? scope.companyId,
+        hostelId: originalRoom?.hostelId ?? scope.hostelId,
+      },
+    });
+
+    const updatedRoom = await editRoomById(
+      roomId,
+      data,
+      scope,
+      auditContext,
+    );
 
     if (!updatedRoom) {
       throw createError({

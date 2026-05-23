@@ -2,18 +2,9 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { userQueries, visitorQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await requirePortalUserSession(event, {
-    message: "Unauthorized Access: Please log in to continue.",
-  });
+  const { user } = await studentSessionCheck(event);
 
   try {
-    if (user.role !== "student") {
-      throw createError({
-        statusCode: 403,
-        message: "Access denied: Only students can register for a visitor pass.",
-      });
-    }
-
     const companyId = user.companyId;
 
     if (!companyId) {

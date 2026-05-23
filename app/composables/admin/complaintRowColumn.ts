@@ -202,7 +202,7 @@ export function useComplaintRowColumn(
       accessorFn: (row) => {
         const student = row.student;
         if (!student) return "N/A";
-        return `${student.user.name} ${student.user.email}`;
+        return `${student?.user?.name} ${student?.user?.email}`;
       },
       header: createSortableHeader("Student", UButton),
       cell: ({ row }) => {
@@ -211,8 +211,8 @@ export function useComplaintRowColumn(
         if (!student) return h("span", "N/A");
 
         return h("div", { class: "flex flex-col" }, [
-          h("p", { class: "font-medium text-highlighted" }, student.user.name),
-          h("p", { class: "text-xs" }, `${student.user.email}`),
+          h("p", { class: "font-medium text-highlighted" }, student?.user?.name),
+          h("p", { class: "text-xs" }, `${student?.user?.email}`),
         ]);
       },
       filterFn: "includesString",

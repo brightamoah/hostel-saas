@@ -35,22 +35,22 @@ const items = computed<TabsItem[]>(() => [
 const detailItems = computed(() => [
   {
     label: "Student Name",
-    value: maintenance.student.user.name,
+    value: maintenance?.student?.user?.name,
     icon: "i-lucide-user",
   },
   {
     label: "Student Email",
-    value: maintenance.student.user.email,
+    value: maintenance?.student?.user?.email,
     icon: "i-lucide-mail",
   },
   {
     label: "Hostel",
-    value: maintenance.hostel.name,
+    value: maintenance?.hostel?.name,
     icon: "i-lucide-map-pinned",
   },
   {
     label: "Room Number",
-    value: maintenance.room.roomNumber,
+    value: maintenance?.room?.roomNumber,
     icon: "i-lucide-door-open",
   },
   {
@@ -110,7 +110,7 @@ const messages = computed(() => {
     },
     ...responseItems.value.map((response) => {
       const responderInfo = response.responder;
-      const isStudent = responderInfo.role === "student";
+      const isStudent = responderInfo?.role === "student";
 
       let messageRole: "user" | "assistant";
       if (isAdmin) messageRole = isStudent ? "assistant" : "user";
@@ -128,10 +128,10 @@ const messages = computed(() => {
           },
         ],
         metadata: {
-          id: response.responder.id,
-          senderName: responderInfo.name,
+          id: response?.responder?.id,
+          senderName: responderInfo?.name,
           senderRole: isStudent ? "Student" : "Admin",
-          email: responderInfo.email,
+          email: responderInfo?.email,
           date: response.responseDate,
           timeAgo: useFormattedTimeAgo(new Date(response.responseDate), isMobile).value,
         },
@@ -204,7 +204,7 @@ function openAttachment(url: string) {
                   />
 
                   <p v-if="!item.badge">
-                    {{ capitalize(item.value) }}
+                    {{ capitalize(item.value!) }}
                   </p>
 
                   <UBadge

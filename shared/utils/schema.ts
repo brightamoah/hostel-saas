@@ -313,7 +313,7 @@ const phoneNumberSchema = z.string().superRefine((val, ctx) => {
 });
 
 const genderSchema = z.union([
-  z.enum(["male", "female"], {
+  z.enum(["male", "female", "mixed", "unassigned"], {
     error: "Gender is required",
   }),
   z.literal(""),
@@ -332,7 +332,7 @@ const idSchema = z.int().min(10000000, "Invalid id: less than required length").
 export type IDSchema = z.output<typeof idSchema>;
 
 const personalDetailsSchema = z.object({
-  gender: genderSchema,
+  gender: z.enum(["male", "female"], "Gender is required"),
   dateOfBirth: z.date({ error: "Date of Birth is required" }).nullable(),
   phoneNumber: phoneNumberSchema,
   address: addressSchema,

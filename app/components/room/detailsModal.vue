@@ -29,13 +29,13 @@ const { featureIcons, statusColorMap } = useRoomColorIcon(roomValue);
         <UCard class="border border-muted">
           <div class="flex justify-between items-center">
             <h3 class="font-semibold text-xl">
-              Room {{ roomValue.roomNumber }}
+              Room {{ roomValue?.roomNumber }}
               <span class="flex gap-1.5 mt-1 font-normal text-sm text-center">
                 <UIcon
                   name="i-lucide-map-pinned"
                   class="size-5"
                 />
-                {{ roomValue.hostel.name }}, Floor {{ roomValue.floor }}
+                {{ roomValue?.hostel?.name }}, Floor {{ roomValue.floor }}
               </span>
             </h3>
 
@@ -68,33 +68,33 @@ const { featureIcons, statusColorMap } = useRoomColorIcon(roomValue);
               <div class="gap-4 grid grid-cols-2">
                 <DashboardDetailItem
                   label="Room Number"
-                  :value="roomValue.roomNumber"
+                  :value="roomValue?.roomNumber"
                 />
 
                 <DashboardDetailItem
                   label="Hostel"
-                  :value="roomValue.hostel.name"
+                  :value="roomValue?.hostel?.name || 'hostel not found'"
                 />
 
                 <DashboardDetailItem
                   label="Amount Per Year"
-                  :value="formatCurrency(Number(roomValue.amountPerYear))"
+                  :value="formatCurrency(Number(roomValue?.amountPerYear))"
                 />
 
                 <DashboardDetailItem
                   label="Room Type"
-                  :value="roomValue.roomType"
+                  :value="roomValue?.roomType"
                   class="capitalize"
                 />
 
                 <DashboardDetailItem
                   label="Floor"
-                  :value="roomValue.floor"
+                  :value="roomValue?.floor"
                 />
 
                 <DashboardDetailItem
                   label="Allowed Gender"
-                  :value="roomValue.allowedGender"
+                  :value="roomValue?.allowedGender"
                   class="capitalize"
                 />
               </div>
@@ -122,8 +122,8 @@ const { featureIcons, statusColorMap } = useRoomColorIcon(roomValue);
                 </p>
 
                 <UBadge
-                  :label="roomValue.status"
-                  :color="statusColorMap[roomValue.status] || 'neutral'"
+                  :label="roomValue?.status"
+                  :color="statusColorMap[roomValue?.status] || 'neutral'"
                   variant="subtle"
                   size="lg"
                   class="capitalize"
@@ -133,12 +133,12 @@ const { featureIcons, statusColorMap } = useRoomColorIcon(roomValue);
               <div class="gap-4 grid grid-cols-2 mt-3">
                 <DashboardDetailItem
                   label="Total Capacity"
-                  :value="roomValue.capacity"
+                  :value="roomValue?.capacity"
                 />
 
                 <DashboardDetailItem
                   label="Current Occupants"
-                  :value="roomValue.currentOccupancy"
+                  :value="roomValue?.currentOccupancy"
                 />
               </div>
 
