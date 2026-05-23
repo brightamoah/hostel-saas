@@ -8,6 +8,8 @@ definePageMeta({
   layout: "admin-dashboard",
 });
 
+const { isPlatformAdminOrOwner } = usePortalUserSession();
+
 // const toast = useToast();
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
@@ -129,6 +131,13 @@ async function handleDeleteUsers() {
     console.error("Error deleting selected users:", error);
   }
 }
+
+watch(isPlatformAdminOrOwner, (canSeeHostel) => {
+  columnVisibility.value = {
+    id: false,
+    hostel: !!canSeeHostel,
+  };
+}, { immediate: true });
 
 watch([globalFilter, statusFilter, roleFilter], () => {
   pagination.value.pageIndex = 0;

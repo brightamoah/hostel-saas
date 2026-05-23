@@ -126,7 +126,7 @@ export function useUserRowColumn(
       return "Promote to Admin";
     });
 
-    return [
+    const actions = [
       {
         type: "label",
         label: "Actions",
@@ -136,11 +136,6 @@ export function useUserRowColumn(
         icon: "i-lucide-eye",
         onSelect: () => openDetailsModal(user),
       },
-      {
-        label: roleChangeLabel.value,
-        icon: "i-lucide-refresh-cw",
-        onSelect: () => openPromoteDemoteUserModal(user),
-      },
       // {
       //   label: "Delete user",
       //   icon: "i-lucide-trash-2",
@@ -149,6 +144,18 @@ export function useUserRowColumn(
 
       // },
     ];
+
+    if (isPlatformAdminOrOwner.value) {
+      actions.push(
+        {
+          label: roleChangeLabel.value,
+          icon: "i-lucide-refresh-cw",
+          onSelect: () => openPromoteDemoteUserModal(user),
+        },
+      );
+    }
+
+    return actions;
   };
 
   const userIcon = (userRole?: UserWithRelations["role"]) =>
@@ -157,7 +164,7 @@ export function useUserRowColumn(
   const columns = ref<TableColumn<UserWithRelations>[]>([
     {
       id: "name",
-      accessorFn: row => `${row.name} ${row.email}`,
+      accessorFn: row => `${row.name} ${row.email} ${row.id}`,
       header: createSortableHeader("User", UButton),
       cell: ({ row }) => {
         return h("div", { class: "flex items-center gap-3" }, [
@@ -210,21 +217,22 @@ export function useUserRowColumn(
         ]);
       },
     },
+    {
+      id: "hostel",
+      accessorFn: row => row.hostelName ?? "N/A",
+      header: createSortableHeader("Hostel", UButton),
+      cell: ({ row }) => {
+        const hostelName = row.original.hostelName ?? "N/A";
+        return h("p", { class: "text-default font-medium" }, hostelName);
+      },
+    },
   ]);
 
-  if (isPlatformAdminOrOwner.value) {
-    columns.value.push(
-      {
-        id: "hostel",
-        accessorFn: row => row.hostelName ?? "N/A",
-        header: createSortableHeader("Hostel", UButton),
-        cell: ({ row }) => {
-          const hostelName = row.original.hostelName ?? "N/A";
-          return h("p", { class: "text-default font-medium" }, hostelName);
-        },
-      },
-    );
-  };
+  // if (isPlatformAdminOrOwner.value) {
+  //   columns.value.push(
+
+  //   );
+  // };
 
   columns.value.push({
     id: "phoneNumber",
@@ -256,24 +264,34 @@ export function useUserRowColumn(
     cell: ({ row }) =>
       h(
         "div",
-        { class: "text-center" },
+        { class: "flex justify-center text-center" },
         [
-          h(UDropdownMenu, {
-            arrow: true,
-            content: {
-              align: "center",
-            },
-            items: getRowItems(row),
-            ui: {
-              item: "cursor-pointer rounded",
-            },
-          }, () =>
-            h(UButton, {
-              icon: "i-lucide-ellipsis-vertical",
-              color: "neutral",
-              variant: "ghost",
-              class: "ml-auto cursor-pointer",
-            })),
+          getRowItems(row).length > 2
+            ? h(UDropdownMenu, {
+                arrow: true,
+                content: {
+                  align: "center",
+                },
+                items: getRowItems(row),
+                ui: {
+                  item: "cursor-pointer rounded",
+                },
+              }, () =>
+                h(UButton, {
+                  icon: "i-lucide-ellipsis-vertical",
+                  color: "neutral",
+                  variant: "ghost",
+                  class: "ml-auto cursor-pointer",
+                }))
+
+            : h(UButton, {
+                icon: "i-lucide-eye",
+                label: "View",
+                color: "neutral",
+                variant: "ghost",
+                class: "cursor-pointer -ml-5",
+                onClick: () => openDetailsModal(row.original),
+              }),
         ],
       ),
   });

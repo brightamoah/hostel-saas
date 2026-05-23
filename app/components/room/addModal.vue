@@ -238,7 +238,6 @@ watch(
             :items="allowedGender"
             placeholder="Select allowed gender"
             class="w-full cursor-pointer"
-            disabled
             :size="isMobile ? 'lg' : 'xl'"
             clear
           />

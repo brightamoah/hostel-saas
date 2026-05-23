@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { user } = usePortalUserSession();
+const { user, isPlatformAdminOrOwner } = usePortalUserSession();
 const admin = user.value?.adminData;
 const companyRole = user.value?.companyRole;
 
@@ -15,13 +15,30 @@ const {
   addModalOpen,
 } = storeToRefs(userStore);
 
-const accessLevel = ref<AdminUser["accessLevel"][]>([
-  "regular",
-  "support",
+const accessLevel = ref<{ label: string; value: AdminUser["accessLevel"] }[]>([
+  { label: "Regular", value: "regular" },
+  { label: "Support", value: "support" },
 ]);
 
+const adminCompanyRoles = computed<{ label: string; value: NonNullable<AdminScope["companyRole"]> }[]>(() => {
+  const items: { label: string; value: NonNullable<AdminScope["companyRole"]> }[] = [
+    { label: "Admin", value: "admin" },
+    { label: "Support", value: "support" },
+    { label: "Staff", value: "staff" },
+  ];
+
+  if (isPlatformAdminOrOwner.value) {
+    items.unshift(
+      { label: "Owner", value: "owner" },
+      { label: "Finance", value: "finance" },
+    );
+  }
+
+  return items;
+});
+
 if (admin && admin.accessLevel === "super") {
-  accessLevel.value.push("super");
+  accessLevel.value.push({ label: "Super Admin", value: "super" });
 }
 
 const {
@@ -134,6 +151,7 @@ watch(
               v-model="adminState.accessLevel"
               :items="accessLevel"
               placeholder="Select Admin Access Level"
+              value-key="value"
               class="w-full cursor-pointer"
               :size="isMobile ? 'lg' : 'xl'"
               clear
@@ -148,13 +166,7 @@ watch(
           >
             <USelectMenu
               v-model="adminState.companyRole"
-              :items="[
-                { label: 'Owner', value: 'owner' },
-                { label: 'Admin', value: 'admin' },
-                { label: 'Finance', value: 'finance' },
-                { label: 'Support', value: 'support' },
-                { label: 'Staff', value: 'staff' },
-              ]"
+              :items="adminCompanyRoles"
               placeholder="Select Company Role"
               class="w-full cursor-pointer"
               value-key="value"

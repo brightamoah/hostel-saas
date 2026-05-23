@@ -15,13 +15,18 @@ export default defineEventHandler(async (event) => {
       stats,
     } = data;
 
-    const flattenUsers = users.map((u) => {
+    const flattenUsers = users.map((user) => {
+      const activeAllocation = Array.isArray(user.student?.allocations)
+        ? user.student.allocations.find(alloc => alloc.status === "active")
+        : null;
+
       const hostelName
-        = u.student?.allocations?.[0]?.room?.hostel?.name
-          || u.admin?.hostel?.name
+        = activeAllocation?.room?.hostel?.name
+          || user.student?.allocations?.[0]?.room?.hostel?.name
+          || user.admin?.hostel?.name
           || "N/A";
 
-      const { emailVerified, ...rest } = u;
+      const { emailVerified, ...rest } = user;
 
       return {
         ...rest,

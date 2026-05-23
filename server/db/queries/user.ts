@@ -1,4 +1,5 @@
 import type { AdminScope, FailedAttempts, Period, StudentInsert } from "~~/shared/types";
+import type { SQL } from "drizzle-orm";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -297,22 +298,16 @@ export async function userQueries() {
   };
 
   const getStudentByUserId = async (id: number) => {
-    const existingStudent = await db
-      .query
-      .student
-      .findFirst({
-        where: { userId: id },
-      });
+    const existingStudent = await db.query.student.findFirst({
+      where: { userId: id },
+    });
     return existingStudent;
   };
 
   const getOnboardedStudent = async (id: number) => {
-    const existingStudent = await db
-      .query
-      .student
-      .findFirst({
-        where: { userId: id },
-      });
+    const existingStudent = await db.query.student.findFirst({
+      where: { userId: id },
+    });
     return existingStudent;
   };
 
@@ -321,28 +316,33 @@ export async function userQueries() {
 
     const { startOfToday, startOfThisWeek, startOfThisMonth } = getTimePeriod();
 
-    const userFilter
-      = mode === "platform"
-        ? sql`TRUE`
-        : or(
-            exists(
-              db
-                .select()
-                .from(admin)
-                .where(and(eq(admin.userId, user.id), ...applyAdminTableScopeSql(scope))),
-            ),
-            exists(
-              db
-                .select()
-                .from(student)
-                .where(and(eq(student.userId, user.id), ...applyStudentTableScope(scope))),
-            ),
-          );
+    const getUserFilterRaw = (table: Pick<typeof user, "id">): SQL<unknown> => {
+      if (mode === "platform") return sql`TRUE`;
+
+      return sql`
+      EXISTS (
+        SELECT 1 FROM ${admin}
+        WHERE ${and(eq(admin.userId, table.id), ...applyAdminTableScopeSql(scope))}
+      ) OR EXISTS (
+        SELECT 1 FROM ${student}
+        WHERE ${and(eq(student.userId, table.id), ...applyStudentTableScope(scope))}
+      )
+    `;
+    };
 
     const [users, [stat]] = await Promise.all([
       db.query.user.findMany({
         where: {
-          RAW: userFilter,
+          RAW: table => getUserFilterRaw(table),
+        },
+        extras: {
+          companyName: (user, { sql }) => sql`(
+            COALESCE(
+              (SELECT name FROM company WHERE id = (SELECT company_id FROM student WHERE user_id = ${user.id} LIMIT 1)),
+              (SELECT name FROM company WHERE id = (SELECT company_id FROM admin WHERE user_id = ${user.id} LIMIT 1)),
+              'Platform Global'
+            )
+          )`,
         },
         orderBy: { id: "asc" },
         ...userWithRelations,
@@ -372,7 +372,7 @@ export async function userQueries() {
         })
         .from(user)
         .leftJoin(student, eq(student.userId, user.id))
-        .where(userFilter),
+        .where(getUserFilterRaw(user)),
     ]);
 
     return {
@@ -401,6 +401,92 @@ export async function userQueries() {
       },
     };
   };
+
+  // const getUsers = async (scope: AdminScope) => {
+  //   const mode = getScopeMode(scope);
+
+  //   const { startOfToday, startOfThisWeek, startOfThisMonth } = getTimePeriod();
+
+  //   const userFilter
+  //     = mode === "platform"
+  //       ? sql`TRUE`
+  //       : or(
+  //           exists(
+  //             db
+  //               .select()
+  //               .from(admin)
+  //               .where(and(eq(admin.userId, user.id), ...applyAdminTableScopeSql(scope))),
+  //           ),
+  //           exists(
+  //             db
+  //               .select()
+  //               .from(student)
+  //               .where(and(eq(student.userId, user.id), ...applyStudentTableScope(scope))),
+  //           ),
+  //         );
+
+  //   const [users, [stat]] = await Promise.all([
+  //     db.query.user.findMany({
+  //       where: {
+  //         RAW: userFilter,
+  //       },
+  //       orderBy: { id: "asc" },
+  //       ...userWithRelations,
+  //     }),
+
+  //     db
+  //       .select({
+  //         totalNow: count(user.id),
+  //         totalPrevMonth: count(sql`CASE WHEN ${user.createdAt} < ${startOfThisMonth} THEN 1 END`),
+
+  //         studentsNow: count(sql`CASE WHEN ${user.role} = 'student' THEN 1 END`),
+  //         studentsPrevMonth: count(
+  //           sql`CASE WHEN ${user.role} = 'student' AND ${user.createdAt} < ${startOfThisMonth} THEN 1 END`,
+  //         ),
+
+  //         adminsNow: count(sql`CASE WHEN ${user.role} = 'admin' THEN 1 END`),
+  //         adminsPrevWeek: count(
+  //           sql`CASE WHEN ${user.role} = 'admin' AND ${user.createdAt} < ${startOfThisWeek} THEN 1 END`,
+  //         ),
+
+  //         activeNow: count(
+  //           sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' THEN 1 END`,
+  //         ),
+  //         activeNotUpdatedToday: count(
+  //           sql`CASE WHEN ${user.role} = 'student' AND ${student.residencyStatus} = 'active' AND ${student.updatedAt} < ${startOfToday} THEN 1 END`,
+  //         ),
+  //       })
+  //       .from(user)
+  //       .leftJoin(student, eq(student.userId, user.id))
+  //       .where(userFilter),
+  //   ]);
+
+  //   return {
+  //     users,
+  //     stats: {
+  //       totalUsers: {
+  //         value: Number(stat?.totalNow),
+  //         percentage: calcChange(Number(stat?.totalNow), Number(stat?.totalPrevMonth)),
+  //         period: "monthly" as Period,
+  //       },
+  //       totalStudents: {
+  //         value: Number(stat?.studentsNow),
+  //         percentage: calcChange(Number(stat?.studentsNow), Number(stat?.studentsPrevMonth)),
+  //         period: "monthly" as Period,
+  //       },
+  //       totalAdmins: {
+  //         value: Number(stat?.adminsNow),
+  //         percentage: calcChange(Number(stat?.adminsNow), Number(stat?.adminsPrevWeek)),
+  //         period: "weekly" as Period,
+  //       },
+  //       activeStudents: {
+  //         value: Number(stat?.activeNow),
+  //         percentage: calcChange(Number(stat?.activeNow), Number(stat?.activeNotUpdatedToday)),
+  //         period: "daily" as Period,
+  //       },
+  //     },
+  //   };
+  // };
 
   const getTotalStudents = async () => {
     const count = await db.query.user
@@ -442,12 +528,7 @@ export async function userQueries() {
   const getAdminByUserIdUnscoped = async (userId: number, activeOnly = false) => {
     return await db.query.admin.findFirst({
       where: {
-        AND: [
-          { userId },
-          activeOnly
-            ? { status: "active" }
-            : { RAW: () => sql`TRUE` },
-        ],
+        AND: [{ userId }, activeOnly ? { status: "active" } : { RAW: () => sql`TRUE` }],
       },
     });
   };

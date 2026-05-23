@@ -57,8 +57,11 @@ export function flattenUserDetails(user: Partial<UserWithRelations>): UserDetail
     "updatedAt",
     "emergencyContactName",
     "allocation",
+    "allocations",
     "emergencyContactPhoneNumber",
     "hostel",
+    "companyId",
+    "hostelId",
   ]);
 
   const formatters: Record<string, (value: any) => UserDetailValue> = {
@@ -74,16 +77,22 @@ export function flattenUserDetails(user: Partial<UserWithRelations>): UserDetail
     }));
 
   if (user.role === "student" && user.student) {
-    const { emergencyContactName, emergencyContactPhoneNumber } = user.student;
+    const { emergencyContactName, emergencyContactPhoneNumber, allocations } = user.student;
 
     details.push({
       key: "Emergency Contact",
-      value: (emergencyContactName && emergencyContactPhoneNumber) ? `${emergencyContactName} (${emergencyContactPhoneNumber})` : "N/A",
+      value: (emergencyContactName && emergencyContactPhoneNumber)
+        ? `${emergencyContactName} (${emergencyContactPhoneNumber})`
+        : "N/A",
     });
+
+    const activeAllocation = Array.isArray(allocations)
+      ? allocations.find((alloc: any) => alloc.status === "active")
+      : null;
 
     details.push({
       key: "Room",
-      value: user.student.allocation?.room?.roomNumber ?? "N/A",
+      value: activeAllocation?.room?.roomNumber ?? "N/A",
     });
   }
 

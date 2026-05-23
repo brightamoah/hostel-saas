@@ -298,7 +298,7 @@ export type AdminUser = {
   email: string;
   role: "admin";
   phoneNumber: string;
-  accessLevel: "regular" | "super" | "support" | "";
+  accessLevel: "regular" | "super" | "support";
   department: string;
 };
 
@@ -387,7 +387,7 @@ type AllocationWithDetails = BaseAllocation & {
 };
 
 type StudentWithDetails = BaseStudent & {
-  allocation?: AllocationWithDetails | null;
+  allocations?: AllocationWithDetails[] | null;
 };
 
 type AdminWithDetails = BaseAdmin & {
@@ -398,6 +398,7 @@ export type UserWithRelations = BaseUser & {
   student?: StudentWithDetails | null;
   admin?: AdminWithDetails | null;
   hostelName?: string | null;
+  isEmailVerified: boolean;
 };
 
 export type RoomInHostel = Pick<BaseRoom, "id" | "roomNumber" | "floor">;
