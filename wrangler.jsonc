@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "kayanest",
   "main": "./.output/server/index.mjs",
-  "compatibility_date": "2025-12-13",
+  "compatibility_date": "2026-05-22",
   "compatibility_flags": [
     "nodejs_compat_v2"
   ],

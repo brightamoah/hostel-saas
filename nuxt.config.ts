@@ -89,6 +89,15 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
+  vite: {
+    optimizeDeps: {
+      include: [
+        "chart.js",
+        "vue-chartjs",
+      ],
+    },
+  },
+
   app: {
     pageTransition: { name: "page", mode: "out-in" },
     head: {
