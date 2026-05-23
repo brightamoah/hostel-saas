@@ -59,9 +59,11 @@ export default defineEventHandler(async (event) => {
     // reference format: KH-{billingId}-{timestamp}-{studentId}-{random}
     const reference = `KH-${billing.id}-${Date.now()}-${billing.studentId}-${Math.floor(Math.random() * 10000)}`;
 
+    const portalUrl = getRequestHeader(event, "origin");
+
     const baseUrl: string = import.meta.dev
       ? "http://localhost:3000"
-      : runtimeConfig.public.siteUrl;
+      : (portalUrl ?? runtimeConfig.public?.siteUrl);
 
     const response = await initializePaystackTransaction({
       email,
