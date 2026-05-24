@@ -91,7 +91,7 @@ export function useBillingRowColumn(
     const cols: TableColumn<Billing>[] = [
       {
         id: "invoiceNumber",
-        accessorFn: row => row.invoiceNumber,
+        accessorFn: row => `${row.invoiceNumber} ${row.payments.map(p => p.transactionReference).join(" ")}`,
         header: createSortableHeader("Invoice No.", UButton),
         cell: ({ row }) => h("p", { class: "capitalize text-default" }, row.original.invoiceNumber),
       },
