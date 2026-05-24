@@ -59,6 +59,11 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
           ? { name: "admin-dashboard" }
           : { name: "student-dashboard" }),
       },
+      {
+        label: "Company Settings",
+        icon: "i-lucide-building-2",
+        to: { name: "admin-companySettings" },
+      },
     ],
     [
       {

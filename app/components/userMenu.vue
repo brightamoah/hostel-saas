@@ -14,6 +14,8 @@ const { userInitials, avatarBgColor, userBadgeColor } = useUseUserItems();
 
 const authStore = useAuthStore();
 
+const isAdmin = computed(() => currentUser.value?.role === "admin");
+
 const colors = [
   "red",
   "orange",
@@ -135,17 +137,23 @@ const items = computed<DropdownMenuItem[][]>(() => [
     {
       label: "Profile",
       icon: "i-lucide-user",
-      to: { name: "student-profile" },
+      to: isAdmin.value
+        ? { name: "admin-profile" }
+        : { name: "student-profile" },
     },
     {
       label: "Billing",
       icon: "i-lucide-credit-card",
-      to: { name: "student-billing" },
+      to: isAdmin.value
+        ? { name: "admin-billings" }
+        : { name: "student-billing" },
     },
     {
       label: "Settings",
       icon: "i-lucide-settings",
-      to: { name: "student-profile-settings-security" },
+      to: isAdmin.value
+        ? { name: "admin-profile-settings-security" }
+        : { name: "student-profile-settings-security" },
     },
   ],
   [

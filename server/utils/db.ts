@@ -18,7 +18,7 @@ export function useDB() {
     relations,
     schema,
     casing: "snake_case",
-    logger: import.meta.dev,
+    logger: false,
   });
 
   if (!db) throw new Error("Database not initialized");

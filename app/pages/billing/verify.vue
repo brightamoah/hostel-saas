@@ -117,6 +117,7 @@ onMounted(async () => {
     }).then(res => res as {
       message: string;
       success: boolean;
+      alreadyProcessed: boolean;
       data: {
         amount: number;
         status: Billing["status"];
@@ -130,6 +131,21 @@ onMounted(async () => {
 
     if (!response.success && !response.data) {
       throw new Error(response.message);
+    }
+
+    if (response.alreadyProcessed) {
+      verificationStatus.value = "success";
+      message.value = response.message;
+      paymentDetails.value = response.data || null;
+
+      toast.add({
+        title: "Transaction Already Processed",
+        description: "This invoice is already fully cleared.",
+        color: "info",
+        icon: "i-lucide-info",
+        duration: 4000,
+      });
+      return;
     }
 
     verificationStatus.value = "success";

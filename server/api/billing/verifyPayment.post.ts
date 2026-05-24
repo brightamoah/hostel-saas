@@ -22,7 +22,6 @@ export default defineEventHandler(async (event) => {
       processSuccessfulPayment,
       markPaymentAsFailed,
       getBillingByIdStudent,
-
     } = await billingQueries();
 
     const existingPayment = await checkExistingPayment(reference);
@@ -34,13 +33,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (existingPayment.status === "completed") {
-      throw createError({
-        statusCode: 400,
-        message: "This payment has already been verified and completed.",
-      });
-    }
-
     const currentBilling = await getBillingByIdStudent(billingId);
 
     if (!currentBilling) {
@@ -48,6 +40,29 @@ export default defineEventHandler(async (event) => {
         statusCode: 404,
         message: "Billing record not found.",
       });
+    }
+
+    if (existingPayment.status === "completed") {
+      const totalDue = Number(currentBilling.amount) + Number(currentBilling.lateFee || 0);
+      const paidAmount = Number(currentBilling.paidAmount || 0);
+      const remainingBalance = Math.max(0, totalDue - paidAmount);
+
+      const verifyResponse = await verifyPaystackTransaction(reference);
+
+      return {
+        success: true,
+        alreadyProcessed: true,
+        message: "This transaction has already been verified and processed.",
+        data: {
+          amount: Number(existingPayment.amount),
+          status: currentBilling.status,
+          remainingBalance,
+          paidAt: existingPayment.updatedAt,
+          paymentMethod: existingPayment.paymentMethod,
+          reference: existingPayment.transactionReference,
+          transactionId: verifyResponse?.data?.id,
+        },
+      };
     }
 
     const billingHostelId = "hostelId" in currentBilling && typeof currentBilling.hostelId === "number"
@@ -121,6 +136,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       message: `Payment of ${formatCurrency(verifiedAmount)} verified successfully. ${newStatus === "fully paid" ? "Invoice fully paid!" : `Balance remaining: ${formatCurrency(totalDue - newPaidTotal)}`}`,
+      alreadyProcessed: false,
       data: {
         amount: verifiedAmount,
         status: newStatus,

@@ -32,8 +32,24 @@ export function handleError(
   context: string,
   event?: H3Event,
 ): never {
-  // const runtimeConfig = useRuntimeConfig();
-  const err = error as StructuredError;
+  let safeError = error;
+
+  if (
+    error
+    && typeof error === "object"
+    && (error.constructor?.name === "ErrorEvent" || "colno" in error || "filename" in error)
+  ) {
+    const eventMessage = (error as any).message || "A database network socket drop occurred via WebSocket connection.";
+
+    const standardErr = new Error(eventMessage);
+    standardErr.name = (error as any).name || "NetworkError";
+    standardErr.stack = (error as any).stack;
+    (standardErr as any).code = (error as any).code;
+
+    safeError = standardErr;
+  }
+
+  const err = safeError as StructuredError;
 
   const log = useLogger(event! as unknown as ServerEvent);
 
@@ -65,7 +81,7 @@ export function handleError(
     error: {
       name: err.name,
       message: err.message,
-      code: (error as any)?.code,
+      code: (safeError as any)?.code,
       statusCode: err.statusCode,
       // Include stack trace in production for Cloudflare logs
       stack: err.stack ? err.stack.split("\n").slice(0, 5).join(" | ") : undefined,
@@ -79,7 +95,7 @@ export function handleError(
   console.error(`[${context} Error] ${err.name}: ${err.message}`);
   console.error(`Path: ${event?.path}, Status: ${err.statusCode || 500}`);
 
-  switch ((error as any)?.code) {
+  switch ((safeError as any)?.code) {
     case "23505": // unique_violation
       throw createError({
         statusCode: 409,
@@ -103,7 +119,7 @@ export function handleError(
   }
 
   // If the error already has a status code, it was thrown deliberately with createError.
-  if (err?.statusCode) throw error;
+  if (err?.statusCode) throw safeError;
 
   const rawMessage = String(err?.data?.message ?? err?.message ?? "").trim();
   const lower = rawMessage.toLowerCase();
@@ -130,13 +146,13 @@ export function handleError(
   }
 
   throw evlogCreateError({
-    cause: error as Error,
-    message: (error as any)?.message || "An unexpected error occurred",
-    status: (error as any)?.statusCode || 500,
+    cause: safeError as Error,
+    message: (safeError as any)?.message || "An unexpected error occurred",
+    status: (safeError as any)?.statusCode || 500,
     // Technical details for logs but hidden from clients
     internal: {
-      originalCode: (error as any)?.code,
-      stack: (error as any)?.stack,
+      originalCode: (safeError as any)?.code,
+      stack: (safeError as any)?.stack,
     },
   });
 }
