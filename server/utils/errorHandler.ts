@@ -51,16 +51,23 @@ export function handleError(
 
   const err = safeError as StructuredError;
 
-  const log = useLogger(event! as unknown as ServerEvent);
+  const runtimeEvent = event || ({
+    method: "CRON",
+    path: `task:${context}`,
+    context: {},
+    node: { req: { headers: {} } },
+  } as unknown as H3Event);
+
+  const log = useLogger(runtimeEvent as unknown as ServerEvent);
 
   log.set({ context });
 
   // Get Cloudflare-specific context
-  const cloudflareContext = event?.context.cloudflare;
-  const requestId = cloudflareContext?.cf?.requestId || "unknown";
-  const cfRay = cloudflareContext?.cf?.cfRay || "unknown";
+  const cloudflareContext = event?.context?.cloudflare;
+  const requestId = cloudflareContext?.cf?.requestId || "system-cron";
+  const cfRay = cloudflareContext?.cf?.cfRay || "system-cron";
 
-  if (event?.context.cloudflare) {
+  if (event?.context?.cloudflare) {
     const { cf } = event.context.cloudflare;
     log.set({
       requestId: cf?.requestId,
@@ -76,8 +83,8 @@ export function handleError(
     requestId,
     cfRay,
     context,
-    path: event?.path || "N/A",
-    method: event?.method || "N/A",
+    path: event?.path || `task:${context}`,
+    method: event?.method || "CRON",
     error: {
       name: err.name,
       message: err.message,
