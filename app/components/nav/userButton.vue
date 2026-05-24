@@ -10,6 +10,8 @@ const { handleSignOut, isLoggedIn, user } = defineProps<{
 
 const portalSurface = usePortalSurface();
 
+const { isPlatformAdminOrOwner } = usePortalUserSession();
+
 const { userInitials, userBadgeColor, avatarBgColor } = useUseUserItems();
 
 const dashboardIcon = computed(() =>
@@ -24,7 +26,7 @@ const signUpRouteName = computed<RouteLocationRaw>(() => portalSurface === "admi
 const userMenuItems = computed<UserMenuItem[][]>(() => {
   if (!isLoggedIn || !user) return [];
 
-  return [
+  const items: UserMenuItem[][] = [
     [
       {
         label: user.name,
@@ -59,21 +61,30 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
           ? { name: "admin-dashboard" }
           : { name: "student-dashboard" }),
       },
+
+    ],
+  ];
+
+  if (isPlatformAdminOrOwner.value) {
+    items.push([
       {
         label: "Company Settings",
         icon: "i-lucide-building-2",
         to: { name: "admin-companySettings" },
       },
-    ],
-    [
-      {
-        label: "Log Out",
-        icon: "i-lucide-log-out",
-        color: "error",
-        onSelect: () => handleSignOut(),
-      },
-    ],
-  ];
+    ]);
+  }
+
+  items.push([
+    {
+      label: "Log Out",
+      icon: "i-lucide-log-out",
+      color: "error",
+      onSelect: () => handleSignOut(),
+    },
+  ]);
+
+  return items;
 });
 </script>
 

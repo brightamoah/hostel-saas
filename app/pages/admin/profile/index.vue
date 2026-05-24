@@ -9,6 +9,8 @@ definePageMeta({
   },
 });
 
+const { isPlatformAdminOrOwner } = usePortalUserSession();
+
 const settingsItems: ProfileSettingsItem[] = [
   {
     id: "security" as const,
@@ -43,6 +45,17 @@ const settingsItems: ProfileSettingsItem[] = [
     link: { name: "admin-profile-settings-loginHistory" },
   },
 ];
+
+if (isPlatformAdminOrOwner.value) {
+  settingsItems.push({
+    id: "companySettings" as const,
+    title: "Company Settings",
+    icon: "i-lucide-building-2",
+    buttonLabel: "Manage Company Settings",
+    description: "Configure your company's information and preferences.",
+    link: { name: "admin-companySettings" },
+  });
+}
 </script>
 
 <template>
