@@ -1,5 +1,7 @@
 import type { H3Event } from "h3";
 
+import { companyQueries } from "../db/queries";
+
 export async function adminSessionCheck(event: H3Event): Promise<AdminScope & { session: Awaited<ReturnType<typeof requirePortalUserSession>> }> {
   const session = await requirePortalUserSession(event, {
     message: "You must be logged in as an admin to access this resource.",
@@ -33,18 +35,9 @@ export async function adminSessionCheck(event: H3Event): Promise<AdminScope & { 
     };
   }
 
-  const { db } = useDB();
+  const { getUserMembershipByUserId } = await companyQueries();
 
-  const membership = await db.query.companyMember.findFirst({
-    where: {
-      userId: user.id,
-    },
-    columns: {
-      companyId: true,
-      role: true,
-      status: true,
-    },
-  });
+  const membership = await getUserMembershipByUserId(user.id);
 
   if (!membership || membership.status !== "active") {
     throw createError({

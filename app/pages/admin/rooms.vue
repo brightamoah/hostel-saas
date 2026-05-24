@@ -245,54 +245,56 @@ useSeoMeta({
           </RoomSearchFilter>
         </div>
 
-        <UTable
-          ref="tableRef"
-          :key="rooms.length"
-          v-model:global-filter="globalFilter"
-          v-model:column-visibility="columnVisibility"
-          v-model:row-selection="rowSelection"
-          v-model:pagination="pagination"
-          row-key="id"
-          class="mt-6 max-w-[95dvw] md:max-w-full shrink-0"
-          :columns="columns"
-          :data="rooms"
-          :get-row-items="getRowItems"
-          :loading="status === 'pending'"
-          :pagination-options="{
-            getPaginationRowModel: getPaginationRowModel(),
-          }"
-          :ui="{
-            base: 'table-fixed border-separate border-spacing-0',
-            thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-            tbody: '[&>tr]:last:[&>td]:border-b-0',
-            th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-            td: 'border-b border-default',
-          }"
-        >
-          <template #empty>
-            <UEmpty
-              variant="naked"
-              icon="i-lucide-building-2"
-              title="No Rooms Available"
-              description="There is currently no data to display in this table."
-              size="xl"
-              class="flex flex-1 justify-center items-center w-full"
-            />
-          </template>
-        </UTable>
+        <ClientOnly>
+          <UTable
+            ref="tableRef"
+            :key="rooms.length"
+            v-model:global-filter="globalFilter"
+            v-model:column-visibility="columnVisibility"
+            v-model:row-selection="rowSelection"
+            v-model:pagination="pagination"
+            row-key="id"
+            class="mt-6 max-w-[95dvw] md:max-w-full shrink-0"
+            :columns="columns"
+            :data="rooms"
+            :get-row-items="getRowItems"
+            :loading="status === 'pending'"
+            :pagination-options="{
+              getPaginationRowModel: getPaginationRowModel(),
+            }"
+            :ui="{
+              base: 'table-fixed border-separate border-spacing-0',
+              thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+              tbody: '[&>tr]:last:[&>td]:border-b-0',
+              th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+              td: 'border-b border-default',
+            }"
+          >
+            <template #empty>
+              <UEmpty
+                variant="naked"
+                icon="i-lucide-building-2"
+                title="No Rooms Available"
+                description="There is currently no data to display in this table."
+                size="xl"
+                class="flex flex-1 justify-center items-center w-full"
+              />
+            </template>
+          </UTable>
 
-        <DashboardPagination
-          v-if="table && table?.tableApi"
-          :items="rooms"
-          :total-items="totalRooms"
-          :selected-items-length="selectedRoomsLength"
-          :current-items-showing="currentRoomsShowing"
-          :last-item-showing="lastRoomShowing"
-          :table="table!.tableApi"
-          :default-page
-          :items-per-page
-          :update-page
-        />
+          <DashboardPagination
+            v-if="table && table?.tableApi"
+            :items="rooms"
+            :total-items="totalRooms"
+            :selected-items-length="selectedRoomsLength"
+            :current-items-showing="currentRoomsShowing"
+            :last-item-showing="lastRoomShowing"
+            :table="table!.tableApi"
+            :default-page
+            :items-per-page
+            :update-page
+          />
+        </ClientOnly>
       </template>
     </UDashboardPanel>
   </div>
