@@ -6,7 +6,6 @@ export function useFetchRoomData() {
   const { data, status, refresh, error } = useFetch<RoomDataResponse>("/api/room/getRoomData", {
     method: "get",
     key: computed(() => `roomData:${user.value?.adminData?.accessLevel}`),
-    lazy: true,
     cache: "default",
     default: () => ({
       rooms: [],

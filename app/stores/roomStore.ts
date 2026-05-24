@@ -16,24 +16,26 @@ export const useRoomStore = defineStore("roomStore", () => {
 
   const isLoading = ref<boolean>(false);
 
-  const roomType = ref<AddRoomSchema["roomType"][]>([
-    "single",
-    "double",
-    "triple",
-    "quad",
+  const roomType = ref<{ label: string; value: AddRoomSchema["roomType"] }[]>([
+    { label: "Single", value: "single" },
+    { label: "Double", value: "double" },
+    { label: "Triple", value: "triple" },
+    { label: "Quad", value: "quad" },
   ]);
 
-  const allowedGender = ref<AddRoomSchema["allowedGender"][]>([
-    "male",
-    "female",
+  const allowedGender = ref<{ label: string; value: AddRoomSchema["allowedGender"] }[]>([
+    { label: "Unassigned", value: "unassigned" },
+    { label: "Male", value: "male" },
+    { label: "Female", value: "female" },
+    { label: "Mixed", value: "mixed" },
   ]);
 
-  const roomStatus = ref<AddRoomSchema["status"][]>([
-    "vacant",
-    "fully occupied",
-    "partially occupied",
-    "under maintenance",
-    "reserved",
+  const roomStatus = ref<{ label: string; value: AddRoomSchema["status"] }[]>([
+    { label: "Vacant", value: "vacant" },
+    { label: "Fully Occupied", value: "fully occupied" },
+    { label: "Partially Occupied", value: "partially occupied" },
+    { label: "Under Maintenance", value: "under maintenance" },
+    { label: "Reserved", value: "reserved" },
   ]);
 
   const addRoomState = ref<Partial<RoomFormState>>({
@@ -44,9 +46,9 @@ export const useRoomStore = defineStore("roomStore", () => {
     features: "",
     floor: 0,
     roomNumber: "",
-    roomType: "",
-    status: "",
-    allowedGender: "",
+    roomType: undefined,
+    status: undefined,
+    allowedGender: "unassigned",
   });
 
   const getRoomCapacity = computed(() => {
@@ -66,15 +68,6 @@ export const useRoomStore = defineStore("roomStore", () => {
 
     addRoomState.value.capacity = capacity;
   }, { immediate: true });
-
-  watch(() => addRoomState.value.floor, (newFloor) => {
-    if (newFloor && newFloor % 2 === 1) {
-      addRoomState.value.allowedGender = "male";
-    }
-    else {
-      addRoomState.value.allowedGender = "female";
-    }
-  }, { immediate: true, flush: "post" });
 
   const isFormValid = computed(() => {
     return addRoomSchema.safeParse(addRoomState.value).success;
@@ -126,8 +119,9 @@ export const useRoomStore = defineStore("roomStore", () => {
       features: "",
       floor: 0,
       roomNumber: "",
-      roomType: "",
-      status: "",
+      roomType: undefined,
+      status: undefined,
+      allowedGender: "unassigned",
     };
   };
 

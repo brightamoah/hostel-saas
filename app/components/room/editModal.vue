@@ -87,9 +87,9 @@ const getChangedFields = computed(() => {
     if (current[field] !== original[field]) changed[field] = current[field] as any;
   });
 
-  if (current.roomType !== original.roomType && current.roomType !== "") changed.roomType = current.roomType;
+  if (current.roomType !== original.roomType) changed.roomType = current.roomType;
 
-  if (current.status !== original.status && current.status !== "") changed.status = current.status;
+  if (current.status !== original.status) changed.status = current.status;
 
   if (current.features !== original.features) {
     changed.features = current.features
@@ -232,8 +232,9 @@ async function submitUpdate() {
             class="w-full"
           >
             <USelectMenu
-              v-model="editRoomState.roomType as AddRoomSchema['roomType']"
+              v-model="editRoomState.roomType"
               :items="roomTypeItems"
+              value-key="value"
               placeholder="Select room type"
               class="w-full cursor-pointer"
               :size="isMobile ? 'lg' : 'xl'"
@@ -308,8 +309,9 @@ async function submitUpdate() {
             class="w-full"
           >
             <USelectMenu
-              v-model="editRoomState.status as AddRoomSchema['status']"
+              v-model="editRoomState.status"
               :items="roomStatusItems"
+              value-key="value"
               placeholder="Select room status"
               class="w-full cursor-pointer"
               :size="isMobile ? 'lg' : 'xl'"

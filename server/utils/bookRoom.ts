@@ -135,10 +135,15 @@ export async function bookRoom(
           });
         }
 
-        if (targetRoom.allowedGender !== studentRecord.gender) {
+        const isGenderAllowed
+          = targetRoom.allowedGender === "unassigned"
+            || targetRoom.allowedGender === "mixed"
+            || targetRoom.allowedGender === studentRecord.gender;
+
+        if (!isGenderAllowed) {
           throw createError({
             statusCode: 400,
-            message: `You cannot book this room. It is reserved for ${targetRoom.allowedGender} students only.`,
+            message: `Booking conflict: This space is explicitly designated for ${targetRoom.allowedGender} residents.`,
           });
         }
 
@@ -215,14 +220,20 @@ export async function bookRoom(
           });
         }
 
+        const resolvedGender = targetRoom.allowedGender === "unassigned"
+          ? studentRecord.gender
+          : targetRoom.allowedGender;
+
         const [updatedRoom] = await tx.update(room)
           .set({
+            allowedGender: resolvedGender,
             currentOccupancy: sql`${room.currentOccupancy} + 1`,
             status: sql`
           CASE
             WHEN ${room.currentOccupancy} + 1 >= ${room.capacity} THEN 'fully occupied'::room_status
             ELSE 'partially occupied'::room_status
           END`,
+            updatedAt: new Date(),
           })
           .where(eq(room.id, roomId))
           .returning();

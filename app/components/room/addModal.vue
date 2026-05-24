@@ -10,24 +10,11 @@ const {
   isLoading,
   isModalOpen,
   allowedGender,
+  roomStatus,
+  roomType,
 } = storeToRefs(roomStore);
 
 const addRoomFormRef = useTemplateRef("addRoomFormRef");
-
-const roomType = ref<AddRoomSchema["roomType"][]>([
-  "single",
-  "double",
-  "triple",
-  "quad",
-]);
-
-const roomStatus = ref<AddRoomSchema["status"][]>([
-  "vacant",
-  "fully occupied",
-  "partially occupied",
-  "under maintenance",
-  "reserved",
-]);
 
 const {
   hostels,
@@ -125,10 +112,11 @@ watch(
             class="w-full"
           >
             <USelectMenu
-              v-model="addRoomState.status as AddRoomSchema['status']"
+              v-model="addRoomState.status"
               :items="roomStatus"
               placeholder="Select room status"
               class="w-full cursor-pointer"
+              value-key="value"
               :size="isMobile ? 'lg' : 'xl'"
               clear
             />
@@ -141,9 +129,10 @@ watch(
             class="w-full"
           >
             <USelectMenu
-              v-model="addRoomState.roomType as AddRoomSchema['roomType'] "
+              v-model="addRoomState.roomType"
               :items="roomType"
               placeholder="Select room type"
+              value-key="value"
               class="w-full cursor-pointer"
               :size="isMobile ? 'lg' : 'xl'"
               clear
@@ -234,8 +223,9 @@ watch(
           class="mb-4 px-4 w-full"
         >
           <USelectMenu
-            v-model="addRoomState.allowedGender as AddRoomSchema['allowedGender']"
+            v-model="addRoomState.allowedGender"
             :items="allowedGender"
+            value-key="value"
             placeholder="Select allowed gender"
             class="w-full cursor-pointer"
             :size="isMobile ? 'lg' : 'xl'"

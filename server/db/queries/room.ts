@@ -3,7 +3,7 @@ import type { AdminScope, AuditContext, Period } from "~~/shared/types";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, asc, countDistinct, desc, eq, exists, gt, inArray, like, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, gt, inArray, like, or, sql } from "drizzle-orm";
 
 import { allocation, hostel, room } from "../schema";
 import { auditLogQueries } from "./auditLog";
@@ -141,34 +141,19 @@ export async function roomQueries() {
 
     const [result] = await db
       .select({
-        vacant: countDistinct(sql`CASE WHEN ${room.status} = 'vacant' THEN ${room.id} END`),
-        fullyOccupied: countDistinct(
-          sql`CASE WHEN ${room.status} = 'fully occupied' THEN ${room.id} END`,
-        ),
-        partiallyOccupied: countDistinct(
-          sql`CASE WHEN ${room.status} = 'partially occupied' THEN ${room.id} END`,
-        ),
-        underMaintenance: countDistinct(
-          sql`CASE WHEN ${room.status} = 'under maintenance' THEN ${room.id} END`,
-        ),
-        reserved: countDistinct(sql`CASE WHEN ${room.status} = 'reserved' THEN ${room.id} END`),
-        available: countDistinct(
-          sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') THEN ${room.id} END`,
-        ),
-        allRooms: countDistinct(room.id),
-        occupied: countDistinct(sql`CASE WHEN ${room.currentOccupancy} > 0 THEN ${room.id} END`),
-        prevTotalRooms: countDistinct(
-          sql`CASE WHEN ${room.createdAt} < ${startOfThisMonth} THEN ${room.id} END`,
-        ),
-        prevOccupied: countDistinct(
-          sql`CASE WHEN ${room.status} = 'fully occupied' AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`,
-        ),
-        prevAvailable: countDistinct(
-          sql`CASE WHEN ${room.status} IN ('vacant', 'partially occupied') AND ${room.updatedAt} < ${startOfThisMonth} THEN ${room.id} END`,
-        ),
-        prevMaintenance: countDistinct(
-          sql`CASE WHEN ${room.status} = 'under maintenance' AND ${room.updatedAt} < ${startOfThisWeek} THEN ${room.id} END`,
-        ),
+        vacant: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'vacant')`,
+        fullyOccupied: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'fully occupied')`,
+        partiallyOccupied: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'partially occupied')`,
+        underMaintenance: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'under maintenance')`,
+        reserved: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'reserved')`,
+        available: sql<number>`COUNT(*) FILTER (WHERE ${room.status} IN ('vacant', 'partially occupied'))`,
+        allRooms: sql<number>`COUNT(*)`,
+        occupied: sql<number>`COUNT(*) FILTER (WHERE ${room.currentOccupancy} > 0)`,
+
+        prevTotalRooms: sql<number>`COUNT(*) FILTER (WHERE ${room.createdAt} < ${startOfThisMonth})`,
+        prevOccupied: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'fully occupied' AND ${room.updatedAt} < ${startOfThisMonth})`,
+        prevAvailable: sql<number>`COUNT(*) FILTER (WHERE ${room.status} IN ('vacant', 'partially occupied') AND ${room.updatedAt} < ${startOfThisMonth})`,
+        prevMaintenance: sql<number>`COUNT(*) FILTER (WHERE ${room.status} = 'under maintenance' AND ${room.updatedAt} < ${startOfThisWeek})`,
       })
       .from(room)
       .where(and(...applyRoomScopeSql(scope)));

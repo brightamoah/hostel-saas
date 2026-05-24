@@ -312,12 +312,10 @@ const phoneNumberSchema = z.string().superRefine((val, ctx) => {
   }
 });
 
-const genderSchema = z.union([
-  z.enum(["male", "female", "mixed", "unassigned"], {
+const genderSchema
+  = z.enum(["male", "female", "mixed", "unassigned"], {
     error: "Gender is required",
-  }),
-  z.literal(""),
-]).refine(val => val !== "", "Gender is required");
+  });
 
 const addressSchema = z
   .string()
@@ -382,19 +380,15 @@ const emailVerificationSchema = z.object({
   token: z.uuidv4({ error: "Valid token is required" }),
 });
 
-const roomTypeSchema = z.union([
-  z.enum(["single", "double", "triple", "quad"], {
+const roomTypeSchema
+  = z.enum(["single", "double", "triple", "quad"], {
     error: "Room Type is required",
-  }),
-  z.literal(""),
-]).refine(val => val !== "", "Room Type is required");
+  });
 
-const roomStatusSchema = z.union([
-  z.enum(["vacant", "fully occupied", "partially occupied", "under maintenance", "reserved"], {
+const roomStatusSchema
+  = z.enum(["vacant", "fully occupied", "partially occupied", "under maintenance", "reserved"], {
     error: "Status is required",
-  }),
-  z.literal(""),
-]).refine(val => val !== "", "Status is required");
+  });
 
 const roomNumberSchema = z
   .string()

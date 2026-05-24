@@ -83,10 +83,17 @@ export const room = pgTable("room", t => ({
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 }), table => [
-  // unique("unique_room").on(table.roomNumber, table.building, table.hostelId),
   unique("unique_room_number").on(table.roomNumber, table.hostelId),
-  check("chk_capacity", sql`capacity > 0`),
-  check("chk_occupancy", sql`current_occupancy >= 0 AND current_occupancy <= capacity`),
+
+  check("chk_capacity", sql`${table.capacity} > 0`),
+
+  check("chk_occupancy", sql`${table.currentOccupancy} >= 0 AND ${table.currentOccupancy} <= ${table.capacity}`),
+
+  check("chk_occupancy_gender_safety", sql`
+    (${table.currentOccupancy} = 0 AND ${table.allowedGender} = 'unassigned')
+    OR (${table.currentOccupancy} > 0 AND ${table.allowedGender} != 'unassigned')
+    OR (${table.allowedGender} = 'mixed')
+  `),
 ]);
 
 export const allocation = pgTable("allocation", t => ({
@@ -106,6 +113,6 @@ export const allocation = pgTable("allocation", t => ({
     .notNull(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
 }), table => [
-  check("chk_dates", sql`end_date IS NULL OR end_date >= allocation_date`),
+  check("chk_dates", sql`${table.endDate} IS NULL OR ${table.endDate} >= ${table.allocationDate}`),
   index("idx_allocation_student_status").on(table.studentId, table.status),
 ]);
