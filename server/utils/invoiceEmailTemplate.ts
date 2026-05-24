@@ -6,6 +6,10 @@ export function getInvoiceEmailTemplate(
   amountTotal: string,
   amountPaid: string,
   amountDue: string,
+  hostelName: string,
+  hostelEmail: string = "support@kayanest.app",
+  hostelPhone: string = "+233 54 968 4848",
+  hostelAddress: string = "University Campus, Accra, Ghana",
 ) {
   const htmlTemplate = `
    <!DOCTYPE html>
@@ -147,15 +151,15 @@ export function getInvoiceEmailTemplate(
 <body>
     <div class="email-container">
         <div class="header">
-            <h1>Kings Hostel Management</h1>
-            <p>University Campus, Accra, Ghana</p>
-            <p>kingshostelmgt@gmail.com | +233 30 277 8899</p>
+            <h1>${hostelName}</h1>
+            <p>${hostelAddress}</p>
+            <p>${hostelEmail} | ${hostelPhone}</p>
         </div>
 
         <div class="greeting">
             <p>Dear <strong>${studentName}</strong>,</p>
             <p>We hope this message finds you well.</p>
-            <p>Please find attached your invoice from Kings Hostel Management. We kindly request your prompt attention to this matter.</p>
+            <p>Please find attached your invoice from ${capitalizeWords(hostelName)}. We kindly request your prompt attention to this matter.</p>
         </div>
 
         <div class="invoice-details">
@@ -181,7 +185,7 @@ export function getInvoiceEmailTemplate(
                 <h4>🏦 Bank Transfer</h4>
                 <ul>
                     <li><strong>Bank:</strong> Ghana Commercial Bank</li>
-                    <li><strong>Account Name:</strong> Kings Hostel Management</li>
+                    <li><strong>Account Name:</strong> ${hostelName}</li>
                     <li><strong>Account Number:</strong> 1234567890</li>
                 </ul>
             </div>
@@ -198,8 +202,8 @@ export function getInvoiceEmailTemplate(
         <div class="contact-info">
             <h4>📞 Need Help?</h4>
             <p>For any questions regarding your invoice or payment options, please contact our billing department:</p>
-            <p><strong>Email:</strong> kingshostelmgt@gmail.com</p>
-            <p><strong>Phone:</strong> +233 30 277 8899</p>
+            <p><strong>Email:</strong> ${hostelEmail}</p>
+            <p><strong>Phone:</strong> ${hostelPhone}</p>
             <p><strong>Office Hours:</strong> Monday - Friday, 8:00 AM - 5:00 PM</p>
         </div>
 
@@ -216,7 +220,7 @@ Dear ${studentName},
 
 We hope this message finds you well.
 
-Please find attached your invoice from Kings Hostel Management. We kindly request your prompt attention to this matter.
+Please find attached your invoice from ${capitalizeWords(hostelName)}. We kindly request your prompt attention to this matter.
 
 Invoice Details:
 - Invoice ID: ${invoiceNumber}
@@ -232,7 +236,7 @@ You can make your payment through any of the following convenient methods:
 
 1. Bank Transfer
    - Bank: Ghana Commercial Bank
-   - Account Name: Kings Hostel Management
+   - Account Name: ${hostelName}
    - Account Number: 1234567890
 
 2. Mobile Money
@@ -241,8 +245,8 @@ You can make your payment through any of the following convenient methods:
 
 Need Help?
 For any questions regarding your invoice or payment options, please contact our billing department:
-- Email: kingshostelmgt@gmail.com
-- Phone: +233 30 277 8899
+- Email: ${hostelEmail}
+- Phone: ${hostelPhone}
 - Office Hours: Monday - Friday, 8:00 AM - 5:00 PM
   `;
 

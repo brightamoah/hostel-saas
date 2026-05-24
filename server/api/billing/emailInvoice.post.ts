@@ -1,3 +1,4 @@
+import { userQueries } from "~~/server/db/queries";
 import { formatDate, formatMoney } from "~~/server/utils/formatters";
 import { getInvoiceEmailTemplate } from "~~/server/utils/invoiceEmailTemplate";
 import { emailInvoiceSchema } from "~~/shared/utils/schema";
@@ -6,6 +7,7 @@ export default defineEventHandler(async (event) => {
   const { user } = await requirePortalUserSession(event, {
     message: "Unauthorized Access: Please log in to continue.",
   });
+
   try {
     const body = await readMultipartFormData(event);
     if (!body) {
@@ -67,6 +69,19 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const { getStudentWithRelations } = await userQueries();
+
+    const student = await getStudentWithRelations(studentUserId);
+
+    if (!student) {
+      throw createError({
+        statusCode: 404,
+        message: "Student Record not found",
+      });
+    }
+
+    const studentsActiveAllocation = student.allocations.find(a => a.status === "active" || a.status === "pending");
+
     const runtimeConfig = useRuntimeConfig();
 
     const { htmlTemplate, textTemplate } = getInvoiceEmailTemplate(
@@ -77,6 +92,10 @@ export default defineEventHandler(async (event) => {
       formatMoney(amountTotal),
       formatMoney(amountPaid),
       formatMoney(amountDue),
+      studentsActiveAllocation?.room?.hostel?.name ?? "",
+      (studentsActiveAllocation?.room?.hostel?.email ?? studentsActiveAllocation?.room?.hostel?.supportEmail) ?? undefined,
+      (studentsActiveAllocation?.room?.hostel?.contactNumber ?? studentsActiveAllocation?.room?.hostel?.supportPhone) ?? undefined,
+      studentsActiveAllocation?.room?.hostel?.address ?? undefined,
     );
 
     const emailSubject = `Invoice #${invoiceNumber} from Kings Hostel`;
@@ -96,7 +115,10 @@ export default defineEventHandler(async (event) => {
         const mailer = await useWorkerMailer();
 
         await mailer.send({
-          from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
+          from: {
+            name: runtimeConfig.emailFromName,
+            email: runtimeConfig.supportEmail ?? runtimeConfig.emailFromEmail,
+          },
           to: { name: studentName, email: studentEmail },
           subject: emailSubject,
           html: htmlTemplate,
