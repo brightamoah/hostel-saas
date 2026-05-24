@@ -7,6 +7,7 @@ export function useFetchRoomData() {
     method: "get",
     key: computed(() => `roomData:${user.value?.adminData?.accessLevel}`),
     cache: "default",
+    lazy: true,
     default: () => ({
       rooms: [],
       hostels: [],
@@ -46,6 +47,17 @@ export function useFetchRoomData() {
     },
   });
 
+  const isMounted = ref(false);
+  onMounted(() => {
+    isMounted.value = true;
+  });
+
+  const uiStatus = computed(() => {
+    if (!isMounted.value) return "pending";
+    if (data.value && data.value.rooms?.length > 0) return "success";
+    return status.value;
+  });
+
   const rooms = computed<Room[]>(() => data.value?.rooms ?? []);
 
   const hostels = computed(() => data.value?.hostels ?? []);
@@ -68,6 +80,7 @@ export function useFetchRoomData() {
     rooms,
     data,
     status,
+    uiStatus,
     coolDownTime,
     isLoading,
     canResend,

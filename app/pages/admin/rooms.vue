@@ -25,7 +25,7 @@ const globalFilter = ref("");
 
 const {
   data,
-  status,
+  uiStatus,
   rooms,
   isLoading: refreshIsLoading,
   canResend,
@@ -82,6 +82,14 @@ const {
   UDropdownMenu,
   UTooltip,
 );
+
+const isTableLoading = computed(() => {
+  if (uiStatus.value === "pending" && rooms.value.length === 0) return true;
+
+  if (refreshIsLoading.value) return true;
+
+  return false;
+});
 
 const {
   selectedRoomsLength,
@@ -140,7 +148,7 @@ const image = "/images/hostel.jpg";
 const url = "https://bkamoah.vercel.app/contact";
 
 useHead({
-  titleTemplate: `Kings Hostel Management | ${title.value}`,
+  titleTemplate: `Kayanest Hostel Management | ${title.value}`,
   meta: [
     { name: "viewport", content: "width=device-width, initial-scale=1.0" },
     { name: "charset", content: "utf-8" },
@@ -176,7 +184,7 @@ useSeoMeta({
 
       <template #body>
         <div class="p-2 md:p-4">
-          <DashboardCardSkeleton v-if="status === 'pending'" />
+          <DashboardCardSkeleton v-if="uiStatus === 'pending'" />
 
           <DashboardStatsCard
             v-else
@@ -245,56 +253,54 @@ useSeoMeta({
           </RoomSearchFilter>
         </div>
 
-        <ClientOnly>
-          <UTable
-            ref="tableRef"
-            :key="rooms.length"
-            v-model:global-filter="globalFilter"
-            v-model:column-visibility="columnVisibility"
-            v-model:row-selection="rowSelection"
-            v-model:pagination="pagination"
-            row-key="id"
-            class="mt-6 max-w-[95dvw] md:max-w-full shrink-0"
-            :columns="columns"
-            :data="rooms"
-            :get-row-items="getRowItems"
-            :loading="status === 'pending'"
-            :pagination-options="{
-              getPaginationRowModel: getPaginationRowModel(),
-            }"
-            :ui="{
-              base: 'table-fixed border-separate border-spacing-0',
-              thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
-              tbody: '[&>tr]:last:[&>td]:border-b-0',
-              th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
-              td: 'border-b border-default',
-            }"
-          >
-            <template #empty>
-              <UEmpty
-                variant="naked"
-                icon="i-lucide-building-2"
-                title="No Rooms Available"
-                description="There is currently no data to display in this table."
-                size="xl"
-                class="flex flex-1 justify-center items-center w-full"
-              />
-            </template>
-          </UTable>
+        <UTable
+          ref="tableRef"
+          :key="rooms.length"
+          v-model:global-filter="globalFilter"
+          v-model:column-visibility="columnVisibility"
+          v-model:row-selection="rowSelection"
+          v-model:pagination="pagination"
+          row-key="id"
+          class="mt-6 max-w-[95dvw] md:max-w-full shrink-0"
+          :columns="columns"
+          :data="rooms"
+          :get-row-items="getRowItems"
+          :loading="isTableLoading"
+          :pagination-options="{
+            getPaginationRowModel: getPaginationRowModel(),
+          }"
+          :ui="{
+            base: 'table-fixed border-separate border-spacing-0',
+            thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+            tbody: '[&>tr]:last:[&>td]:border-b-0',
+            th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+            td: 'border-b border-default',
+          }"
+        >
+          <template #empty>
+            <UEmpty
+              variant="naked"
+              icon="i-lucide-building-2"
+              title="No Rooms Available"
+              description="There is currently no data to display in this table."
+              size="xl"
+              class="flex flex-1 justify-center items-center w-full"
+            />
+          </template>
+        </UTable>
 
-          <DashboardPagination
-            v-if="table && table?.tableApi"
-            :items="rooms"
-            :total-items="totalRooms"
-            :selected-items-length="selectedRoomsLength"
-            :current-items-showing="currentRoomsShowing"
-            :last-item-showing="lastRoomShowing"
-            :table="table!.tableApi"
-            :default-page
-            :items-per-page
-            :update-page
-          />
-        </ClientOnly>
+        <DashboardPagination
+          v-if="table && table?.tableApi"
+          :items="rooms"
+          :total-items="totalRooms"
+          :selected-items-length="selectedRoomsLength"
+          :current-items-showing="currentRoomsShowing"
+          :last-item-showing="lastRoomShowing"
+          :table="table!.tableApi"
+          :default-page
+          :items-per-page
+          :update-page
+        />
       </template>
     </UDashboardPanel>
   </div>

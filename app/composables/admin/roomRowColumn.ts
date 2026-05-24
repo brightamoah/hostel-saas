@@ -122,7 +122,7 @@ export function useRoomRowColumn(
     {
       id: "hostel.name",
       accessorFn: row => row?.hostel?.name,
-      header: createSortableHeader("Building", UButton),
+      header: createSortableHeader("Hostel", UButton),
       cell: ({ row }) => {
         return h("p", { class: "font-medium" }, row?.original?.hostel?.name);
       },
