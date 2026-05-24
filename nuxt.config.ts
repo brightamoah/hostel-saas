@@ -394,7 +394,7 @@ export default defineNuxtConfig({
         },
       },
       sampling: {
-        rates: { info: 20, warn: 50, debug: 20, error: 100 },
+        rates: { info: 10, warn: 30, debug: 10, error: 100 },
         keep: [{ status: 400 }, { status: 500 }],
       },
     },

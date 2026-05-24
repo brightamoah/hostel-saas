@@ -3,9 +3,14 @@ import { createAxiomDrain } from "evlog/axiom";
 import { createFsDrain } from "evlog/fs";
 
 export default defineNitroPlugin((nitro) => {
+  const runtimeConfig = useRuntimeConfig();
+
   nitro.hooks.hook("evlog:enrich", auditEnricher());
 
-  nitro.hooks.hook("evlog:drain", createAxiomDrain());
+  nitro.hooks.hook("evlog:drain", createAxiomDrain({
+    token: runtimeConfig.axiomToken,
+    dataset: runtimeConfig.axiomDataset,
+  }));
 
   if (import.meta.dev) {
     nitro.hooks.hook("evlog:drain", auditOnly(
