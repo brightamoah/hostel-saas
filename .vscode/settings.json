@@ -12,7 +12,7 @@
   "debug.console.fontSize": 13,
   "window.commandCenter": false,
   "workbench.preferredDarkColorTheme": "Anysphere",
-  "workbench.preferredLightColorTheme": "Dark Modern",
+  "workbench.preferredLightColorTheme": "Cursor Light",
   "workbench.iconTheme": "material-icon-theme",
   "window.autoDetectColorScheme": true,
   "workbench.layoutControl.enabled": false,
@@ -124,12 +124,17 @@
   "workbench.activityBar.location": "default",
   "editor.minimap.enabled": false,
   "editor.inlayHints.padding": true,
-  "js/ts.inlayHints.functionLikeReturnTypes.enabled": true,
-  "js/ts.inlayHints.parameterTypes.enabled": true,
-  "js/ts.inlayHints.propertyDeclarationTypes.enabled": true,
-  "js/ts.inlayHints.variableTypes.enabled": true,
-  "js/ts.inlayHints.enumMemberValues.enabled": true,
-  "js/ts.inlayHints.parameterNames.enabled": "all",
+  "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+  "typescript.inlayHints.parameterTypes.enabled": true,
+  "typescript.inlayHints.propertyDeclarationTypes.enabled": true,
+  "typescript.inlayHints.variableTypes.enabled": true,
+  "typescript.inlayHints.enumMemberValues.enabled": true,
+  "typescript.inlayHints.parameterNames.enabled": "all",
+  "javascript.inlayHints.functionLikeReturnTypes.enabled": true,
+  "javascript.inlayHints.parameterTypes.enabled": true,
+  "javascript.inlayHints.propertyDeclarationTypes.enabled": true,
+  "javascript.inlayHints.variableTypes.enabled": true,
+  "javascript.inlayHints.parameterNames.enabled": "all",
   "vue.inlayHints.destructuredProps": true,
   "vue.inlayHints.missingProps": true,
   "vue.inlayHints.optionsWrapper": true,
@@ -138,7 +143,7 @@
   "workbench.sideBar.location": "right",
   "oxc.enable": true,
   "tailwindCSS.experimental.configFile": "app/assets/css/main.css",
-  "js/ts.tsdk.path": "node_modules\\typescript\\lib",
+  "typescript.tsdk.path": "node_modules\\typescript\\lib",
   "tailwindCSS.includeLanguages": {
     "javascript": "html",
     "typescript": "html",
@@ -175,5 +180,6 @@
       }
     ]
   },
-  "SQL-Formatter-VSCode.dialect": "postgresql"
+  "SQL-Formatter-VSCode.dialect": "postgresql",
+  "editor.inlayHints.enabled": "on"
 }

@@ -10,8 +10,6 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<HostelAmenitiesSchema>>("state", { required: true });
 
-// Predefined amenity options. WiFi and Parking are managed in Operations tab
-// since they have their own detail fields — not duplicated here.
 const AMENITY_OPTIONS: { label: string; value: string }[] = [
   { label: "CCTV / Security cameras", value: "CCTV" },
   { label: "24/7 Security", value: "24/7 Security" },
@@ -49,7 +47,6 @@ function isSelected(value: string) {
   return selected.value.includes(value);
 }
 
-// Custom amenity input
 const customInput = ref("");
 
 function addCustom() {
@@ -63,7 +60,6 @@ function removeAmenity(value: string) {
   selected.value = selected.value.filter(v => v !== value);
 }
 
-// Amenities that were added as custom (not in predefined list)
 const customAmenities = computed(() =>
   selected.value.filter(v => !AMENITY_OPTIONS.find(o => o.value === v)),
 );
