@@ -41,6 +41,22 @@ export const roomGenderEnum = pgEnum("room_gender", [
 
 export const allocationStatusEnum = pgEnum("allocation_status", ["active", "expired", "pending", "cancelled"]);
 
+const paystackAccountTypeEnum = pgEnum("paystack_account_type", [
+  "bank_account",
+  "mobile_money",
+]);
+
+export const hostelGenderPolicyEnum = pgEnum("hostel_gender_policy", [
+  "per_room",
+  "hostel_wide",
+]);
+
+export const hostelGenderEnum = pgEnum("hostel_gender", [
+  "male",
+  "female",
+  "mixed",
+]);
+
 export const hostel = pgTable("hostel", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   name: t.text().notNull().unique(),
@@ -116,3 +132,55 @@ export const allocation = pgTable("allocation", t => ({
   check("chk_dates", sql`${table.endDate} IS NULL OR ${table.endDate} >= ${table.allocationDate}`),
   index("idx_allocation_student_status").on(table.studentId, table.status),
 ]);
+
+export const hostelSettings = pgTable("hostel_settings", t => ({
+  id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
+  companyId: t.integer().notNull().references(() => company.id, { onDelete: "cascade" }),
+
+  useHostelSubaccount: t.boolean().default(false).notNull(),
+  paystackSubaccountCode: t.varchar({ length: 100 }),
+  paystackSubaccountId: t.varchar({ length: 100 }),
+  paystackBusinessName: t.varchar({ length: 255 }),
+  paystackBankCode: t.varchar({ length: 10 }),
+  paystackAccountNumber: t.varchar({ length: 20 }),
+  paystackAccountType: paystackAccountTypeEnum(),
+  paystackPercentageCharge: t
+    .numeric({ precision: 5, scale: 2 })
+    .default("100.00"),
+  paystackSettlementBank: t.varchar({ length: 100 }),
+  paystackIsVerified: t.boolean().default(false).notNull(),
+
+  logoUrl: t.text(),
+  primaryColor: t.varchar({ length: 32 }),
+  accentColor: t.varchar({ length: 32 }),
+
+  supportEmail: t.varchar({ length: 255 }),
+  supportPhone: t.varchar({ length: 30 }),
+
+  genderPolicy: hostelGenderPolicyEnum().default("per_room").notNull(),
+  hostelGender: hostelGenderEnum().default("mixed").notNull(),
+  visitorPolicy: t.text(),
+  maxVisitorsPerRoom: t.integer().default(2).notNull(),
+  quietHoursStart: t.varchar({ length: 10 }),
+  quietHoursEnd: t.varchar({ length: 10 }),
+
+  checkInTime: t.varchar({ length: 10 }),
+  checkOutTime: t.varchar({ length: 10 }),
+  wifiAvailable: t.boolean().default(false).notNull(),
+  wifiDetails: t.text(),
+  parkingAvailable: t.boolean().default(false).notNull(),
+  parkingDetails: t.text(),
+
+  amenities: t
+    .text()
+    .array()
+    .default(sql`ARRAY[]::text[]`)
+    .notNull(),
+
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp()
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+}));

@@ -1,3 +1,4 @@
+export { useCompanySettings } from "./admin/companySettings";
 export { useComplaintRowColumn } from "./admin/complaintRowColumn";
 export { useAdminDashboardData } from "./admin/dashboard";
 export { useFetchBillingDataAdmin } from "./admin/fetchBillingDataAdmin";
@@ -6,7 +7,9 @@ export { useFetchMaintenanceData } from "./admin/fetchMaintenanceData";
 export { useFetchRoomData } from "./admin/fetchRoomData";
 export { useFetchUserData } from "./admin/fetchUserData";
 export { useFetchVisitorData } from "./admin/fetchVisitorData";
+export { useHostelSettings } from "./admin/hostelSettings";
 export { useMaintenanceRowColumn } from "./admin/maintenanceRowColumn";
+export { usePaystackSetup } from "./admin/paystackSetup";
 export { useRoomRowColumn } from "./admin/roomRowColumn";
 export { useUserRowColumn } from "./admin/userRowColumn";
 export { useVisitorRowColumn } from "./admin/visitorRowColumn";

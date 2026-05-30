@@ -58,6 +58,16 @@ export const relations = defineRelations(schema, r => ({
     students: r.many.student(),
     visitors: r.many.visitor(),
     visitorLogs: r.many.visitorLogs(),
+    settings: r.one.companySettings({
+      from: r.company.id,
+      to: r.companySettings.companyId,
+    }),
+  },
+  companySettings: {
+    company: r.one.company({
+      from: r.companySettings.companyId,
+      to: r.company.id,
+    }),
   },
   companyMember: {
     company: r.one.company({
@@ -92,6 +102,20 @@ export const relations = defineRelations(schema, r => ({
     students: r.many.student(),
     visitors: r.many.visitor(),
     rooms: r.many.room(),
+    settings: r.one.hostelSettings({
+      from: r.hostel.id,
+      to: r.hostelSettings.hostelId,
+    }),
+  },
+  hostelSettings: {
+    hostel: r.one.hostel({
+      from: r.hostelSettings.hostelId,
+      to: r.hostel.id,
+    }),
+    company: r.one.company({
+      from: r.hostelSettings.companyId,
+      to: r.company.id,
+    }),
   },
   user: {
     student: r.one.student({

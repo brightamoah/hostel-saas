@@ -70,7 +70,7 @@ const userMenuItems = computed<UserMenuItem[][]>(() => {
       {
         label: "Company Settings",
         icon: "i-lucide-building-2",
-        to: { name: "admin-companySettings" },
+        to: { name: "admin-settings-company" },
       },
     ]);
   }

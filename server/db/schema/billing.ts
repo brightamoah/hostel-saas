@@ -43,6 +43,12 @@ const academicPeriodEnum = pgEnum("academic_period", [
   "vacation period",
 ]);
 
+export const paymentSplitTypeEnum = pgEnum("payment_split_type", [
+  "company",
+  "hostel",
+  "platform",
+]);
+
 export const billing = pgTable("billing", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
@@ -77,6 +83,8 @@ export const payment = pgTable("payment", t => ({
   paymentMethod: paymentMethod().notNull(),
   status: paymentStatus().default("pending").notNull(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
+  paystackSubaccountCode: t.varchar({ length: 100 }),
+  splitType: paymentSplitTypeEnum().default("company").notNull(),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
     .defaultNow()

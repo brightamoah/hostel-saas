@@ -3,7 +3,7 @@ import type { AdminScope, AuditContext } from "~~/shared/types";
 import { getActorLabel } from "~~/server/utils/auditLogUtils";
 import { and, count, eq, sql } from "drizzle-orm";
 
-import { admin, company, companyMember, hostel, room, student, user } from "../schema";
+import { admin, company, companyMember, companySettings, hostel, room, student, user } from "../schema";
 import { auditLogQueries } from "./auditLog";
 
 export async function companyQueries() {
@@ -29,6 +29,21 @@ export async function companyQueries() {
       where: {
         ...applyCompanyScope(scope),
       },
+      with: {
+        hostels: true,
+      },
+    });
+  };
+
+  const getAllCompaniesWithRelations = async (scope: AdminScope) => {
+    if (!scope.isPlatformAdmin) {
+      throw createError({
+        statusCode: 403,
+        message: "Only platform admins can access all companies.",
+      });
+    }
+
+    return await db.query.company.findMany({
       with: {
         hostels: true,
       },
@@ -384,6 +399,209 @@ export async function companyQueries() {
     return membership;
   };
 
+  const companySettingsExist = async (companyId: number) => {
+    return await db.query.companySettings.findFirst({
+      where: { companyId },
+      columns: {
+        id: true,
+        paystackSubaccountCode: true,
+        paystackIsVerified: true,
+      },
+    });
+  };
+
+  const getCompanySettings = async (companyId: number) => {
+    return await db.query.companySettings.findFirst({
+      where: {
+        companyId,
+      },
+    });
+  };
+
+  const updateCompanySettings = async (
+    companyId: number,
+    data: Partial<typeof companySettings.$inferInsert>,
+    auditCtx: AuditContext,
+  ) => {
+    return await db.transaction(async (tx) => {
+      const existingSettings = await tx.query.companySettings.findFirst({
+        where: { companyId },
+        columns: {
+          id: true,
+        },
+      });
+
+      if (existingSettings) {
+        const [updated] = await tx
+          .update(companySettings)
+          .set({ ...data, updatedAt: new Date() })
+          .where(eq(companySettings.companyId, companyId))
+          .returning();
+
+        await logAudit(tx, auditCtx, {
+          action: "companySettings.updateSettings",
+          actionType: "UPDATE",
+          entityType: "company_settings",
+          entityId: updated?.id,
+          description: `${getActorLabel(auditCtx)} updated company settings for company ID ${updated?.companyId}`,
+          before: existingSettings,
+          after: updated,
+          diff: computeAuditDiff(redact(existingSettings), redact(updated)),
+        });
+      }
+      else {
+        const [created] = await tx
+          .insert(companySettings)
+          .values({ companyId, ...data })
+          .returning();
+
+        await logAudit(tx, auditCtx, {
+          action: "companySettings.updateSettings",
+          actionType: "UPDATE",
+          entityType: "company_settings",
+          entityId: created?.id,
+          description: `${getActorLabel(auditCtx)} updated company settings for company ID ${created?.companyId}`,
+          before: null,
+          after: created,
+          diff: null,
+        });
+      }
+
+      return true;
+    });
+  };
+
+  const updateCompanySubaccount = async (
+    companyId: number,
+    data: Partial<NewCompanySettings>,
+    auditCtx: AuditContext,
+  ) => {
+    return await db.transaction(async (tx) => {
+      const existing = await tx.query.companySettings.findFirst({
+        where: { companyId },
+        columns: {
+          id: true,
+          paystackSubaccountCode: true,
+          paystackBusinessName: true,
+          paystackBankCode: true,
+          paystackAccountNumber: true,
+          paystackAccountType: true,
+          paystackPercentageCharge: true,
+          paystackSettlementBank: true,
+          paystackIsVerified: true,
+        },
+      });
+
+      if (!existing) {
+        throw createError({
+          statusCode: 404,
+          message: "No Paystack subaccount found for this company.",
+        });
+      }
+
+      const [updated] = await tx
+        .update(companySettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(companySettings.companyId, companyId))
+        .returning();
+
+      await logAudit(tx, auditCtx, {
+        action: "companySettings.updateSubaccount",
+        actionType: "UPDATE",
+        entityType: "company_settings",
+        entityId: updated?.id,
+        description: `${getActorLabel(auditCtx)} updated company settings for company ID ${updated?.companyId}`,
+        before: redact(existing),
+        after: redact(updated),
+        diff: computeAuditDiff(redact(existing), redact(updated)),
+      });
+
+      return updated?.id;
+    });
+  };
+
+  const createSubaccount = async (
+    companyId: number,
+    data: CreateSubaccountSchema,
+    auditCtx: AuditContext,
+  ) => {
+    const preCheck = await db.query.companySettings.findFirst({
+      where: { companyId },
+      columns: { paystackSubaccountCode: true },
+    });
+
+    if (preCheck?.paystackSubaccountCode) {
+      throw createError({
+        statusCode: 409,
+        message: "A Paystack subaccount already exists for this company. Use the update endpoint instead.",
+      });
+    }
+
+    const subaccount = await createPaystackSubaccount(data);
+
+    if (!subaccount) {
+      throw createError({
+        statusCode: 500,
+        message: "Failed to create Paystack subaccount. Please try again.",
+      });
+    }
+
+    return await db.transaction(async (tx) => {
+      const existing = await tx.query.companySettings.findFirst({
+        where: { companyId },
+        columns: {
+          id: true,
+          paystackSubaccountCode: true,
+          paystackIsVerified: true,
+        },
+      });
+
+      if (existing?.paystackSubaccountCode) {
+        throw createError({
+          statusCode: 409,
+          message: "A Paystack subaccount already exists for this company. Use the update endpoint instead.",
+        });
+      }
+
+      const insertValues = {
+        companyId,
+        paystackSubaccountCode: subaccount.subaccountCode,
+        paystackSubaccountId: String(subaccount.id),
+        paystackBusinessName: subaccount.businessName,
+        paystackBankCode: data.settlementBank,
+        paystackAccountNumber: data.accountNumber,
+        paystackAccountType: data.accountType,
+        paystackSettlementBank: subaccount.settlementBank,
+        paystackPercentageCharge: String(data.percentageCharge),
+        paystackIsVerified: subaccount.isVerified,
+      };
+
+      const [created] = existing
+        ? await tx
+            .update(companySettings)
+            .set({ ...insertValues, updatedAt: new Date() })
+            .where(eq(companySettings.companyId, companyId))
+            .returning()
+        : await tx
+            .insert(companySettings)
+            .values(insertValues)
+            .returning();
+
+      await logAudit(tx, auditCtx, {
+        action: "companySettings.createSubaccount",
+        actionType: "CREATE",
+        entityType: "company_settings",
+        entityId: created?.id,
+        description: `${getActorLabel(auditCtx)} created Paystack subaccount for company ID ${created?.companyId}`,
+        before: existing ? redact(existing) : null,
+        after: redact(created),
+        diff: existing ? computeAuditDiff(redact(existing), redact(created)) : null,
+      });
+
+      return subaccount;
+    });
+  };
+
   return {
     registerCompanyOwner,
     getUserMembershipByUserId,
@@ -391,5 +609,13 @@ export async function companyQueries() {
     updateCompanyProfile,
     getCompanyStats,
     getCompanyMembers,
+    getCompanySettings,
+    companySettingsExist,
+    updateCompanySettings,
+    updateCompanySubaccount,
+    createSubaccount,
+    getAllCompaniesWithRelations,
   };
 }
+
+export type CompaniesList = NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof companyQueries>>["getAllCompaniesWithRelations"]>>>;

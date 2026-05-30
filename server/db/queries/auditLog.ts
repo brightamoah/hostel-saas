@@ -3,7 +3,7 @@ import type { AuditActor } from "evlog";
 import type { H3Event } from "h3";
 
 import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
-import { useLogger } from "evlog";
+import { auditDiff, useLogger } from "evlog";
 
 import { auditLog } from "../schema";
 
@@ -117,7 +117,9 @@ export async function auditLogQueries() {
       },
       outcome: "success",
       reason: entry.description ?? "",
-      changes: { before, after },
+      changes: entry.before && entry.after
+        ? auditDiff(entry.before, entry.after)
+        : undefined,
     });
   }
 

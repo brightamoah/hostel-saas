@@ -362,7 +362,14 @@ export default defineNuxtConfig({
       endpoint: "/api/_evlog/ingest",
       credentials: "include",
     },
-    redact: true,
+    redact: {
+      paths: [
+        "*.paystackAccountNumber",
+        "*.paystackSubaccountCode",
+        "*.paystackSubaccountId",
+        "audit.changes.after.paystackAccountNumber",
+      ],
+    },
     routes: {
       "/api/admin/**": { service: "admin-api" },
       "/api/auth/**": { service: "auth-api" },

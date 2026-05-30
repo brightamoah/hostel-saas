@@ -13,6 +13,14 @@ const { isPlatformAdminOrOwner } = usePortalUserSession();
 
 const settingsItems: ProfileSettingsItem[] = [
   {
+    id: "hostelSettings" as const,
+    title: "Hostel Settings",
+    icon: "i-lucide-building",
+    buttonLabel: "Manage Hostel Settings",
+    description: "Configure your hostel's information and preferences.",
+    link: { name: "admin-settings-hostel" },
+  },
+  {
     id: "security" as const,
     title: "Security Information",
     icon: "i-lucide-shield-check",
@@ -47,13 +55,13 @@ const settingsItems: ProfileSettingsItem[] = [
 ];
 
 if (isPlatformAdminOrOwner.value) {
-  settingsItems.push({
+  settingsItems.unshift({
     id: "companySettings" as const,
     title: "Company Settings",
     icon: "i-lucide-building-2",
     buttonLabel: "Manage Company Settings",
     description: "Configure your company's information and preferences.",
-    link: { name: "admin-companySettings" },
+    link: { name: "admin-settings-company" },
   });
 }
 </script>

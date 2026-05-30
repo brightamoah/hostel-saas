@@ -184,7 +184,7 @@ export function createIdSchema(name: string) {
     .min(1, `Invalid ${name} ID`);
 }
 
-const passwordSchema = z.string().trim().superRefine((val, ctx) => {
+const passwordSchema = z.string("Password is required").trim().superRefine((val, ctx) => {
   if (!val?.trim()) {
     ctx.addIssue({
       code: "custom",
@@ -843,7 +843,7 @@ const academicPeriodSchema = z.enum([
 
 const academicYearSchema = z
   .string()
-  .regex(/^\d{4}\/\d{4}$/, "Academic year must be in format YYYY/YYYY");
+  .regex(/^\d{4}\/\d{4}$/, "Academic year must be in format YYYY/YYYY (e.g.2025/2026)");
 
 const bookRoomSchema = z.object({
   roomId: createIdSchema("Room"),
@@ -1062,6 +1062,8 @@ const updatePhoneNumberSchema = z.object({
 export type UpdatePhoneNumberSchema = z.output<typeof updatePhoneNumberSchema>;
 
 export {
+  academicPeriodSchema,
+  academicYearSchema,
   addAdminSchema,
   approveDenySchema,
   baseSignupSchema,
@@ -1096,6 +1098,7 @@ export {
   passwordSchema,
   paymentSchema,
   personalDetailsSchema,
+  phoneNumberSchema,
   promoteDemoteSchema,
   readStatusSchema,
   registerCompanySchema,

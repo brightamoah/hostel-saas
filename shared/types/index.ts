@@ -7,16 +7,18 @@ import type { useEditor } from "@tiptap/vue-3";
 import type { User } from "#auth-utils";
 import type { AnnouncementType } from "~~/server/db/queries/announcement";
 import type { AdminBillingStats, BillingType, StudentBillingStats } from "~~/server/db/queries/billing";
+import type { CompaniesList } from "~~/server/db/queries/company";
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
 import type { AdminRoomStats, HostelRoomType, PaginatedHostel, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/queries/user";
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
-import type { admin, allocation, announcement, auditLog, billing, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, loginAttempts, maintenanceRequest, maintenanceStatusEnum, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
+import type { admin, allocation, announcement, auditLog, billing, companySettings, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, hostelSettings, loginAttempts, maintenanceRequest, maintenanceStatusEnum, payment, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { useDB } from "~~/server/utils/db";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type { H3EventContext } from "evlog";
 import type { H3Event, useSession } from "h3";
+import type { Bank } from "paystack-sdk/dist/misc/interface";
 import type { randomUUID } from "uncrypto";
 import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
 import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
@@ -254,6 +256,8 @@ export type FilterOption = {
   label: string;
   value: string | number;
 };
+
+export type Companies = CompaniesList;
 
 export type Student = typeof student.$inferSelect;
 
@@ -700,3 +704,95 @@ export interface ServerEvent {
   };
   response?: Response;
 }
+
+export type CompanySettings = typeof companySettings.$inferSelect;
+export type NewCompanySettings = typeof companySettings.$inferInsert;
+
+export type HostelSettings = typeof hostelSettings.$inferSelect;
+export type NewHostelSettings = typeof hostelSettings.$inferInsert;
+
+export type Payment = typeof payment.$inferSelect;
+export type NewPayment = typeof payment.$inferInsert;
+
+export type Step = "idle" | "verify" | "confirmed" | "done";
+export type CompanySettingsTab
+  = | "general"
+    | "payments"
+    | "billing"
+    | "notifications"
+    | "portal"
+    | "academic";
+
+export type HostelSettingsTab
+  = | "general"
+    | "policies"
+    | "operations"
+    | "amenities"
+    | "subaccount";
+
+export type CompanySettingsResponseData = {
+  success: boolean;
+  data: CompanySettings | null;
+  isFirstSetup: boolean;
+};
+/** Scope is determined by the `scope` argument: "company" or "hostel/:id". */
+export type PaystackScope = "company" | { hostel: number };
+
+export type PaystackBanksResponseData = {
+  success: boolean;
+  data: Bank[] | null;
+  currency: string;
+  cached: boolean;
+};
+
+export type VerifyAccountResponseData = {
+  success: boolean;
+  data: {
+    accountName: string;
+  };
+};
+
+export type CreateSubaccountResponseData = {
+  success: boolean;
+  message: string;
+  data: {
+    subaccountId: number;
+    subaccountCode: string;
+    businessName: string;
+    bankCode: string;
+    accountNumberMasked: string;
+    isVerified: boolean;
+    useHostelSubaccount?: boolean;
+  };
+};
+
+export type UpdateSubaccountResponseData = {
+  success: boolean;
+  message: string;
+  data: {
+    subaccountCode: string;
+    businessName: string;
+    isVerified: boolean;
+    active: boolean;
+    accountNumberMasked?: string;
+    useHostelSubaccount?: boolean;
+  };
+};
+
+export type UpdateSubaccountToggleResponseData = {
+  success: boolean;
+  message: string;
+  data: {
+    useHostelSubaccount: boolean;
+  };
+};
+
+export type UpdateSubaccountResponse
+  = | UpdateSubaccountToggleResponseData
+    | UpdateSubaccountResponseData;
+
+export type HostelSettingsResponseData = {
+  success: boolean;
+  data: HostelSettings | null;
+  isFirstSetup: boolean;
+};

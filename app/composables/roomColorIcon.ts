@@ -16,40 +16,10 @@ export function useRoomColorIcon(roomRef: RoomRef) {
 
     const featuresArray = Array.isArray(room.value.features)
       ? room.value.features
-      : String(room.value.features).split(",").map(f => f.trim()).filter(f => f);
+      : String(room.value.features).split(",").map(feature => feature.trim()).filter(feature => feature);
 
-    const iconMap: Record<string, string> = {
-      "wifi": "i-lucide-wifi",
-      "internet": "i-lucide-wifi",
-      "wi-fi": "i-lucide-wifi",
-      "storage": "i-lucide-archive",
-      "storage space": "i-lucide-archive",
-      "tv": "i-lucide-tv",
-      "television": "i-lucide-tv",
-      "wardrobe": "i-mdi-wardrobe-outline",
-      "cupboard": "i-mdi-wardrobe-outline",
-      "desk": "i-material-symbols-desk-rounded",
-      "table": "i-material-symbols-desk-rounded",
-      "fridge": "i-mdi-fridge-outline",
-      "ac": "i-lucide-air-vent",
-      "air conditioner": "i-lucide-air-vent",
-      "air-conditioning": "i-lucide-air-vent",
-      "air condition": "i-lucide-air-vent",
-      "balcony": "i-material-symbols-balcony-rounded",
-      "patio": "i-material-symbols-balcony-rounded",
-      "porch": "i-material-symbols-balcony-rounded",
-      "bathroom": "i-lucide-shower-head",
-      "washroom": "i-lucide-shower-head",
-      "toilet": "i-lucide-shower-head",
-      "shower": "i-lucide-shower-head",
-      "fan": "i-lucide-fan",
-      "ceiling fan": "i-lucide-fan",
-    };
     return featuresArray.map((feature) => {
-      const lowerFeature = feature.toLowerCase();
-      const icon = Object.keys(iconMap).find(key => lowerFeature.includes(key))
-        ? iconMap[Object.keys(iconMap).find(key => lowerFeature.includes(key))!]
-        : "i-lucide-check";
+      const icon = featureIconMap[feature];
       return { name: feature, icon };
     });
   });

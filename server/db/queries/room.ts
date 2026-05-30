@@ -1,11 +1,11 @@
-import type { AdminScope, AuditContext, Period } from "~~/shared/types";
+import type { AdminScope, AuditContext, NewHostelSettings, Period } from "~~/shared/types";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, asc, desc, eq, exists, gt, inArray, like, or, sql } from "drizzle-orm";
 
-import { allocation, hostel, room } from "../schema";
+import { allocation, hostel, hostelSettings, room } from "../schema";
 import { auditLogQueries } from "./auditLog";
 
 const roomWithRelations = {
@@ -702,6 +702,9 @@ export async function roomQueries() {
         primaryColor: true,
         logoUrl: true,
         status: true,
+        companyId: true,
+        slug: true,
+        joinCode: true,
       },
     });
     return hostelResult;
@@ -836,6 +839,238 @@ export async function roomQueries() {
     };
   };
 
+  const updateHostelSettings = async (
+    hostelId: number,
+    hostelCompanyId: number,
+    data: Partial<NewHostelSettings>,
+    scope: AdminScope,
+    auditCtx: AuditContext,
+  ) => {
+    return await db.transaction(async (tx) => {
+      const existingHostelSettings = await tx
+        .query
+        .hostelSettings
+        .findFirst({
+          where: { hostelId, companyId: scope.companyId! },
+          columns: { id: true },
+        });
+
+      if (existingHostelSettings) {
+        const [updated] = await tx
+          .update(hostelSettings)
+          .set({ ...data, updatedAt: new Date() })
+          .where(eq(hostelSettings.hostelId, hostelId))
+          .returning();
+
+        await logAudit(tx, auditCtx, {
+          action: "HostelSettings.update",
+          actionType: "UPDATE",
+          entityType: "hostel_settings",
+          description: "Updated the hostel settings",
+          before: existingHostelSettings,
+          after: updated,
+          diff: computeAuditDiff(redact(existingHostelSettings), redact(updated)),
+          entityId: updated?.id,
+        });
+      }
+      else {
+        const [insert] = await tx
+          .insert(hostelSettings)
+          .values({ hostelId, companyId: hostelCompanyId, ...data })
+          .returning();
+
+        await logAudit(tx, auditCtx, {
+          action: "HostelSettings.update",
+          actionType: "CREATE",
+          entityType: "hostel_settings",
+          description: "Created hostel settings",
+          before: null,
+          after: insert,
+          entityId: insert?.id,
+        });
+      }
+
+      return true;
+    });
+  };
+
+  const updateHostelSubaccount = async (
+    hostelId: number,
+    companyId: number,
+    isToggleOnly: boolean,
+    toggleParse: HostelSubaccountToggleSchema,
+    data: Partial<NewHostelSettings>,
+    scope: AdminScope,
+    auditCtx: AuditContext,
+  ) => {
+    return await db.transaction(async (tx) => {
+      const existing = await tx
+        .query
+        .hostelSettings
+        .findFirst({
+          where: { hostelId, companyId: scope.companyId! },
+          columns: {
+            id: true,
+            paystackSubaccountCode: true,
+            paystackIsVerified: true,
+            useHostelSubaccount: true,
+          },
+        });
+
+      if (!existing?.paystackSubaccountCode) {
+        throw createError({
+          statusCode: 404,
+          message: "No existing subaccount found for this hostel. Use the create endpoint to set up a subaccount first.",
+        });
+      }
+
+      if (isToggleOnly) {
+        if (toggleParse.useHostelSubaccount && !existing.paystackIsVerified) {
+          throw createError({
+            statusCode: 422,
+            message: "Cannot activate routing to an unverified subaccount",
+          });
+        }
+
+        const [updated] = await tx
+          .update(hostelSettings)
+          .set({
+            useHostelSubaccount: toggleParse.useHostelSubaccount,
+            updatedAt: new Date(),
+          })
+          .where(eq(hostelSettings.hostelId, hostelId))
+          .returning();
+
+        await logAudit(tx, auditCtx, {
+          action: "HostelSettings.toggleSubaccount",
+          actionType: "UPDATE",
+          entityType: "hostel_settings",
+          description: `${toggleParse.useHostelSubaccount ? "Activated" : "Deactivated"} routing to hostel subaccount`,
+          before: existing,
+          after: { ...existing, useHostelSubaccount: updated?.useHostelSubaccount },
+          diff: computeAuditDiff(redact(existing), redact({ ...existing, useHostelSubaccount: updated?.useHostelSubaccount })),
+          entityId: existing.id,
+        });
+
+        return updated?.useHostelSubaccount;
+      }
+      else {
+        const [updated] = await tx
+          .update(hostelSettings)
+          .set({
+            ...data,
+            updatedAt: new Date(),
+          })
+          .where(eq(hostelSettings.hostelId, hostelId))
+          .returning();
+
+        await logAudit(tx, auditCtx, {
+          action: "HostelSettings.updateSubaccount",
+          actionType: "UPDATE",
+          entityType: "hostel_settings",
+          description: "Updated hostel Paystack subaccount details",
+          before: existing,
+          after: updated,
+          diff: computeAuditDiff(redact(existing), redact(updated)),
+          entityId: existing.id,
+        });
+
+        return updated;
+      }
+    });
+  };
+
+  const getHostelSettings = async (hostelId: number) => {
+    return await db.query.hostelSettings.findFirst({
+      where: { hostelId },
+      // columns: {
+      //   paystackAccountNumber: false,
+      // },
+    });
+  };
+
+  const createHostelSubaccount = async (
+    hostelId: number,
+    companyId: number,
+    scope: AdminScope,
+    data: CreateSubaccountSchema,
+    auditCtx: AuditContext,
+  ) => {
+    const preCheck = await db.query.hostelSettings.findFirst({
+      where: { hostelId, companyId: scope.companyId! },
+      columns: { paystackSubaccountCode: true },
+    });
+
+    if (preCheck?.paystackSubaccountCode) {
+      throw createError({
+        statusCode: 409,
+        message: "A Paystack subaccount already exists for this hostel. Use the update endpoint instead.",
+      });
+    }
+
+    const subaccount = await createPaystackSubaccount(data);
+
+    if (!subaccount) {
+      throw createError({
+        statusCode: 500,
+        message: "Failed to create Paystack subaccount. Please try again.",
+      });
+    }
+
+    return await db.transaction(async (tx) => {
+      const existing = await tx.query.hostelSettings.findFirst({
+        where: {
+          hostelId,
+          companyId: scope.companyId!,
+        },
+        columns: { id: true, paystackSubaccountCode: true },
+      });
+
+      if (existing?.paystackSubaccountCode) {
+        throw createError({
+          statusCode: 409,
+          message: "A Paystack subaccount already exists for this hostel. Use the update endpoint instead.",
+        });
+      }
+
+      const paystackFields = {
+        paystackSubaccountCode: subaccount.subaccountCode,
+        paystackSubaccountId: String(subaccount.id),
+        paystackBusinessName: subaccount.businessName,
+        paystackBankCode: data.settlementBank,
+        paystackAccountNumber: data.accountNumber,
+        paystackAccountType: data.accountType,
+        paystackPercentageCharge: String(data.percentageCharge),
+        paystackIsVerified: true,
+        useHostelSubaccount: false,
+      } as const;
+
+      const [created] = existing
+        ? await tx
+            .update(hostelSettings)
+            .set({ ...paystackFields, updatedAt: new Date() })
+            .where(eq(hostelSettings.hostelId, hostelId))
+            .returning()
+        : await tx
+            .insert(hostelSettings)
+            .values({ hostelId, companyId, ...paystackFields })
+            .returning();
+
+      await logAudit(tx, auditCtx, {
+        action: existing ? "HostelSettings.updateSubaccount" : "HostelSettings.createSubaccount",
+        actionType: existing ? "UPDATE" : "CREATE",
+        entityType: "hostel_settings",
+        description: existing ? "Updated the hostel subaccount settings" : "Created a new hostel subaccount",
+        before: existing ? redact(existing) : null,
+        after: redact(created),
+        entityId: created?.id,
+        diff: existing ? computeAuditDiff(redact(existing), redact(created)) : null,
+      });
+
+      return subaccount;
+    });
+  };
+
   return {
     getAllRooms,
     getRoomByIdScoped,
@@ -864,6 +1099,10 @@ export async function roomQueries() {
     createNewHostel,
     getHostelByIdScoped,
     getHostelsPaginated,
+    updateHostelSettings,
+    updateHostelSubaccount,
+    getHostelSettings,
+    createHostelSubaccount,
   };
 }
 
