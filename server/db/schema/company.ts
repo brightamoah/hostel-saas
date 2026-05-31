@@ -24,6 +24,7 @@ export const companyMemberStatusEnum = pgEnum("company_member_status", [
 ]);
 
 export const lateFeeTypeEnum = pgEnum("late_fee_type", ["flat", "percent"]);
+export const lateFeeFrequencyEnum = pgEnum("late_fee_frequency", ["one-time", "daily", "weekly", "monthly"]);
 
 export const paystackAccountTypeEnum = pgEnum("paystack_account_type", [
   "bank_account",
@@ -89,6 +90,7 @@ export const companySettings = pgTable("company_settings", t => ({
 
   lateFeeEnabled: t.boolean().default(false).notNull(),
   lateFeeType: lateFeeTypeEnum().default("flat").notNull(),
+  lateFeeFrequency: lateFeeFrequencyEnum().default("one-time").notNull(),
   lateFeeValue: t.numeric({ precision: 10, scale: 2 }).default("0.00").notNull(),
   lateFeeGracePeriodDays: t.integer().default(0).notNull(),
   autoSendInvoices: t.boolean().default(true).notNull(),

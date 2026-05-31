@@ -7,12 +7,12 @@ import { allocation, billing, companySettings } from "../db/schema";
 export default defineTask({
   meta: {
     name: "applyOverdueLateFee",
-    description: "Apply 5% weekly late fee to overdue billings",
+    description: "Apply late fees to overdue billings based on company settings (frequency, grace period)",
   },
   async run() {
     const { db } = useDB();
 
-    console.log("Running task: Apply weekly late fees...");
+    console.log("Running task: Apply cumulative late fees...");
 
     try {
       const overdueBillings = await db
@@ -29,7 +29,6 @@ export default defineTask({
           and(
             eq(billing.status, "overdue"),
             inArray(allocation.status, ["active", "pending"]),
-            eq(billing.lateFee, "0.00"),
           ),
         );
 
@@ -58,25 +57,49 @@ export default defineTask({
         const graceEnd = new Date(dueDate);
         graceEnd.setDate(graceEnd.getDate() + companySettings.lateFeeGracePeriodDays);
 
-        if (new Date() > graceEnd) {
-          let fee = 0;
+        const now = new Date();
+        if (now > graceEnd) {
+          const daysOverdue = Math.floor((now.getTime() - graceEnd.getTime()) / (1000 * 60 * 60 * 24));
+
+          let multiplier = 1;
+          const frequency = companySettings.lateFeeFrequency || "one-time";
+
+          if (frequency === "daily") {
+            multiplier = daysOverdue + 1;
+          }
+          else if (frequency === "weekly") {
+            multiplier = Math.floor(daysOverdue / 7) + 1;
+          }
+          else if (frequency === "monthly") {
+            multiplier = Math.floor(daysOverdue / 30) + 1;
+          }
+
+          let baseFee = 0;
           const amt = Number(b.amount);
 
-          if (companySettings.lateFeeType === "flat") fee = Number(companySettings.lateFeeValue);
+          if (companySettings.lateFeeType === "flat") {
+            baseFee = Number(companySettings.lateFeeValue);
+          }
+          else if (companySettings.lateFeeType === "percent") {
+            baseFee = amt * (Number(companySettings.lateFeeValue) / 100);
+          }
 
-          else if (companySettings.lateFeeType === "percent") fee = amt * (Number(companySettings.lateFeeValue) / 100);
+          const totalExpectedFee = baseFee * multiplier;
+          const currentFee = Number(b.lateFee || 0);
 
-          if (fee > 0) {
+          if (totalExpectedFee > 0 && totalExpectedFee !== currentFee) {
             await db
               .update(billing)
               .set({
-                lateFee: fee.toFixed(2),
+                lateFee: totalExpectedFee.toFixed(2),
                 updatedAt: new Date(),
               })
               .where(eq(billing.id, b.billingId));
 
             updatedCount++;
-            totalFees += fee;
+            // Calculate the delta added so we can log it
+            const addedFee = totalExpectedFee - currentFee;
+            totalFees += addedFee;
           }
         }
       }
@@ -92,12 +115,12 @@ export default defineTask({
         });
 
         await logAudit(db, ctx, {
-          action: "billing.apply_weekly_late_fees",
+          action: "billing.apply_cumulative_late_fees",
           actionType: "UPDATE",
           entityType: "billing",
-          description: `System applied weekly late fees to ${updatedCount} overdue billing(s). Total fees applied: ${totalFees}`,
+          description: `System applied cumulative late fees to ${updatedCount} overdue billing(s). Additional fees applied: ${totalFees}`,
           before: null,
-          after: { updatedCount, totalFees },
+          after: { updatedCount, totalFeesAdded: totalFees },
         });
       }
 

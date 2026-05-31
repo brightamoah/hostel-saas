@@ -1,0 +1,2 @@
+CREATE TYPE "late_fee_frequency" AS ENUM('one-time', 'daily', 'weekly', 'monthly');--> statement-breakpoint
+ALTER TABLE "company_settings" ADD COLUMN "late_fee_frequency" "late_fee_frequency" DEFAULT 'one-time'::"late_fee_frequency" NOT NULL;

@@ -15,6 +15,8 @@ const isDirty = computed(() => JSON.stringify(state.value) !== initialState.valu
 
 watch(() => state.value, (newVal) => {
   if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+
+  initialState.value = JSON.stringify(newVal);
 }, { deep: true });
 
 const formRef = useTemplateRef("formRef");
@@ -22,6 +24,13 @@ const formRef = useTemplateRef("formRef");
 const lateFeeTypeOptions = [
   { label: "Flat Amount", value: "flat" },
   { label: "Percentage", value: "percent" },
+];
+
+const lateFeeFrequencyOptions = [
+  { label: "One-Time", value: "one-time" },
+  { label: "Daily", value: "daily" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Monthly", value: "monthly" },
 ];
 
 function onSubmit(_e: FormSubmitEvent<CompanyBillingSettingsSchema>) {
@@ -92,7 +101,7 @@ function onSubmit(_e: FormSubmitEvent<CompanyBillingSettingsSchema>) {
         >
           <div
             v-if="state.lateFeeEnabled"
-            class="gap-4 grid grid-cols-1 sm:grid-cols-3"
+            class="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
           >
             <UFormField
               label="Fee Type"
@@ -144,6 +153,21 @@ function onSubmit(_e: FormSubmitEvent<CompanyBillingSettingsSchema>) {
                   <span class="font-medium text-muted text-sm">days</span>
                 </template>
               </UInput>
+            </UFormField>
+
+            <UFormField
+              label="Fee Application Frequency"
+              name="lateFeeFrequency"
+              size="lg"
+              required
+            >
+              <USelectMenu
+                v-model="state.lateFeeFrequency"
+                :items="lateFeeFrequencyOptions"
+                value-key="value"
+                placeholder="Select a frequency"
+                class="w-full cursor-pointer"
+              />
             </UFormField>
           </div>
         </Transition>

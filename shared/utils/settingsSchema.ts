@@ -28,7 +28,8 @@ export const companyGeneralSettingsSchema = z.object({
 
 export const companyBillingSettingsSchema = z.object({
   lateFeeEnabled: z.boolean(),
-  lateFeeType: z.enum(["flat", "percent"]),
+  lateFeeType: z.enum(["flat", "percent"], "Late fee type is required"),
+  lateFeeFrequency: z.enum(["one-time", "daily", "weekly", "monthly"], "Late fee frequency is required"),
   lateFeeValue: z.number().min(0).max(1_000_000),
   lateFeeGracePeriodDays: z.number().int().min(0).max(365),
   autoSendInvoices: z.boolean(),
