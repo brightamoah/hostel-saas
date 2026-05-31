@@ -10,6 +10,13 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<CompanyPortalSettingsSchema>>("state", { required: true });
 
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
+
+watch(() => state.value, (newVal) => {
+  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+}, { deep: true });
+
 const formRef = useTemplateRef("formRef");
 
 const toggles = [
@@ -40,6 +47,7 @@ const toggles = [
 ];
 
 function onSubmit(_e: FormSubmitEvent<CompanyPortalSettingsSchema>) {
+  initialState.value = JSON.stringify(state.value);
   emit("save");
 }
 </script>
@@ -88,7 +96,7 @@ function onSubmit(_e: FormSubmitEvent<CompanyPortalSettingsSchema>) {
     <div class="flex justify-end pt-2">
       <UButton
         type="submit"
-        label="Save Portal Settings"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         :loading="isSaving"

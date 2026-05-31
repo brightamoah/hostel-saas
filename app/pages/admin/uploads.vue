@@ -29,7 +29,7 @@ async function uploadImage(file: File): Promise<{ url: string; key: string } | n
       url.value = response.url;
       return {
         url: response.url,
-        key: response.key,
+        key: response.url.split("/").slice(-3).join("/"),
       };
     }
 

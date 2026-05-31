@@ -170,7 +170,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("folder", "hostels");
+      formData.append("folder", "company-registration");
 
       const progressInterval = setInterval(() => {
         if (uploadProgress.value < 90) {
@@ -190,7 +190,7 @@ export const useCompanyStore = defineStore("companyStore", () => {
 
         return {
           url: response.url,
-          key: response.key,
+          key: response.url.split("/").slice(-3).join("/"),
         };
       }
 

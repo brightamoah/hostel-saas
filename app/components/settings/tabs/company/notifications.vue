@@ -10,6 +10,13 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<CompanyNotificationSettingsSchema>>("state", { required: true });
 
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
+
+watch(() => state.value, (newVal) => {
+  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+}, { deep: true });
+
 const formRef = useTemplateRef("formRef");
 
 const toggles = [
@@ -52,6 +59,7 @@ watch(reminderInput, (val) => {
 });
 
 function onSubmit(_e: FormSubmitEvent<CompanyNotificationSettingsSchema>) {
+  initialState.value = JSON.stringify(state.value);
   emit("save");
 }
 </script>
@@ -190,7 +198,7 @@ function onSubmit(_e: FormSubmitEvent<CompanyNotificationSettingsSchema>) {
     <div class="flex justify-end pb-2">
       <UButton
         type="submit"
-        label="Save Notification Settings"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         size="lg"

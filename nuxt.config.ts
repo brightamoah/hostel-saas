@@ -63,7 +63,9 @@ export default defineNuxtConfig({
     routeRules: {
       "/_nitro/tasks/**": {
         security: {
-          csrf: false,
+          csrf: {
+            addCsrfTokenToEventCtx: true,
+          },
         },
       },
       "/_nitro/**": {

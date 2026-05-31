@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
-import { sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { auditLogQueries } from "../db/queries/auditLog";
+import { allocation, billing, companySettings } from "../db/schema";
 
 export default defineTask({
   meta: {
@@ -14,13 +15,75 @@ export default defineTask({
     console.log("Running task: Apply weekly late fees...");
 
     try {
-      const result = await db.execute(sql`SELECT * FROM apply_weekly_late_fees()`);
-      const updatedCount = result.rows[0]?.updated_count ?? 0;
-      const totalFees = result.rows[0]?.total_late_fees ?? 0;
+      const overdueBillings = await db
+        .select({
+          billingId: billing.id,
+          amount: billing.amount,
+          dueDate: billing.dueDate,
+          companyId: billing.companyId,
+          lateFee: billing.lateFee,
+        })
+        .from(billing)
+        .innerJoin(allocation, eq(billing.allocationId, allocation.id))
+        .where(
+          and(
+            eq(billing.status, "overdue"),
+            inArray(allocation.status, ["active", "pending"]),
+            eq(billing.lateFee, "0.00"),
+          ),
+        );
 
-      console.log("Task completed: Apply weekly late fees - Success. Updated", updatedCount, "billing(s). Total late fees applied:", totalFees);
+      if (overdueBillings.length === 0) {
+        console.log("No overdue billings to process.");
+        return { result: "No overdue billings to process." };
+      }
 
-      if (Number(updatedCount) > 0) {
+      const companyIds = [...new Set(overdueBillings.map(billing => billing.companyId))];
+      const settings = await db
+        .select()
+        .from(companySettings)
+        .where(inArray(companySettings.companyId, companyIds));
+
+      const settingsMap = new Map(settings.map(setting => [setting.companyId, setting]));
+
+      let updatedCount = 0;
+      let totalFees = 0;
+
+      for (const b of overdueBillings) {
+        const companySettings = settingsMap.get(b.companyId);
+
+        if (!companySettings || !companySettings.lateFeeEnabled) continue;
+
+        const dueDate = new Date(b.dueDate);
+        const graceEnd = new Date(dueDate);
+        graceEnd.setDate(graceEnd.getDate() + companySettings.lateFeeGracePeriodDays);
+
+        if (new Date() > graceEnd) {
+          let fee = 0;
+          const amt = Number(b.amount);
+
+          if (companySettings.lateFeeType === "flat") fee = Number(companySettings.lateFeeValue);
+
+          else if (companySettings.lateFeeType === "percent") fee = amt * (Number(companySettings.lateFeeValue) / 100);
+
+          if (fee > 0) {
+            await db
+              .update(billing)
+              .set({
+                lateFee: fee.toFixed(2),
+                updatedAt: new Date(),
+              })
+              .where(eq(billing.id, b.billingId));
+
+            updatedCount++;
+            totalFees += fee;
+          }
+        }
+      }
+
+      console.log("Task completed: Apply late fees - Success. Updated", updatedCount, "billing(s). Total late fees applied:", totalFees);
+
+      if (updatedCount > 0) {
         const { logAudit } = await auditLogQueries();
 
         const ctx = getAuditContext({

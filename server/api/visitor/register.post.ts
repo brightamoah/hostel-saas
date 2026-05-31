@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const { getStudentForDashboardByUserId } = await userQueries();
-    const { createVisitor } = await visitorQueries();
+    const { createVisitor, checkRoomVisitorLimit } = await visitorQueries();
 
     const studentData = await getStudentForDashboardByUserId(user.id);
 
@@ -65,6 +65,15 @@ export default defineEventHandler(async (event) => {
         message: "Access denied: Only active hostel residents can register a visitor.",
       });
     }
+
+    const roomId = student.allocation.room.id;
+    const hostelId = student.allocation.room.hostel.id;
+
+    await checkRoomVisitorLimit(
+      roomId,
+      hostelId,
+      visitDate.toString(),
+    );
 
     const data: VisitorCreate = {
       ...formData,

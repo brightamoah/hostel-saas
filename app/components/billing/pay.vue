@@ -25,8 +25,19 @@ const total = computed(() => subtotal.value + lateFee.value);
 const balanceDue = computed(() => total.value - Number(billing.paidAmount));
 const purpose = computed(() => billing.type);
 
+const { tenantContext } = useTenantContext();
+
+const allowPartialPayments = computed(() => tenantContext.value?.billing?.allowPartialPayments ?? true);
+
+const minPercent = computed(() => Number(tenantContext.value?.billing?.minimumPartialPaymentPercent || 0));
+
+const minPayment = computed(() => {
+  const rawMin = minPercent.value > 0 ? (total.value * minPercent.value) / 100 : 1.00;
+  return Math.min(rawMin, balanceDue.value);
+});
+
 const helpText = computed(() => {
-  return `Minimum: GH₵1.00 | Maximum: ${formatCurrency(balanceDue.value)}`;
+  return `Minimum: ${formatCurrency(minPayment.value)} | Maximum: ${formatCurrency(balanceDue.value)}`;
 });
 
 const cardDetails = ref([
@@ -49,18 +60,25 @@ const cardDetails = ref([
   },
 ]);
 
-const paymentType = ref<RadioGroupItem[]>([
-  {
-    label: `Full Payment: ${formatCurrency(balanceDue.value)}`,
-    value: "full",
-    description: "Pay the entire outstanding amount.",
-  },
-  {
-    label: "Partial Payment",
-    value: "partial",
-    description: "Pay a portion of the outstanding amount.",
-  },
-]);
+const paymentType = computed(() => {
+  const types: RadioGroupItem[] = [
+    {
+      label: `Full Payment: ${formatCurrency(balanceDue.value)}`,
+      value: "full",
+      description: "Pay the entire outstanding amount.",
+    },
+  ];
+
+  if (allowPartialPayments.value) {
+    types.push({
+      label: "Partial Payment",
+      value: "partial",
+      description: "Pay a portion of the outstanding amount.",
+    });
+  }
+
+  return types;
+});
 const selectedPaymentType = ref<"partial" | "full">("full");
 
 watch(selectedPaymentType, (newType) => {
@@ -166,7 +184,7 @@ function closeModal() {
             type="number"
             placeholder="0.00"
             size="lg"
-            :min="1"
+            :min="minPayment"
             :max="balanceDue"
             class="w-full"
             autofocus

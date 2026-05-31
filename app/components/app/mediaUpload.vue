@@ -9,9 +9,14 @@ const {
   maxFiles?: number;
 }>();
 
-const modelValue = defineModel<File[] | null | undefined>({ required: true, default: () => null });
+const modelValue = defineModel<File[] | File | null | undefined>({ required: true, default: () => null });
 
 const objectUrls = new WeakMap<File, string>();
+
+function getFilesArray(val: File[] | File | null | undefined): File[] {
+  if (!val) return [];
+  return Array.isArray(val) ? val : [val];
+}
 
 function getObjectUrl(file: File | null | undefined) {
   if (!file) return "";
@@ -25,15 +30,23 @@ function getObjectUrl(file: File | null | undefined) {
 function handleRemoveFile(index: number) {
   if (!modelValue.value) return;
 
-  const files = [...modelValue.value];
-  const removed = files.splice(index, 1)[0];
+  const files = getFilesArray(modelValue.value);
+  const removed = files[index];
 
-  if (removed && objectUrls.has(removed)) {
-    URL.revokeObjectURL(objectUrls.get(removed)!);
-    objectUrls.delete(removed);
+  if (removed) {
+    if (objectUrls.has(removed)) {
+      URL.revokeObjectURL(objectUrls.get(removed)!);
+      objectUrls.delete(removed);
+    }
+
+    if (Array.isArray(modelValue.value)) {
+      const updatedFiles = files.filter((_, i) => i !== index);
+      modelValue.value = updatedFiles.length === 0 ? null : updatedFiles;
+    }
+    else {
+      modelValue.value = null;
+    }
   }
-
-  modelValue.value = files.length === 0 ? null : files;
 }
 
 function revokeObjectUrl(file: File) {
@@ -44,29 +57,44 @@ function revokeObjectUrl(file: File) {
   }
 }
 
-watch(() => modelValue.value, (newFiles, oldFiles) => {
-  if (!oldFiles?.length) return;
+watch(modelValue, (newVal, oldVal) => {
+  const oldFiles = getFilesArray(oldVal);
+  const newFiles = getFilesArray(newVal);
 
-  const removed = oldFiles.filter(file => !newFiles?.includes(file));
+  if (oldFiles.length === 0) return;
+
+  const removed = oldFiles.filter(file => !newFiles.includes(file));
   removed.forEach(file => revokeObjectUrl(file));
 }, { deep: true });
 
 onUnmounted(() => {
-  if (modelValue.value) {
-    modelValue.value.forEach((file) => {
-      if (file && objectUrls.has(file)) {
-        URL.revokeObjectURL(objectUrls.get(file)!);
-        objectUrls.delete(file);
-      }
-    });
-  }
+  const files = getFilesArray(modelValue.value);
+
+  files.forEach((file) => {
+    if (file && objectUrls.has(file)) {
+      URL.revokeObjectURL(objectUrls.get(file)!);
+      objectUrls.delete(file);
+    }
+  });
+});
+
+const fileUploadRef = useTemplateRef("fileUploadRef");
+
+function openSlotProp() {
+  fileUploadRef.value?.inputRef?.click();
+}
+
+defineExpose({
+  fileUploadRef,
+  open: openSlotProp,
 });
 </script>
 
 <template>
   <UFileUpload
+    ref="fileUploadRef"
     v-model="modelValue"
-    multiple
+    :multiple="maxFiles > 1"
     :accept
     icon="i-lucide-cloud-upload"
     :label="description"
@@ -87,26 +115,27 @@ onUnmounted(() => {
         color="primary"
         variant="outline"
         class="cursor-pointer"
-        @click="open()"
+        @click="open({ multiple: maxFiles > 1 })"
       />
     </template>
 
     <template #files-top="{ open, files }">
       <div
-        v-if="files?.length"
+        v-if="files"
         class="flex justify-between items-center mb-2"
       >
         <p class="font-bold">
-          Files ({{ files?.length }})
+          Files ({{ Array.isArray(files) ? files.length : 1 }})
         </p>
 
         <UButton
+          v-if="maxFiles > 1 && (Array.isArray(files) ? files.length : 1) < maxFiles"
           icon="i-lucide-plus"
           label="Add more"
           color="neutral"
           variant="outline"
           class="-my-2 cursor-pointer"
-          @click="open()"
+          @click="open({ multiple: maxFiles > 1 })"
         />
       </div>
     </template>

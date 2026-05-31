@@ -1,90 +1,88 @@
-/* eslint-disable no-console */
-import { randomUUID } from "uncrypto";
-
-const MAX_FILE_SIZE = 2 * 1024 * 1024;
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
+const ALLOWED_PUBLIC_FOLDERS = [
+  "company-registration",
+  "registrations",
+  "public-profiles",
+  "onboarding-temp",
 ];
 
 export default defineEventHandler(async (event) => {
   try {
-    const formData = await readMultipartFormData(event);
+    const { user } = await getPortalUserSession(event);
 
-    if (!formData || formData.length === 0) {
+    let parts: NonNullable<Awaited<ReturnType<typeof readMultipartFormData>>> = [];
+    try {
+      parts = (await readMultipartFormData(event)) ?? [];
+    }
+    catch (e) {
+      console.error("readMultipartFormData failed:", e);
+      throw createError({
+        statusCode: 500,
+        message: "Failed to parse upload.",
+      });
+    }
+
+    const files = parts.filter(p => p.name === "file" || p.name === "files");
+
+    if (!files.length) {
       throw createError({
         statusCode: 400,
         message: "No file uploaded",
       });
     }
 
-    const fileField = formData.find(f => f.name === "file");
-    const folderField = formData.find(f => f.name === "folder");
+    const folderField = parts.find(f => f.name === "folder");
 
-    if (!fileField || !fileField.data) {
-      throw createError({
-        statusCode: 400,
-        message: "No file found in upload",
-      });
-    }
-
-    const mimeType = fileField.type || "";
     const folder = folderField?.data.toString() || "uploads";
 
-    if (!ALLOWED_TYPES.includes(mimeType)) {
+    const isPublicFolder = ALLOWED_PUBLIC_FOLDERS.includes(folder);
+
+    if (!user && !isPublicFolder) {
       throw createError({
-        statusCode: 400,
-        message: "Invalid file type. Allowed types: JPEG, JPG, PNG, WEBP",
+        statusCode: 401,
+        message: "Unauthorized Access: Please log in to upload files here.",
       });
     }
 
-    if (fileField.data.length > MAX_FILE_SIZE) {
-      throw createError({
-        statusCode: 400,
-        message: "File too large. Maximum size is 2MB",
-      });
-    }
+    if (!user) {
+      const totalSize = files.reduce((acc, f) => acc + f.data.length, 0);
 
-    const extension = mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-    const filename = `${randomUUID()}.${extension}`;
-    const key = `${folder}/${filename}`;
-
-    console.log("Uploading file with key:", key);
-
-    if (import.meta.dev) {
-      const storage = useStorage("images");
-
-      await storage.setItemRaw(key, fileField.data, {
-        httpMetadata: {
-          contentType: mimeType,
-        },
-      });
-    }
-    else {
-      const r2Bucket = event.context.cloudflare?.env?.BUCKET;
-
-      if (!r2Bucket) {
+      if (totalSize > 2 * 1024 * 1024) {
         throw createError({
-          statusCode: 500,
-          message: "R2 bucket not configured",
+          statusCode: 413,
+          message: "Payload Too Large: Public uploads are restricted to a maximum of 2MB.",
         });
       }
+    }
 
-      await r2Bucket.put(key, fileField.data, {
-        httpMetadata: {
-          contentType: mimeType,
-        },
+    const entityId = user ? (user.companyId || user.id) : "registration-anonymous";
+
+    const attachments = await uploadMedia(event, files.map(f => ({
+      data: f.data,
+      type: f.type!,
+      filename: f.filename,
+    })), {
+      folder,
+      entityId,
+      allowedMimeTypes: {
+        "image/jpeg": "image",
+        "image/jpg": "image",
+        "image/png": "image",
+        "image/webp": "image",
+      },
+    });
+
+    if (!attachments.length) {
+      throw createError({
+        statusCode: 500,
+        message: "Failed to upload image.",
       });
     }
 
     return {
       success: true,
       message: "File uploaded successfully",
-      url: `/api/_images/${key}`,
-      key,
-      filename,
+      url: attachments[0]?.url,
+      attachments,
     };
   }
   catch (error) {

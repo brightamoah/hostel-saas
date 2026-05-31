@@ -5,7 +5,7 @@ import { useDB } from "~~/server/utils/db";
 import { getScopeMode } from "~~/server/utils/permissionScope";
 import { and, count, eq, inArray, sql } from "drizzle-orm";
 
-import { visitor } from "../schema";
+import { allocation, hostelSettings, visitor } from "../schema";
 
 const visitorWithRelations = {
   with: {
@@ -301,6 +301,48 @@ export async function visitorQueries() {
     return updatedVisitor;
   };
 
+  const checkRoomVisitorLimit = async (roomId: number, hostelId: number, visitDate: string) => {
+    const [hSettings] = await db
+      .select({ maxVisitorsPerRoom: hostelSettings.maxVisitorsPerRoom })
+      .from(hostelSettings)
+      .where(eq(hostelSettings.hostelId, hostelId));
+
+    if (hSettings && hSettings.maxVisitorsPerRoom > 0) {
+      const roomStudentIds = await db
+        .select({ id: allocation.studentId })
+        .from(allocation)
+        .where(
+          and(
+            eq(allocation.roomId, roomId),
+            inArray(allocation.status, ["active", "pending"])
+          )
+        );
+
+      const studentIds = roomStudentIds.map((s) => s.id);
+
+      if (studentIds.length === 0) return true; // No students, so limit isn't reached
+
+      const [visitorCount] = await db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(visitor)
+        .where(
+          and(
+            inArray(visitor.studentId, studentIds),
+            eq(visitor.visitDate, visitDate),
+            inArray(visitor.status, ["pending", "approved", "checked-in"])
+          )
+        );
+
+      if (visitorCount && visitorCount.count >= hSettings.maxVisitorsPerRoom) {
+        throw createError({
+          statusCode: 400,
+          message: `The maximum limit of ${hSettings.maxVisitorsPerRoom} visitor(s) per room has been reached for this date.`,
+        });
+      }
+    }
+    return true;
+  };
+
   return {
     getScopedVisitors,
     getVisitorById,
@@ -312,6 +354,7 @@ export async function visitorQueries() {
     getVisitorForStudentById,
     createVisitor,
     updateVisitorForStudent,
+    checkRoomVisitorLimit,
   };
 }
 

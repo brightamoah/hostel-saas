@@ -12,6 +12,10 @@ const emit = defineEmits<{
   (e: "success"): void;
 }>();
 
+function isHostelSettings(val: CompanySettings | HostelSettings | null): val is HostelSettings {
+  return val !== null && "useHostelSubaccount" in val;
+}
+
 const {
   mainBankOptions,
   mobileMoneyOptions,
@@ -26,9 +30,25 @@ const {
   createSubaccount,
   isUpdating,
   updateSubaccount,
+  toggleHostelSubaccount,
 } = usePaystackSetup(scope);
 
 const isHostelScope = computed(() => typeof scope !== "string");
+
+const isHostelSubaccountEnabled = ref(false);
+
+watch(
+  () => isHostelSettings(settings) ? settings.useHostelSubaccount : false,
+  (val) => {
+    isHostelSubaccountEnabled.value = Boolean(val);
+  },
+  { immediate: true },
+);
+
+async function onToggleHostelSubaccount(val: boolean) {
+  const ok = await toggleHostelSubaccount(val);
+  if (!ok) isHostelSubaccountEnabled.value = !val;
+}
 
 const stepOverride = ref<Step | null>(null);
 const step = computed<Step>({
@@ -149,6 +169,35 @@ const maskedAccountNumber = computed(() => settings?.paystackAccountType === "mo
         variant="subtle"
       />
     </Transition>
+
+    <UCard
+      v-if="isHostelScope"
+      :ui="{ root: 'ring-default shadow-none', body: 'py-5' }"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <p class="font-semibold text-highlighted text-base">
+            Enable Custom Routing
+          </p>
+
+          <p class="mt-1 text-muted text-sm max-w-xl">
+            When enabled, all payments for this hostel will be routed to this connected Paystack account instead of the main company account.
+            <span
+              v-if="!settings?.paystackSubaccountCode"
+              class="block text-warning font-medium mt-1"
+            >
+              You must set up a payment account below before you can enable custom routing.
+            </span>
+          </p>
+        </div>
+
+        <USwitch
+          v-model="isHostelSubaccountEnabled"
+          :disabled="isUpdating || !settings?.paystackSubaccountCode"
+          @update:model-value="onToggleHostelSubaccount"
+        />
+      </div>
+    </UCard>
 
     <UCard
       v-if="settings?.paystackSubaccountCode"
@@ -299,7 +348,7 @@ const maskedAccountNumber = computed(() => settings?.paystackAccountType === "mo
         </div>
 
         <UButton
-          label="Set Up Company Account"
+          :label="isHostelScope ? 'Set Up Hostel Account' : 'Set Up Company Account'"
           icon="i-lucide-plus"
           color="primary"
           size="lg"

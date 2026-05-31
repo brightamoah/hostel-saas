@@ -3,7 +3,7 @@ import type { AdminScope, AuditContext } from "~~/shared/types";
 import { getActorLabel } from "~~/server/utils/auditLogUtils";
 import { and, count, eq, sql } from "drizzle-orm";
 
-import { admin, company, companyMember, companySettings, hostel, room, student, user } from "../schema";
+import { admin, company, companyMember, companySettings, hostel, hostelSettings, room, student, user } from "../schema";
 import { auditLogQueries } from "./auditLog";
 
 export async function companyQueries() {
@@ -602,6 +602,24 @@ export async function companyQueries() {
     });
   };
 
+  const getPublicTenantContext = async (companyId: number, hostelId?: number | null) => {
+    const [cSettings] = await db
+      .select()
+      .from(companySettings)
+      .where(eq(companySettings.companyId, companyId));
+
+    let hSettings = null;
+    if (hostelId) {
+      const [res] = await db
+        .select()
+        .from(hostelSettings)
+        .where(eq(hostelSettings.hostelId, hostelId));
+      hSettings = res || null;
+    }
+
+    return { cSettings, hSettings };
+  };
+
   return {
     registerCompanyOwner,
     getUserMembershipByUserId,
@@ -615,6 +633,7 @@ export async function companyQueries() {
     updateCompanySubaccount,
     createSubaccount,
     getAllCompaniesWithRelations,
+    getPublicTenantContext,
   };
 }
 

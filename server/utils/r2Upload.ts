@@ -1,6 +1,8 @@
 import type { H3Event } from "h3";
 import type { Buffer } from "node:buffer";
 
+import { randomUUID } from "uncrypto";
+
 const ALLOWED_MIME_TYPES: Record<string, MediaAttachment["type"]> = {
   "image/jpeg": "image",
   "image/png": "image",
@@ -12,7 +14,7 @@ const ALLOWED_MIME_TYPES: Record<string, MediaAttachment["type"]> = {
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_FILES = 3;
 
-const randomString = () => Math.random().toString(36).slice(2);
+const randomString = () => randomUUID();
 
 export function validateFiles(
   files: { type?: string; data: Buffer; filename?: string }[],

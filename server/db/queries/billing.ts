@@ -321,6 +321,8 @@ export async function billingQueries() {
     companyId: number,
     amount: number,
     reference: string,
+    subaccountCode: string | null,
+    splitType: "company" | "hostel" | "platform",
     ctx: AuditContext,
   ) => {
     const [intent] = await db.insert(payment).values({
@@ -329,6 +331,8 @@ export async function billingQueries() {
       companyId,
       amount: amount.toString(),
       transactionReference: reference,
+      paystackSubaccountCode: subaccountCode,
+      splitType,
       paymentMethod: "card",
       status: "pending",
       paymentDate: new Date(),

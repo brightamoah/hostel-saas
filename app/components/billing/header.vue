@@ -8,6 +8,7 @@ const { status } = defineProps<{
   dueDate: string;
   hostelAddress: string;
   status: Billing["status"];
+  hostelName: string | undefined;
 }>();
 
 const billingStatus = computed(() => status);
@@ -21,7 +22,7 @@ const billingStatus = computed(() => status);
 
         <div>
           <h2 class="font-newsreader font-semibold text-base md:text-2xl">
-            Kings Hostel
+            {{ hostelName ?? "Kayanest HMS" }}
           </h2>
 
           <p class="flex items-center gap-0.5 mt-1 text-muted text-sm">

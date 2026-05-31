@@ -23,15 +23,127 @@ watch(() => [state.value.primaryColor, state.value.accentColor], ([primary, acce
 
 const formRef = useTemplateRef("formRef");
 
-function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
-  emit("save");
+const logoInputRef = useTemplateRef("logoInputRef");
+const faviconInputRef = useTemplateRef("faviconInputRef");
+
+const logoFile = ref<any>(null);
+const faviconFile = ref<any>(null);
+const isUploading = ref(false);
+
+function getFirstFile(val: any): File | null {
+  if (!val) return null;
+  if (val instanceof File) return val;
+  if (Array.isArray(val) && val.length > 0) return val[0];
+  if (val.length > 0) return val[0];
+  return null;
+}
+
+const logoPreviewUrl = computed(() => {
+  const file = getFirstFile(logoFile.value);
+  if (file) {
+    return URL.createObjectURL(file);
+  }
+  return state.value.logoUrl;
+});
+
+const faviconPreviewUrl = computed(() => {
+  const file = getFirstFile(faviconFile.value);
+  if (file) {
+    return URL.createObjectURL(file);
+  }
+  return state.value.faviconUrl;
+});
+
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => {
+  return JSON.stringify(state.value) !== initialState.value || !!getFirstFile(logoFile.value) || !!getFirstFile(faviconFile.value);
+});
+
+async function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
+  isUploading.value = true;
+  try {
+    const { $apiFetch } = useNuxtApp();
+
+    const firstLogo = getFirstFile(logoFile.value);
+    if (firstLogo) {
+      const oldUrl = state.value.logoUrl;
+      const formData = new FormData();
+      formData.append("file", firstLogo, firstLogo.name);
+      formData.append("folder", "company");
+      const res = await $apiFetch("/api/upload/image", {
+        method: "POST",
+        body: formData,
+      });
+      state.value.logoUrl = res.url;
+
+      if (oldUrl) {
+        try {
+          let key = "";
+          if (oldUrl.startsWith("http")) {
+            const urlObj = new URL(oldUrl);
+            key = urlObj.pathname.slice(1);
+          }
+          else if (oldUrl.startsWith("/api/images/")) {
+            key = oldUrl.replace("/api/images/", "");
+          }
+          if (key) {
+            await $apiFetch("/api/upload/image", { method: "DELETE", body: { key } });
+          }
+        }
+        catch (e) {
+          console.error("Failed to delete old logo", e);
+        }
+      }
+    }
+
+    const firstFavicon = getFirstFile(faviconFile.value);
+    if (firstFavicon) {
+      const oldUrl = state.value.faviconUrl;
+      const formData = new FormData();
+      formData.append("file", firstFavicon, firstFavicon.name);
+      formData.append("folder", "company-favicons");
+      const res = await $apiFetch("/api/upload/image", { method: "POST", body: formData });
+      state.value.faviconUrl = res.url;
+
+      if (oldUrl) {
+        try {
+          let key = "";
+          if (oldUrl.startsWith("http")) {
+            const urlObj = new URL(oldUrl);
+            key = urlObj.pathname.slice(1);
+          }
+          else if (oldUrl.startsWith("/api/images/")) {
+            key = oldUrl.replace("/api/images/", "");
+          }
+          if (key) {
+            await $apiFetch("/api/upload/image", { method: "DELETE", body: { key } });
+          }
+        }
+        catch (e) {
+          console.error("Failed to delete old favicon", e);
+        }
+      }
+    }
+
+    initialState.value = JSON.stringify(state.value);
+    logoFile.value = null;
+    faviconFile.value = null;
+
+    emit("save");
+  }
+  catch (error) {
+    console.error("Upload failed", error);
+  }
+  finally {
+    isUploading.value = false;
+  }
 }
 </script>
 
 <template>
   <UForm
     ref="formRef"
-    :loading="isSaving"
+    :loading="isSaving || isUploading"
     :schema="companyGeneralSettingsSchema"
     :state
     class="space-y-6 mx-auto mt-4 max-w-5xl"
@@ -65,46 +177,6 @@ function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
 
       <div class="gap-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <UFormField
-          label="Logo URL"
-          name="logoUrl"
-          size="lg"
-          class="sm:col-span-2 lg:col-span-1"
-        >
-          <UInput
-            v-model="state.logoUrl"
-            placeholder="https://yourcompany.com/logo.png"
-            icon="i-lucide-image"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Favicon URL"
-          name="faviconUrl"
-          size="lg"
-        >
-          <UInput
-            v-model="state.faviconUrl"
-            placeholder="https://yourcompany.com/favicon.ico"
-            icon="i-lucide-image"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Website"
-          name="companyWebsite"
-          size="lg"
-        >
-          <UInput
-            v-model="state.companyWebsite"
-            placeholder="https://yourcompany.com"
-            icon="i-lucide-globe"
-            class="w-full"
-          />
-        </UFormField>
-
-        <UFormField
           label="Primary Color"
           name="primaryColor"
           size="lg"
@@ -119,7 +191,7 @@ function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
             :ui="{
               item: 'cursor-pointer',
             }"
-            @update:model-value="(val: string | undefined) => state.primaryColor = val ?? undefined"
+            @update:model-value="(val: string | null) => state.primaryColor = val ?? undefined"
           >
             <template #leading>
               <span
@@ -154,7 +226,7 @@ function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
             :ui="{
               item: 'cursor-pointer',
             }"
-            @update:model-value="(val: string | undefined) => state.accentColor = val ?? undefined"
+            @update:model-value="(val: string | null) => state.accentColor = val ?? undefined"
           >
             <template #leading>
               <span
@@ -172,6 +244,114 @@ function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
               <span class="ml-2 font-medium text-sm">{{ item.label }}</span>
             </template>
           </USelectMenu>
+        </UFormField>
+
+        <UFormField
+          label="Website"
+          name="companyWebsite"
+          size="lg"
+        >
+          <UInput
+            v-model="state.companyWebsite"
+            placeholder="https://yourcompany.com"
+            icon="i-lucide-globe"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UFormField
+          label="Logo"
+          name="logoUrl"
+          size="lg"
+          class="sm:col-span-2 lg:col-span-1"
+        >
+          <div
+            class="group relative w-full h-36 rounded-xl border-2 border-dashed border-muted overflow-hidden cursor-pointer"
+            @click="logoInputRef?.open()"
+          >
+            <NuxtImg
+              v-if="logoPreviewUrl"
+              :src="logoPreviewUrl"
+              class="w-full h-full object-contain"
+            />
+
+            <div
+              v-else
+              class="w-full h-full flex flex-col items-center justify-center bg-muted/10"
+            >
+              <UIcon
+                name="i-lucide-image"
+                class="size-8 text-muted"
+              />
+
+              <span class="text-muted text-xs mt-2 font-medium">Upload Logo</span>
+            </div>
+
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+              <UIcon
+                name="i-lucide-image-up"
+                class="size-6 text-white"
+              />
+
+              <span class="text-white text-xs font-medium">{{ logoPreviewUrl ? 'Change Logo' : 'Upload Logo' }}</span>
+            </div>
+          </div>
+
+          <AppMediaUpload
+            ref="logoInputRef"
+            v-model="logoFile"
+            description="Upload company logo"
+            accept="image/*"
+            :max-files="1"
+            class="hidden"
+          />
+        </UFormField>
+
+        <UFormField
+          label="Favicon"
+          name="faviconUrl"
+          size="lg"
+        >
+          <div
+            class="group relative w-full h-36 rounded-xl border-2 border-dashed border-muted overflow-hidden cursor-pointer"
+            @click="faviconInputRef?.open()"
+          >
+            <img
+              v-if="faviconPreviewUrl"
+              :src="faviconPreviewUrl"
+              class="w-full h-full object-contain"
+            >
+
+            <div
+              v-else
+              class="w-full h-full flex flex-col items-center justify-center bg-muted/10"
+            >
+              <UIcon
+                name="i-lucide-image"
+                class="size-8 text-muted"
+              />
+
+              <span class="text-muted text-xs mt-2 font-medium">Upload Favicon</span>
+            </div>
+
+            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+              <UIcon
+                name="i-lucide-image-up"
+                class="size-6 text-white"
+              />
+
+              <span class="text-white text-xs font-medium">{{ faviconPreviewUrl ? 'Change Favicon' : 'Upload Favicon' }}</span>
+            </div>
+          </div>
+
+          <AppMediaUpload
+            ref="faviconInputRef"
+            v-model="faviconFile"
+            description="Upload favicon"
+            accept="image/*"
+            :max-files="1"
+            class="hidden"
+          />
         </UFormField>
       </div>
     </UCard>
@@ -336,11 +516,11 @@ function onSubmit(_e: FormSubmitEvent<CompanyGeneralSettingsSchema>) {
     <div class="flex justify-end items-center gap-3 py-2">
       <UButton
         type="submit"
-        label="Save Changes"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         size="lg"
-        :loading="isSaving"
+        :loading="isSaving || isUploading"
         class="cursor-pointer"
       />
     </div>

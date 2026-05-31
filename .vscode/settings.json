@@ -181,5 +181,6 @@
     ]
   },
   "SQL-Formatter-VSCode.dialect": "postgresql",
-  "editor.inlayHints.enabled": "on"
+  "editor.inlayHints.enabled": "on",
+  "editor.wordWrap": "on"
 }

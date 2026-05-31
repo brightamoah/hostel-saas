@@ -11,17 +11,19 @@ const { $handleFormError } = useNuxtApp();
 const toast = useToast();
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
-const activeTab = ref<"0" | "1">("0");
+const activeTab = ref<"owner" | "company">("owner");
 const isOwnerComplete = ref(false);
 
 const items = computed<TabsItem[]>(() => [
   {
     label: "Owner",
+    value: "owner",
     icon: "i-lucide-user",
     slot: "owner" as const,
   },
   {
     label: "Company",
+    value: "company",
     icon: "i-lucide-building-2",
     slot: "company" as const,
     disabled: !isOwnerComplete.value,
@@ -63,7 +65,7 @@ async function nextTab() {
     return;
   }
   isOwnerComplete.value = true;
-  activeTab.value = "1";
+  activeTab.value = "company";
 }
 </script>
 
@@ -351,7 +353,7 @@ async function nextTab() {
                   type="button"
                   class="flex justify-center items-center cursor-pointer"
                   :disabled="isLoading"
-                  @click="activeTab = '0'"
+                  @click="activeTab = 'owner'"
                 />
 
                 <UButton

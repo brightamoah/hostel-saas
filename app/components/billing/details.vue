@@ -12,6 +12,8 @@ const billingStore = useBillingStore();
 const { isSending } = storeToRefs(billingStore);
 const { emailInvoice } = billingStore;
 
+const { userProfile } = useUser();
+
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const detailCards = [
@@ -128,6 +130,7 @@ async function handleDownload() {
         :due-date="billing.dueDate"
         :hostel-address="billing?.hostel?.address ?? ''"
         :status="billing.status"
+        :hostel-name="userProfile?.hostel"
       />
 
       <USeparator

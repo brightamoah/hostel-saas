@@ -10,6 +10,13 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<HostelPoliciesSchema>>("state", { required: true });
 
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
+
+watch(() => state.value, (newVal) => {
+  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+}, { deep: true });
+
 const genderPolicyOptions = [
   {
     label: "Per Room",
@@ -34,6 +41,7 @@ watch(() => state.value.genderPolicy, (val) => {
 });
 
 function onSubmit(_e: FormSubmitEvent<HostelPoliciesSchema>) {
+  initialState.value = JSON.stringify(state.value);
   emit("save");
 }
 </script>
@@ -227,7 +235,7 @@ function onSubmit(_e: FormSubmitEvent<HostelPoliciesSchema>) {
     <div class="flex justify-end pb-2">
       <UButton
         type="submit"
-        label="Save Policies"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         size="lg"

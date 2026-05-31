@@ -1,4 +1,5 @@
-import { billingQueries } from "~~/server/db/queries";
+import { billingQueries, companyQueries } from "~~/server/db/queries";
+import { resolveSubaccount } from "~~/server/libs/paystack/resolveSubaccount";
 
 export default defineEventHandler(async (event) => {
   const { user } = await requirePortalUserSession(event, {
@@ -56,8 +57,36 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const { getCompanySettings } = await companyQueries();
+    const cSettings = await getCompanySettings(companyId);
+
+    if (cSettings) {
+      if (!cSettings.allowPartialPayments && amount < balanceDue) {
+        throw createError({
+          statusCode: 400,
+          message: `Partial payments are not allowed. You must pay the full balance of ${formatCurrency(balanceDue)}.`,
+        });
+      }
+
+      if (
+        cSettings.allowPartialPayments
+        && cSettings.minimumPartialPaymentPercent
+      ) {
+        const minAmount = (totalAmount * Number(cSettings.minimumPartialPaymentPercent)) / 100;
+
+        if (amount < minAmount && amount < balanceDue) {
+          throw createError({
+            statusCode: 400,
+            message: `The minimum partial payment allowed is ${cSettings.minimumPartialPaymentPercent}% (${formatCurrency(minAmount)}).`,
+          });
+        }
+      }
+    }
+
     // reference format: KH-{billingId}-{timestamp}-{studentId}-{random}
     const reference = `KH-${billing.id}-${Date.now()}-${billing.studentId}-${Math.floor(Math.random() * 10000)}`;
+
+    console.log("[BILLING INITIALIZED]", reference);
 
     const portalUrl = getRequestHeader(event, "origin");
 
@@ -65,11 +94,26 @@ export default defineEventHandler(async (event) => {
       ? "http://localhost:3000"
       : (portalUrl ?? runtimeConfig.public?.siteUrl);
 
+    if (billing.hostelId === null) {
+      throw createError({
+        statusCode: 400,
+        message: "Billing record is not associated with a hostel.",
+      });
+    }
+
+    const { subaccountCode, splitType } = await resolveSubaccount(
+      billing.hostelId,
+      companyId,
+    );
+
+    console.log("[SUBACCOUNT, SPLITTYPE]", subaccountCode, splitType);
+
     const response = await initializePaystackTransaction({
       email,
       amount,
       currency: "GHS",
       reference,
+      subaccountCode: subaccountCode ?? undefined,
       channels: ["card", "bank", "ussd", "qr", "mobile_money", "bank_transfer"],
       callbackUrl: `${baseUrl}/billing/verify?reference=${reference}`,
       metadata: {
@@ -113,6 +157,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    console.log("[BILLING INITIALIZED]", response);
+
     const auditContext = getAuditContext({
       kind: "student",
       companyId,
@@ -127,6 +173,8 @@ export default defineEventHandler(async (event) => {
       companyId,
       amount,
       reference,
+      subaccountCode,
+      splitType,
       auditContext,
     );
 

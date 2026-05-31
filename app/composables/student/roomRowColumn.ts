@@ -15,6 +15,7 @@ export function useStudentRoomRowColumn(
   const { user } = usePortalUserSession();
 
   const { student } = useFetchStudentDashboardData();
+  const { tenantContext } = useTenantContext();
 
   const overlay = useOverlay();
   const toast = useToast();
@@ -65,17 +66,23 @@ export function useStudentRoomRowColumn(
     const modal = overlay.create(ConfirmationModal);
     const close = modal.close;
 
+    const defaultYear = tenantContext.value?.billing?.defaultAcademicYear;
+    const defaultPeriod = tenantContext.value?.billing?.defaultAcademicPeriod;
+    const hasDefault = Boolean(defaultYear && defaultPeriod);
+
     await modal.open({
       "title": `Book Room ${room.roomNumber} at ${room?.hostel?.name}`,
       "confirmLabel": "Book Room",
       "description": `This action will reserve room ${room.roomNumber} for you.`,
       "renderTrigger": false,
-      "body": `Are you sure you want to proceed with booking room ${room.roomNumber}? \n After booking the room, you have three(3) days to make 60% payment to confirm your allocation.`,
+      "body": hasDefault
+        ? `Are you sure you want to proceed with booking room ${room.roomNumber} for ${defaultYear} - ${defaultPeriod}? \n After booking the room, you have three(3) days to make 60% payment to confirm your allocation.`
+        : `Are you sure you want to proceed with booking room ${room.roomNumber}? \n After booking the room, you have three(3) days to make 60% payment to confirm your allocation.`,
       isLoading,
       "confirmColor": "primary",
       "selectMenuPlaceholder": "Select Academic Period",
-      "showSelectMenu": true,
-      "selectMenuValidation": z.string().nonempty("Please select an academic period to continue."),
+      "showSelectMenu": !hasDefault,
+      "selectMenuValidation": !hasDefault ? z.string().nonempty("Please select an academic period to continue.") : undefined,
       "selectMenuOptions": academicPeriodOptions.value,
       "onUpdate:selectedValue": (value: unknown) => {
         selectedAcademicPeriod.value = value as string;
@@ -84,15 +91,26 @@ export function useStudentRoomRowColumn(
         const userId = user.value?.role === "student" ? user.value.id : undefined;
         if (!userId) return;
 
-        const academicPeriod = data?.selectedValue;
+        let finalYear = "";
+        let finalPeriod: Allocation["academicPeriod"] | "" = "";
 
-        if (!academicPeriod) {
-          toast.add({
-            title: "Selection Required",
-            description: "Please select an academic period to continue.",
-            color: "warning",
-          });
-          return;
+        if (hasDefault) {
+          finalYear = defaultYear!;
+          finalPeriod = defaultPeriod as Allocation["academicPeriod"];
+        }
+        else {
+          const academicPeriod = data?.selectedValue;
+
+          if (!academicPeriod) {
+            toast.add({
+              title: "Selection Required",
+              description: "Please select an academic period to continue.",
+              color: "warning",
+            });
+            return;
+          }
+          finalYear = academicYear;
+          finalPeriod = period;
         }
 
         if (student.value?.allocation?.id && ["active", "pending"].includes(student.value.allocation.status)) {
@@ -110,8 +128,8 @@ export function useStudentRoomRowColumn(
         await bookRoom({
           roomId: room.id,
           userId,
-          academicPeriod: period,
-          academicYear,
+          academicPeriod: finalPeriod as Allocation["academicPeriod"],
+          academicYear: finalYear,
         }, room.roomNumber);
         close();
       },

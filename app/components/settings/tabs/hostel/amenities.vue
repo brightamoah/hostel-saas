@@ -10,6 +10,13 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<HostelAmenitiesSchema>>("state", { required: true });
 
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
+
+watch(() => state.value, (newVal) => {
+  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+}, { deep: true });
+
 const AMENITY_OPTIONS: { label: string; value: string }[] = [
   { label: "CCTV / Security cameras", value: "CCTV" },
   { label: "24/7 Security", value: "24/7 Security" },
@@ -65,6 +72,7 @@ const customAmenities = computed(() =>
 );
 
 function onSubmit(_e: FormSubmitEvent<HostelAmenitiesSchema>) {
+  initialState.value = JSON.stringify(state.value);
   emit("save");
 }
 </script>
@@ -201,7 +209,7 @@ function onSubmit(_e: FormSubmitEvent<HostelAmenitiesSchema>) {
     <div class="flex justify-end py-2">
       <UButton
         type="submit"
-        label="Save Amenities"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         size="lg"

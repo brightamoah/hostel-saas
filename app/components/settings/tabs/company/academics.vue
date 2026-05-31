@@ -10,6 +10,13 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<CompanyAcademicSettingsSchema>>("state", { required: true });
 
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
+
+watch(() => state.value, (newVal) => {
+  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+}, { deep: true });
+
 const formRef = useTemplateRef("formRef");
 
 const periodOptions = companyAcademicSettingsSchema.shape.defaultAcademicPeriod.options.map(p => ({
@@ -22,6 +29,7 @@ const yearIsValid = computed(() =>
 );
 
 function onSubmit(_e: FormSubmitEvent<CompanyAcademicSettingsSchema>) {
+  initialState.value = JSON.stringify(state.value);
   emit("save");
 }
 </script>
@@ -104,7 +112,7 @@ function onSubmit(_e: FormSubmitEvent<CompanyAcademicSettingsSchema>) {
     <div class="flex justify-end pb-2">
       <UButton
         type="submit"
-        label="Save Academic Settings"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         size="lg"

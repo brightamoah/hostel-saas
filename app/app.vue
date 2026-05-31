@@ -12,6 +12,8 @@ const isMobile = breakpoints.smaller("md");
 provide(userProfileKey, userProfile);
 provide(isMobileKey, isMobile);
 
+useTenantContext();
+
 const appLocale = useState("appLocale", () => en_gb);
 
 useHead({

@@ -10,7 +10,15 @@ const emit = defineEmits<{ save: [] }>();
 
 const state = defineModel<Partial<HostelOperationsSchema>>("state", { required: true });
 
+const initialState = ref(JSON.stringify(state.value));
+const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
+
+watch(() => state.value, (newVal) => {
+  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
+}, { deep: true });
+
 function onSubmit(_e: FormSubmitEvent<HostelOperationsSchema>) {
+  initialState.value = JSON.stringify(state.value);
   emit("save");
 }
 </script>
@@ -227,7 +235,7 @@ function onSubmit(_e: FormSubmitEvent<HostelOperationsSchema>) {
     <div class="flex justify-end pb-2">
       <UButton
         type="submit"
-        label="Save Operations"
+        :label="isDirty ? 'Update' : 'Save Changes'"
         icon="i-lucide-save"
         color="primary"
         size="lg"
