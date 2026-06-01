@@ -243,7 +243,7 @@ const maskedAccountNumber = computed(() => settings?.paystackAccountType === "mo
             <span class="opacity-40 mx-1.5">·</span>
             {{ maskedAccountNumber }}
             <span class="opacity-40 mx-1.5">·</span>
-            {{ settings.paystackSubaccountCode }}
+            {{ maskAccountNumberPartial(settings.paystackSubaccountCode) }}
           </p>
         </div>
 

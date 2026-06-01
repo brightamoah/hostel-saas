@@ -12,8 +12,6 @@ const billingStore = useBillingStore();
 const { isSending } = storeToRefs(billingStore);
 const { emailInvoice } = billingStore;
 
-const { userProfile } = useUser();
-
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const detailCards = [
@@ -68,12 +66,26 @@ const lateFee = computed(() => Number(billing.lateFee || 0));
 const total = computed(() => subtotal.value + lateFee.value);
 const balanceDue = computed(() => total.value - Number(billing.paidAmount));
 
+function getBillingContext(billingData: Billing) {
+  const hSettings = billingData?.hostel?.settings;
+  const cSettings = billingData?.company?.settings;
+  return {
+    bankName: hSettings?.paystackBankCode || cSettings?.paystackBankCode || undefined,
+    accountNumber: hSettings?.paystackAccountNumber || cSettings?.paystackAccountNumber || undefined,
+    supportPhone: hSettings?.supportPhone || cSettings?.supportPhone || undefined,
+    logoUrl: hSettings?.logoUrl || cSettings?.logoUrl || undefined,
+  };
+}
+
+const billingContext = computed(() => getBillingContext(billing));
+
 async function handleDownload() {
   if (isGenerating.value) return;
 
   isGenerating.value = true;
   try {
-    const pdfBlob = await generateInvoicePDF(billing);
+    const paymentContext = billingContext.value;
+    const pdfBlob = await generateInvoicePDF(billing, paymentContext);
 
     const url = window.URL.createObjectURL(pdfBlob);
     const link = document.createElement("a");
@@ -130,7 +142,8 @@ async function handleDownload() {
         :due-date="billing.dueDate"
         :hostel-address="billing?.hostel?.address ?? ''"
         :status="billing.status"
-        :hostel-name="userProfile?.hostel"
+        :hostel-name="billing?.hostel?.name ?? 'Kayanest'"
+        :logo-url="billingContext.logoUrl"
       />
 
       <USeparator
@@ -173,6 +186,7 @@ async function handleDownload() {
 
       <BillingPayment
         :payments="billing.payments"
+        :billing="billing"
         class="mt-6"
       />
 

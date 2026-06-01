@@ -14,6 +14,7 @@ function getGreeting() {
 }
 
 const { user } = usePortalUserSession();
+const { userProfile } = useUser();
 
 const refreshContext = inject(refreshKey);
 
@@ -40,7 +41,7 @@ const {
 
     <template #description>
       <p class="text-muted text-base">
-        Manage Kings Hostel operations efficiently from your dashboard.
+        Manage {{ userProfile?.hostel ?? "Kayanest" }} operations efficiently from your dashboard.
       </p>
 
       <div class="flex gap-2 mt-3">

@@ -1,12 +1,21 @@
 import { companyQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
-  const { user } = await studentSessionCheck(event);
+  const session = await requirePortalUserSession(event);
+  const user = session.user;
 
   try {
     const { getStudentForDashboardByUserId } = await userQueries();
 
-    const studentData = await getStudentForDashboardByUserId(user.id);
+    // Only fetch student data if the user is actually a student
+    let hostelId: number | undefined;
+    if (user.role === "student") {
+      const studentData = await getStudentForDashboardByUserId(user.id);
+      const allocation = studentData?.studentRecordWithBestAllocation?.allocation;
+      hostelId = allocation?.room?.hostel?.id;
+    } else {
+      hostelId = user.adminData?.hostelId ?? undefined;
+    }
 
     const companyId = user.companyId;
 
@@ -18,10 +27,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const { getPublicTenantContext } = await companyQueries();
-
-    // Check if student has an active allocation for hostel settings override
-    const allocation = studentData?.studentRecordWithBestAllocation?.allocation;
-    const hostelId = allocation?.room?.hostel?.id;
 
     const { cSettings, hSettings } = await getPublicTenantContext(companyId, hostelId);
 
@@ -45,6 +50,9 @@ export default defineEventHandler(async (event) => {
         defaultAcademicPeriod: cSettings?.defaultAcademicPeriod,
         allowPartialPayments: cSettings?.allowPartialPayments,
         minimumPartialPaymentPercent: cSettings?.minimumPartialPaymentPercent,
+        accountName: hSettings?.paystackBusinessName ?? cSettings?.paystackBusinessName,
+        accountNumber: hSettings?.paystackAccountNumber ?? cSettings?.paystackAccountNumber,
+        bankName: hSettings?.paystackBankCode ?? cSettings?.paystackBankCode,
         // invoiceDueDays: cSettings?.invoiceDueDays,
         // autoSendInvoices: cSettings?.autoSendInvoices,
         // lateFeeEnabled: cSettings?.lateFeeEnabled,

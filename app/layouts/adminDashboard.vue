@@ -14,6 +14,8 @@ const open = ref(false);
 const { refreshSession } = useAuthStore();
 
 const { unreadAnnouncementCount } = useAnnouncementData();
+const { userProfile } = useUser();
+const { tenantContext } = useTenantContext();
 
 const links = computed(() => [[
   {
@@ -116,23 +118,98 @@ const links = computed(() => [[
   target: "_blank",
 }]] satisfies NavigationMenuItem[][]);
 
+const pages = computed(() => [
+  {
+    label: "Company Settings",
+    icon: "i-lucide-building",
+    to: { name: "admin-settings-company" },
+  },
+  {
+    label: "Hostel Settings",
+    icon: "i-lucide-hotel",
+    to: { name: "admin-settings-hostel" },
+  },
+  {
+    label: "Profile",
+    icon: "i-lucide-user",
+    to: { name: "admin-profile" },
+  },
+  {
+    label: "Change Password",
+    icon: "i-lucide-key",
+    to: { name: "admin-profile-settings-changePassword" },
+  },
+  {
+    label: "Login History",
+    icon: "i-lucide-history",
+    to: { name: "admin-profile-settings-loginHistory" },
+  },
+  {
+    label: "Security",
+    icon: "i-lucide-shield",
+    to: { name: "admin-profile-settings-security" },
+  },
+  {
+    label: "Analytics",
+    icon: "i-lucide-line-chart",
+    to: { name: "admin-analytics" },
+  },
+  {
+    label: "Uploads",
+    icon: "i-lucide-upload-cloud",
+    to: { name: "admin-uploads" },
+  },
+  {
+    label: "Privacy Policy",
+    icon: "i-lucide-file-text",
+    to: { name: "admin-profile-settings-privacy" },
+  },
+  {
+    label: "About",
+    icon: "i-lucide-info",
+    to: { name: "about" },
+  },
+  {
+    label: "Contact Us",
+    icon: "i-lucide-phone",
+    to: { name: "contact" },
+  },
+  {
+    label: "FAQ",
+    icon: "i-lucide-message-circle-question-mark",
+    to: { name: "faq" },
+  },
+  {
+    label: "Features",
+    icon: "i-lucide-sparkles",
+    to: { name: "features" },
+  },
+  {
+    label: "Home Page",
+    icon: "i-lucide-home",
+    to: { name: "index" },
+  },
+] satisfies NavigationMenuItem[]);
+
+const groupItems = computed(() => [...links.value.flat(), ...pages.value]);
+
 const groups = computed(() => [
   {
     id: "links",
     label: "Go to",
-    items: links.value.flat(),
+    items: groupItems.value,
   },
-  {
-    id: "code",
-    label: "Code",
-    items: [{
-      id: "source",
-      label: "View page source",
-      icon: "i-lucide-github",
-      to: "https://github.com/brightamoah/hostel-app.git",
-      target: "_blank",
-    }],
-  },
+  // {
+  //   id: "code",
+  //   label: "Code",
+  //   items: [{
+  //     id: "source",
+  //     label: "View page source",
+  //     icon: "i-lucide-github",
+  //     to: "https://github.com/brightamoah/hostel-app.git",
+  //     target: "_blank",
+  //   }],
+  // },
 ]);
 
 function persistOptOut() {
@@ -200,7 +277,19 @@ onMounted(async () => {
           :to="{ name: 'admin-dashboard' }"
           class="flex justify-center items-center gap-2"
         >
+          <NuxtImg
+            v-if="tenantContext?.branding?.logoUrl"
+            :src="tenantContext.branding.logoUrl"
+            alt="Logo"
+            class="size-6 md:size-8 object-contain"
+            :class="{
+              'mx-auto': collapsed,
+              'mx-0': !collapsed,
+            }"
+          />
+
           <AppLogo
+            v-else
             class="size-6 md:size-8"
             :class="{
               'mx-auto': collapsed,
@@ -212,7 +301,7 @@ onMounted(async () => {
             v-if="!collapsed"
             class="font-newsreader font-semibold text-2xl"
           >
-            Kings Hostel
+            {{ userProfile?.hostel ?? "Kayanest" }}
           </h2>
         </NuxtLink>
       </template>
@@ -246,11 +335,11 @@ onMounted(async () => {
       </template>
 
       <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
+        <UserMenu :collapsed />
       </template>
     </UDashboardSidebar>
 
-    <UDashboardSearch :groups="groups" />
+    <UDashboardSearch :groups />
 
     <slot />
 

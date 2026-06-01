@@ -8,8 +8,10 @@ const { items, isLoggedIn, user } = defineProps<{
 }>();
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
-const route = useRoute();
 const isMobileMenuOpen = ref(false);
+
+// const { tenantContext } = useTenantContext();
+const route = useRoute();
 
 const navItems = computed(() =>
   items.map((item) => {
@@ -58,12 +60,19 @@ watch(() => route.path, () => {
       <template #title>
         <NuxtLink
           :to="{ name: 'index' }"
-          class="flex justify-center items-center gap-2"
+          class="flex  items-center gap-2"
         >
+          <!-- <NuxtImg
+            v-if="tenantContext?.branding?.logoUrl"
+            :src="tenantContext.branding.logoUrl"
+            alt="Logo"
+            class="size-8 shrink-0 object-contain"
+          /> -->
+
           <AppLogo class="size-8 shrink-0" />
 
           <h2 class="font-newsreader font-semibold text-2xl">
-            Kings Hostel
+            KayaNest
           </h2>
         </NuxtLink>
       </template>

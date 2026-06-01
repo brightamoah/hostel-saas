@@ -25,7 +25,16 @@ const billingWithRelations = {
       },
     },
     allocation: true,
-    hostel: true,
+    hostel: {
+      with: {
+        settings: true,
+      },
+    },
+    company: {
+      with: {
+        settings: true,
+      },
+    },
     payments: true,
   },
 } as const;

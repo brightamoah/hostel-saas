@@ -45,7 +45,10 @@ function getDaysDifference(start: Date | string, end: Date | string) {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-export function generateInvoicePDF(billing: Billing): Promise<Blob> {
+export function generateInvoicePDF(
+  billing: Billing, 
+  paymentContext?: { bankName?: string; accountNumber?: string; supportPhone?: string }
+): Promise<Blob> {
   return new Promise((resolve) => {
     const doc = new JSPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -57,7 +60,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(PRIMARY_COLOR);
-    doc.text(billing.hostel?.name || "Kayanest Hostels", PAGE_WIDTH / 2, y, { align: "center" });
+    doc.text(billing.hostel?.name || "Kayanest", PAGE_WIDTH / 2, y, { align: "center" });
 
     y += 6;
     doc.setFont("helvetica", "normal");
@@ -66,7 +69,7 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.text(billing.hostel?.address || "University Campus, Accra, Ghana", PAGE_WIDTH / 2, y, { align: "center" });
 
     y += 5;
-    doc.text(`${billing.hostel?.email || "kingshostelmgt@gmail.com"} | ${billing.hostel?.contactNumber || "+233 30 277 8899"}`, PAGE_WIDTH / 2, y, { align: "center" });
+    doc.text(`${billing.hostel?.email || "support@kayanest.com"} | ${billing.hostel?.contactNumber || ""}`, PAGE_WIDTH / 2, y, { align: "center" });
 
     y += 8;
     doc.setDrawColor(PRIMARY_COLOR);
@@ -233,23 +236,26 @@ export function generateInvoicePDF(billing: Billing): Promise<Blob> {
     doc.setFont("helvetica", "bold");
     doc.text("Bank Name:", payX, payY);
     doc.setFont("helvetica", "normal");
-    doc.text("Ghana Commercial Bank", payX + 25, payY);
+    doc.text(paymentContext?.bankName || "N/A", payX + 25, payY);
+
+    // Use actual account number without masking
+    const acctNum = paymentContext?.accountNumber || "N/A";
 
     doc.setFont("helvetica", "bold");
     doc.text("Account No:", payX + 85, payY);
     doc.setFont("helvetica", "normal");
-    doc.text("1234567890", payX + 110, payY);
+    doc.text(acctNum, payX + 110, payY);
 
     payY += 5;
     doc.setFont("helvetica", "bold");
     doc.text("Account Name:", payX, payY);
     doc.setFont("helvetica", "normal");
-    doc.text("Kings Hostel Management", payX + 25, payY);
+    doc.text(billing.hostel?.name || "Kayanest", payX + 25, payY);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Mobile Money:", payX + 85, payY);
+    doc.text("Support Contact:", payX + 85, payY);
     doc.setFont("helvetica", "normal");
-    doc.text("+233 54 968 4848", payX + 110, payY);
+    doc.text(paymentContext?.supportPhone || "N/A", payX + 110, payY);
 
     y += 38;
 

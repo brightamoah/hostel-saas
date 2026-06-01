@@ -9,6 +9,9 @@ const authStore = useAuthStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const { signout } = authStore;
 
+// const { userProfile } = useUser();
+// const { tenantContext } = useTenantContext();
+
 const avatarBgColor = generateUserColor(user.value?.id || "default");
 // const activeSection = ref("home");
 
@@ -83,6 +86,12 @@ const { y } = useWindowScroll();
         :to="{ name: 'index' }"
         class="flex items-center gap-2"
       >
+        <!-- <NuxtImg
+          v-if="tenantContext?.branding.logoUrl"
+          :src="tenantContext.branding.logoUrl"
+          class="size-6 md:size-8 rounded-2xl"
+        /> -->
+
         <AppLogo class="size-6 md:size-8" />
 
         <h2 class="hidden md:block font-newsreader font-semibold text-2xl">

@@ -9,8 +9,8 @@ const { status } = defineProps<{
   hostelAddress: string;
   status: Billing["status"];
   hostelName: string | undefined;
+  logoUrl?: string | null;
 }>();
-
 const billingStatus = computed(() => status);
 </script>
 
@@ -18,11 +18,21 @@ const billingStatus = computed(() => status);
   <div class="flex md:flex-row flex-col justify-between md:items-center gap-4">
     <div class="space-y-6">
       <div class="flex items-start gap-3">
-        <AppLogo class="size-10 md:size-16 shrink-0" />
+        <NuxtImg
+          v-if="logoUrl"
+          :src="logoUrl"
+          alt="Logo"
+          class="size-10 md:size-16 shrink-0 object-contain"
+        />
+
+        <AppLogo
+          v-else
+          class="size-10 md:size-16 shrink-0"
+        />
 
         <div>
           <h2 class="font-newsreader font-semibold text-base md:text-2xl">
-            {{ hostelName ?? "Kayanest HMS" }}
+            {{ hostelName ?? "Kayanest" }}
           </h2>
 
           <p class="flex items-center gap-0.5 mt-1 text-muted text-sm">

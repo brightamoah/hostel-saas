@@ -30,7 +30,7 @@ useHead({
 });
 
 useSeoMeta({
-  titleTemplate: "%s - Kings Hostel Management",
+  titleTemplate: "%s - Kayanest",
   title: String(error.status),
 });
 </script>

@@ -5,8 +5,9 @@ import type { Table } from "@tanstack/vue-table";
 import { getPaginationRowModel } from "@tanstack/table-core";
 import { useDateFormat } from "@vueuse/core";
 
-const { payments } = defineProps<{
+const { payments, billing } = defineProps<{
   payments: Billing["payments"];
+  billing?: Billing;
 }>();
 
 type PaymentRow = Billing["payments"][number];
@@ -14,12 +15,37 @@ type PaymentExtended = Omit<PaymentRow, "status"> & { status: PaymentStatus };
 
 const UBadge = resolveComponent("UBadge");
 
-const paymentDetails = [
-  { label: "Bank Name", value: "Ghana Commercial Bank", icon: "i-lucide-landmark", border: true },
-  { label: "Account Name", value: "Kings Hostel Mgt", icon: "i-lucide-user", border: true },
-  { label: "Account No", value: "1234567890", icon: "i-lucide-hash", border: true },
-  { label: "Mobile Money", value: "+233 54 968 4848", icon: "i-lucide-smartphone", border: false },
-];
+const { userProfile } = useUser();
+const { tenantContext } = useTenantContext();
+
+function getBillingContext(billingData?: Billing) {
+  const hSettings = billingData?.hostel?.settings;
+  const cSettings = billingData?.company?.settings;
+
+  const accountName = hSettings?.paystackBusinessName || cSettings?.paystackBusinessName;
+  const accountNumber = hSettings?.paystackAccountNumber || cSettings?.paystackAccountNumber;
+  const bankName = hSettings?.paystackBankCode || cSettings?.paystackBankCode;
+  const supportPhone = hSettings?.supportPhone || cSettings?.supportPhone;
+
+  return { accountName, accountNumber, bankName, supportPhone };
+}
+
+const paymentDetails = computed(() => {
+  const bContext = getBillingContext(billing);
+  const fallbackHostelName = userProfile.value?.hostel ?? "Kayanest";
+
+  const acctNum = bContext.accountNumber || "N/A";
+  const bankName = bContext.bankName || "N/A";
+  const accountName = bContext.accountName || fallbackHostelName;
+  const supportPhone = bContext.supportPhone || tenantContext.value?.branding?.supportPhone || "N/A";
+
+  return [
+    { label: "Bank Name", value: bankName, icon: "i-lucide-landmark", border: true },
+    { label: "Account Name", value: accountName, icon: "i-lucide-user", border: true },
+    { label: "Account No", value: acctNum, icon: "i-lucide-hash", border: true },
+    { label: "Support Contact", value: supportPhone, icon: "i-lucide-smartphone", border: false },
+  ];
+});
 
 const columns = ref<TableColumn<PaymentExtended>[]>([
   {

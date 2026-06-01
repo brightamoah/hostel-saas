@@ -79,26 +79,70 @@ const links = computed(() => {
   return [baseLinks];
 });
 
+const pages = computed(() => [
+  {
+    label: "Profile",
+    icon: "i-lucide-user",
+    to: { name: "student-profile" },
+    onSelect: () => open.value = false,
+  },
+  {
+    label: "Change Password",
+    icon: "i-lucide-key",
+    to: { name: "student-profile-settings-changePassword" },
+    onSelect: () => open.value = false,
+  },
+  {
+    label: "Login History",
+    icon: "i-lucide-history",
+    to: { name: "student-profile-settings-loginHistory" },
+    onSelect: () => open.value = false,
+  },
+  {
+    label: "Security",
+    icon: "i-lucide-shield",
+    to: { name: "student-profile-settings-security" },
+    onSelect: () => open.value = false,
+  },
+  {
+    label: "About",
+    icon: "i-lucide-info",
+    to: { name: "about" },
+  },
+  {
+    label: "Contact Us",
+    icon: "i-lucide-phone",
+    to: { name: "contact" },
+  },
+  {
+    label: "FAQ",
+    icon: "i-lucide-message-circle-question-mark",
+    to: { name: "faq" },
+  },
+  {
+    label: "Features",
+    icon: "i-lucide-sparkles",
+    to: { name: "features" },
+  },
+  {
+    label: "Home Page",
+    icon: "i-lucide-home",
+    to: { name: "index" },
+  },
+] satisfies NavigationMenuItem[]);
+
+const groupItems = computed(() => [...links.value.flat(), ...pages.value]);
+
 const groups = computed(() => [
   {
     id: "links",
     label: "Go to",
-    items: links.value.flat().map((link): CommandPaletteItem => ({
+    items: groupItems.value.map((link): CommandPaletteItem => ({
       label: link.label as string,
       icon: link.icon,
       to: link.to,
       onSelect: link.onSelect,
     })),
-  },
-  {
-    id: "code",
-    label: "Code",
-    items: [{
-      label: "View page source",
-      icon: "i-lucide-github",
-      to: "https://github.com/brightamoah/hostel-app.git",
-      target: "_blank",
-    }] satisfies CommandPaletteItem[],
   },
 ]);
 
@@ -154,7 +198,7 @@ onMounted(async () => {
           :to="{ name: 'student-dashboard' }"
           class="flex justify-center items-center gap-2"
         >
-          <img
+          <NuxtImg
             v-if="tenantContext?.branding?.logoUrl"
             :src="tenantContext.branding.logoUrl"
             alt="Logo"
@@ -163,7 +207,7 @@ onMounted(async () => {
               'mx-auto': collapsed,
               'mx-0': !collapsed,
             }"
-          >
+          />
 
           <AppLogo
             v-else
@@ -178,7 +222,7 @@ onMounted(async () => {
             v-if="!collapsed"
             class="font-newsreader font-semibold text-2xl truncate max-w-50"
           >
-            {{ userProfile?.hostel ?? userProfile?.company ?? "Kayanest HMS" }}
+            {{ userProfile?.hostel ?? "Kayanest" }}
           </h2>
         </NuxtLink>
       </template>
