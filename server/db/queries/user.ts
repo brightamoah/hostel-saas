@@ -269,20 +269,30 @@ export async function userQueries(event?: H3Event) {
     filteredField: FailedAttempts,
     filteredValue: string | number,
   ): Promise<number> => {
-    const windowStartTimestamp = Date.now() - ATTEMPT_WINDOW_MINUTES * 60 * 1000;
+    try {
+      const windowStartTimestamp = Date.now() - ATTEMPT_WINDOW_MINUTES * 60 * 1000;
 
-    const [result] = await db
-      .select({ value: count() })
-      .from(loginAttempts)
-      .where(
-        and(
-          eq(filteredField, filteredValue),
-          eq(loginAttempts.success, false),
-          gt(loginAttempts.timestamp, new Date(windowStartTimestamp)),
-        ),
-      );
+      const [result] = await db
+        .select({ value: count() })
+        .from(loginAttempts)
+        .where(
+          and(
+            eq(filteredField, filteredValue),
+            eq(loginAttempts.success, false),
+            gt(loginAttempts.timestamp, new Date(windowStartTimestamp)),
+          ),
+        );
 
-    return result?.value ?? 0;
+      return result?.value ?? 0;
+    }
+    catch (error: any) {
+      console.error("QUERY ERROR");
+      console.error("message:", error?.message);
+      console.error("cause:", error?.cause);
+      console.error("stack:", error?.stack);
+
+      throw error;
+    }
   };
 
   const recordLoginAttempt = async (
