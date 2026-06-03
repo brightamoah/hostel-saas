@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
 
   try {
-    const { getRoomByIdScoped } = await roomQueries();
+    const { getRoomByIdScoped } = await roomQueries(event);
 
     const id = getRouterParam(event, "roomId");
 

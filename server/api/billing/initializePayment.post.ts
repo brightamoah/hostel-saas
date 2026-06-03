@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
     const { billingId, amount, email, phoneNumber, totalAmount } = body.data;
 
-    const { getBillingByIdStudent, createPaymentIntent } = await billingQueries();
+    const { getBillingByIdStudent, createPaymentIntent } = await billingQueries(event);
     const billing = await getBillingByIdStudent(billingId);
 
     if (!billing) {
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getCompanySettings } = await companyQueries();
+    const { getCompanySettings } = await companyQueries(event);
     const cSettings = await getCompanySettings(companyId);
 
     if (cSettings) {
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
     // reference format: KH-{billingId}-{timestamp}-{studentId}-{random}
     const reference = `KH-${billing.id}-${Date.now()}-${billing.studentId}-${Math.floor(Math.random() * 10000)}`;
 
-    console.log("[BILLING INITIALIZED]", reference);
+    // console.log("[BILLING INITIALIZED]", reference);
 
     const portalUrl = getRequestHeader(event, "origin");
 
@@ -106,7 +106,7 @@ export default defineEventHandler(async (event) => {
       companyId,
     );
 
-    console.log("[SUBACCOUNT, SPLITTYPE]", subaccountCode, splitType);
+    // console.log("[SUBACCOUNT, SPLITTYPE]", subaccountCode, splitType);
 
     const response = await initializePaystackTransaction({
       email,
@@ -157,7 +157,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    console.log("[BILLING INITIALIZED]", response);
+    // console.log("[BILLING INITIALIZED]", response);
 
     const auditContext = getAuditContext({
       kind: "student",

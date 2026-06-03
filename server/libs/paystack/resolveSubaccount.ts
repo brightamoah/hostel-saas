@@ -1,3 +1,5 @@
+import type { H3Event } from "h3";
+
 export type SplitType = "company" | "hostel" | "platform";
 
 export type ResolvedSubaccount = {
@@ -24,8 +26,9 @@ export type ResolvedSubaccount = {
 export async function resolveSubaccount(
   hostelId: number,
   companyId: number,
+  event?: H3Event,
 ): Promise<ResolvedSubaccount> {
-  const { db } = useDB();
+  const { db } = useDB(event);
 
   const [hostelSetting, companySetting] = await Promise.all([
     db.query.hostelSettings.findFirst({
@@ -47,7 +50,6 @@ export async function resolveSubaccount(
 
   if (
     hostelSetting?.useHostelSubaccount === true
-    && hostelSetting.paystackIsVerified === true
     && hostelSetting.paystackSubaccountCode
   ) {
     return {
@@ -56,10 +58,7 @@ export async function resolveSubaccount(
     };
   }
 
-  if (
-    companySetting?.paystackIsVerified === true
-    && companySetting.paystackSubaccountCode
-  ) {
+  if (companySetting?.paystackSubaccountCode) {
     return {
       subaccountCode: companySetting.paystackSubaccountCode,
       splitType: "company",

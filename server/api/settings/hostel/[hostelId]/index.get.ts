@@ -14,7 +14,7 @@ export default defineEventHandler(async (event): Promise<HostelSettingsResponseD
       return parsed;
     })();
 
-    const { getHostelByIdScoped, getHostelSettings } = await roomQueries();
+    const { getHostelByIdScoped, getHostelSettings } = await roomQueries(event);
 
     const hostelRecord = await getHostelByIdScoped(hostelId, scope);
 

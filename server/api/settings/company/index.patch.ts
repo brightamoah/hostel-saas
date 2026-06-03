@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const { updateCompanySettings } = await companyQueries();
+    const { updateCompanySettings } = await companyQueries(event);
 
     const auditContext = getAuditContext({
       event,

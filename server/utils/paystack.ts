@@ -1,3 +1,5 @@
+import type { ListTransactionQueryParams } from "paystack-sdk/dist/transaction/interface";
+
 import { Paystack } from "paystack-sdk";
 
 export type SubAccount = {
@@ -68,6 +70,27 @@ export function getPaystackClient(): Paystack {
 }
 
 /**
+ * Wraps Paystack SDK calls to safely extract and throw human-readable errors.
+ * This prevents massive Axios Socket objects from bubbling up and crashing the global error logger.
+ */
+async function withPaystackErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  }
+  catch (paystackError: any) {
+    if (paystackError?.response?.data) {
+      console.error("[Paystack API Error]", paystackError.response.data);
+      throw createError({
+        statusCode: paystackError.response.status || 400,
+        message: paystackError.response.data.message || "Paystack API request failed",
+        data: paystackError.response.data,
+      });
+    }
+    throw paystackError;
+  }
+}
+
+/**
  * Initializes a transaction with Paystack.
  *
  * This function prepares a payment request by interacting with the Paystack API. It handles
@@ -130,7 +153,7 @@ export async function initializePaystackTransaction(
     payload.bearer = params.bearer ?? "subaccount";
   }
 
-  return await paystack.transaction.initialize(payload);
+  return withPaystackErrorHandling(() => paystack.transaction.initialize(payload));
 }
 
 /**
@@ -141,7 +164,7 @@ export async function initializePaystackTransaction(
  */
 export async function verifyPaystackTransaction(reference: string) {
   const paystack = getPaystackClient();
-  return await paystack.transaction.verify(reference);
+  return withPaystackErrorHandling(() => paystack.transaction.verify(reference));
 }
 
 /**
@@ -153,11 +176,11 @@ export async function verifyPaystackTransaction(reference: string) {
  */
 export async function listPaystackBanks(currency = "GHS") {
   const paystack = getPaystackClient();
-  return await paystack.misc.banks({
+  return withPaystackErrorHandling(() => paystack.misc.banks({
     currency,
     use_cursor: false,
     perPage: 100,
-  });
+  }));
 }
 
 /**
@@ -178,11 +201,24 @@ export async function verifyBankAccount(
   accountNumber: string,
   bankCode: string,
 ) {
+  // Mock verification in development to avoid hitting the strict 10-req/min rate limit on Paystack test mode
+  if (import.meta.dev) {
+    console.warn("[Paystack DEV Mock] Mocking verifyBankAccount to prevent rate limits");
+    return {
+      status: true,
+      message: "Account number resolved",
+      data: {
+        account_number: accountNumber,
+        account_name: `Test Account ${accountNumber}`,
+      },
+    };
+  }
+
   const paystack = getPaystackClient();
-  return await paystack.verification.resolveAccount({
+  return withPaystackErrorHandling(() => paystack.verification.resolveAccount({
     account_number: accountNumber,
     bank_code: bankCode,
-  });
+  }));
 }
 
 export type CreateSubaccountParams = {
@@ -262,7 +298,7 @@ export async function createPaystackSubaccount(params: CreateSubaccountParams) {
     account_number: params.accountNumber,
     business_name: params.businessName,
     settlement_bank: params.settlementBank,
-    percentage_charge: params.percentageCharge,
+    percentage_charge: Math.round(Number(params.percentageCharge || 0)),
     description: params.description ?? "",
     metadata: params.metadata,
     primary_contact_email: params.primaryContactEmail,
@@ -270,7 +306,7 @@ export async function createPaystackSubaccount(params: CreateSubaccountParams) {
     primary_contact_phone: params.primaryContactPhone,
   };
 
-  const response = await paystack.subAccount.create(paramItems);
+  const response = await withPaystackErrorHandling(() => paystack.subAccount.create(paramItems));
 
   if (!response.status) {
     throw new Error(
@@ -298,7 +334,7 @@ export async function updatePaystackSubaccount(
   const payload: Partial<NonNullable<Parameters<typeof paystack.subAccount.update>[1]>> = {};
 
   if (params.businessName !== undefined) payload.business_name = params.businessName;
-  if (params.percentageCharge !== undefined) payload.percentage_charge = params.percentageCharge;
+  if (params.percentageCharge !== undefined) payload.percentage_charge = Math.round(Number(params.percentageCharge));
   if (params.active !== undefined) (payload as any).active = params.active;
   if (params.description) payload.description = params.description;
   if (params.primaryContactName) payload.primary_contact_name = params.primaryContactName;
@@ -319,10 +355,10 @@ export async function updatePaystackSubaccount(
     payload.account_number = params.accountNumber;
   }
 
-  const response = await paystack.subAccount.update(
+  const response = await withPaystackErrorHandling(() => paystack.subAccount.update(
     subaccountCode,
     payload as NonNullable<Parameters<typeof paystack.subAccount.update>[1]>,
-  );
+  ));
 
   if (!response.status) {
     throw new Error(
@@ -345,7 +381,7 @@ export async function updatePaystackSubaccount(
  */
 export async function fetchPaystackSubaccount(subaccountCode: string): Promise<SubAccount> {
   const paystack = getPaystackClient();
-  const response = await paystack.subAccount.fetch(subaccountCode);
+  const response = await withPaystackErrorHandling(() => paystack.subAccount.fetch(subaccountCode));
 
   if (!response.status || !response.data) {
     throw new Error(
@@ -354,4 +390,21 @@ export async function fetchPaystackSubaccount(subaccountCode: string): Promise<S
   }
 
   return mapSubAccount(response.data as unknown as Record<string, unknown>);
+}
+
+export async function fetchTransactions(queryParams?: ListTransactionQueryParams) {
+  const paystack = getPaystackClient();
+
+  const response = await withPaystackErrorHandling(() => paystack.transaction.list({
+    perPage: queryParams?.perPage ?? 100,
+    page: queryParams?.page ?? 1,
+  }));
+
+  if (!response.status || !response.data) {
+    throw new Error(
+      `Paystack transaction fetch failed: ${response.message ?? "unknown error"}`,
+    );
+  }
+
+  return response.data;
 }

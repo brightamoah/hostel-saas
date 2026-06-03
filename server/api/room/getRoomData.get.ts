@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       getRoomStatusCount,
       getAllHostelsScoped,
       getScopedRooms,
-    } = await roomQueries();
+    } = await roomQueries(event);
 
     const {
       totalRooms,

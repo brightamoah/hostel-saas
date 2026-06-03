@@ -13,8 +13,8 @@ export async function bookRoom(
   bookingAcademicPeriod?: Allocation["academicPeriod"],
   academicYear?: string,
 ) {
-  const { db } = useDB();
-  const { logAudit } = await auditLogQueries();
+  const { db } = useDB(ctx.event);
+  const { logAudit } = await auditLogQueries(ctx.event);
 
   const now = new Date();
   const allocationDate = now.toISOString();

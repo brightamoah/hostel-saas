@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
     const { phoneNumber, password } = body.data;
 
-    const { updatePhoneNumber, getUserExtended } = await userQueries();
+    const { updatePhoneNumber, getUserExtended } = await userQueries(event);
 
     const userData = await getUserExtended(user.id);
     if (!userData) {

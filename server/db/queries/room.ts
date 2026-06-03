@@ -1,4 +1,5 @@
 import type { AdminScope, AuditContext, NewHostelSettings, Period } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -14,9 +15,9 @@ const roomWithRelations = {
   },
 } as const;
 
-export async function roomQueries() {
-  const { db } = useDB();
-  const { logAudit } = await auditLogQueries();
+export async function roomQueries(event?: H3Event) {
+  const { db } = useDB(event);
+  const { logAudit } = await auditLogQueries(event);
 
   const applyRoomScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -1040,7 +1041,7 @@ export async function roomQueries() {
         paystackBankCode: data.settlementBank,
         paystackAccountNumber: data.accountNumber,
         paystackAccountType: data.accountType,
-        paystackPercentageCharge: String(data.percentageCharge),
+        paystackPercentageCharge: data.percentageCharge,
         paystackIsVerified: true,
         useHostelSubaccount: false,
       } as const;

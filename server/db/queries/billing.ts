@@ -1,4 +1,5 @@
 import type { AdminScope, AuditContext, BillingInsert, Period } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { computeAuditDiff } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
@@ -41,10 +42,10 @@ const billingWithRelations = {
 
 type PaymentMethodType = typeof paymentMethod.enumValues[number];
 
-export async function billingQueries() {
-  const { db } = useDB();
+export async function billingQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
-  const { logAudit } = await auditLogQueries();
+  const { logAudit } = await auditLogQueries(event);
 
   const applyBillingScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);

@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
 
   try {
-    const { getNotifications } = await notificationQueries();
+    const { getNotifications } = await notificationQueries(event);
 
     const notifications = await getNotifications(scope, 20);
 

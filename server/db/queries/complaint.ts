@@ -1,4 +1,5 @@
 import type { AdminScope, AuditContext, ComplaintActionTaken, ComplaintInsert, ComplaintStatus, Period } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
@@ -41,10 +42,10 @@ const complaintWithRelations = {
   },
 } as const;
 
-export async function complaintQueries() {
-  const { db } = useDB();
+export async function complaintQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
-  const { logAudit } = await auditLogQueries();
+  const { logAudit } = await auditLogQueries(event);
 
   const applyComplaintScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);

@@ -35,7 +35,7 @@ export async function adminSessionCheck(event: H3Event): Promise<AdminScope & { 
     };
   }
 
-  const { getUserMembershipByUserId } = await companyQueries();
+  const { getUserMembershipByUserId } = await companyQueries(event);
 
   const membership = await getUserMembershipByUserId(user.id);
 

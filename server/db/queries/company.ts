@@ -1,4 +1,5 @@
 import type { AdminScope, AuditContext } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { getActorLabel } from "~~/server/utils/auditLogUtils";
 import { and, count, eq, sql } from "drizzle-orm";
@@ -6,9 +7,9 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { admin, company, companyMember, companySettings, hostel, hostelSettings, room, student, user } from "../schema";
 import { auditLogQueries } from "./auditLog";
 
-export async function companyQueries() {
-  const { db } = useDB();
-  const { logAudit } = await auditLogQueries();
+export async function companyQueries(event?: H3Event) {
+  const { db } = useDB(event);
+  const { logAudit } = await auditLogQueries(event);
 
   const applyCompanyScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -572,7 +573,7 @@ export async function companyQueries() {
         paystackAccountNumber: data.accountNumber,
         paystackAccountType: data.accountType,
         paystackSettlementBank: subaccount.settlementBank,
-        paystackPercentageCharge: String(data.percentageCharge),
+        paystackPercentageCharge: data.percentageCharge,
         paystackIsVerified: subaccount.isVerified,
       };
 

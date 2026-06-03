@@ -15,7 +15,12 @@ export default defineEventHandler(async (event) => {
 
     const { visitorId, status } = body.data;
 
-    const updatedVisitor = await updateVisitorStatus(visitorId, status, scope);
+    const updatedVisitor = await updateVisitorStatus(
+      visitorId,
+      status,
+      scope,
+      event,
+    );
 
     return {
       success: true,

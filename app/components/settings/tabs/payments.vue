@@ -79,7 +79,7 @@ const createState = ref<CreateSubaccountSchema>({
   businessName: "",
   settlementBank: "",
   accountNumber: "",
-  percentageCharge: 100,
+  percentageCharge: 0,
   description: "",
   primaryContactName: "",
   primaryContactEmail: "",
@@ -89,7 +89,7 @@ const createState = ref<CreateSubaccountSchema>({
 const updateState = ref<UpdateSubaccountSchema>({
   percentageCharge: settings?.paystackPercentageCharge
     ? Number(settings.paystackPercentageCharge)
-    : 100,
+    : 0,
 });
 
 const verifyFormRef = useTemplateRef("verifyFormRef");
@@ -143,7 +143,7 @@ watch(
 watch(
   () => settings?.paystackPercentageCharge,
   (newCharge) => {
-    updateState.value.percentageCharge = newCharge ? Number(newCharge) : 100;
+    updateState.value.percentageCharge = newCharge ? Number(newCharge) : 0;
   },
   { immediate: true },
 );
@@ -278,7 +278,7 @@ const maskedAccountNumber = computed(() => settings?.paystackAccountType === "mo
             </p>
 
             <p class="mt-0.5 text-muted text-sm">
-              Adjust how much of each payment is settled to your account
+              Adjust the percentage of each payment kept by the platform account.
             </p>
           </div>
         </div>
@@ -286,14 +286,14 @@ const maskedAccountNumber = computed(() => settings?.paystackAccountType === "mo
 
       <div class="space-y-4">
         <UFormField
-          label="Percentage Charge"
+          label="Platform Fee Percentage"
           name="percentageCharge"
           size="lg"
         >
           <UInput
             v-model.number="updateState.percentageCharge"
             type="number"
-            min="1"
+            min="0"
             max="100"
             class="w-full max-w-xs"
             size="lg"
@@ -591,17 +591,18 @@ const maskedAccountNumber = computed(() => settings?.paystackAccountType === "mo
           </UFormField>
 
           <UFormField
-            label="Settlement Percentage"
+            label="Platform Fee Percentage"
             name="percentageCharge"
             size="lg"
             required
+            help="Percentage of each transaction kept by the platform/master account."
           >
             <UInput
               v-model.number="createState.percentageCharge"
               type="number"
-              min="1"
+              min="0"
               max="100"
-              placeholder="100"
+              placeholder="0"
               class="w-full"
             >
               <template #trailing>

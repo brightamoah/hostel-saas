@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
     const { currentPassword, newPassword, confirmPassword } = body.data;
 
-    const { getUserById, updateUserProfile } = await userQueries();
+    const { getUserById, updateUserProfile } = await userQueries(event);
 
     const userRecord = await getUserById(user.id);
 

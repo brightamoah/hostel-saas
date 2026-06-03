@@ -71,7 +71,7 @@ export const companySettings = pgTable("company_settings", t => ({
   paystackBankCode: t.varchar({ length: 10 }),
   paystackAccountNumber: t.varchar({ length: 20 }),
   paystackAccountType: paystackAccountTypeEnum(),
-  paystackPercentageCharge: t.numeric({ precision: 5, scale: 2 }).default("100.00"),
+  paystackPercentageCharge: t.integer().default(0).notNull(),
   paystackSettlementBank: t.varchar({ length: 100 }),
   paystackIsVerified: t.boolean().default(false).notNull(),
 

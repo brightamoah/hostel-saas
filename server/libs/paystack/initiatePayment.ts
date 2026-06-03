@@ -1,3 +1,5 @@
+import type { H3Event } from "h3";
+
 import type { SplitType } from "./resolveSubaccount";
 
 import { resolveSubaccount } from "./resolveSubaccount";
@@ -41,8 +43,9 @@ type InitiatePaymentResult = {
  */
 export async function initiatePayment(
   params: InitiatePaymentParams,
+  event?: H3Event,
 ): Promise<InitiatePaymentResult> {
-  const { db } = useDB();
+  const { db } = useDB(event);
 
   // ------------------------------------------------------------------
   // 1. Load the billing record with only the fields we need.

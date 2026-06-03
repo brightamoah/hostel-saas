@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     const {
       getDashboardOverview,
       getCardStats,
-    } = await statsQueries();
+    } = await statsQueries(event);
 
     const overview = await getDashboardOverview({
       ...adminData,

@@ -32,7 +32,7 @@ export default defineEventHandler(async (event): Promise<CreateSubaccountRespons
       });
     }
 
-    const { companySettingsExist, createSubaccount } = await companyQueries();
+    const { companySettingsExist, createSubaccount } = await companyQueries(event);
 
     if (!companySettingsExist(companyId)) {
       throw createError({

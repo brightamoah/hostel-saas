@@ -7,7 +7,7 @@ import { auditDiff, useLogger } from "evlog";
 
 import { auditLog } from "../schema";
 
-export async function auditLogQueries() {
+export async function auditLogQueries(event?: H3Event) {
   const actorFields = (ctx: AuditContext): Pick<AuditInsert, "actorUserId" | "actorAdminId" | "actorType"> => {
     const a = ctx.actor;
 
@@ -79,7 +79,7 @@ export async function auditLogQueries() {
         : null;
 
     if (targetUserId) {
-      const { db: globalDb } = useDB();
+      const { db: globalDb } = useDB(event);
 
       const userData = await globalDb.query.user.findFirst({
         where: {

@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    const { getUserProfile } = await userQueries();
+    const { getUserProfile } = await userQueries(event);
     const userProfile = await getUserProfile(user.id);
 
     return {

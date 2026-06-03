@@ -149,7 +149,7 @@ export const createSubaccountSchema = z.object({
     .min(10, "Account number must be at least 10 digits")
     .max(13, "Account number must be at most 13 digits")
     .regex(/^\d+$/, "Account number must contain digits only"),
-  percentageCharge: z.number("Percentage charge is required").min(1, "Percentage charge must be at least 1").max(100, "Percentage charge must be at most 100"),
+  percentageCharge: z.number("Percentage charge is required").int("Percentage charge must be a whole number (e.g. 0, 5, 100)").min(0, "Percentage charge must be at least 0").max(100, "Percentage charge must be at most 100"),
   description: z.string("Description is required").min(2, "Description must be at least 2 characters").max(500, "Description must be at most 500 characters").optional(),
   primaryContactName: z.string("Primary Contact Name is required").min(2, "Primary Contact Name must be at least 2 characters").max(255, "Primary Contact Name must be at most 255 characters").optional(),
   primaryContactEmail: z.email("Invalid email address").optional(),
@@ -189,7 +189,7 @@ export type CreateSubaccountSchema = z.output<typeof createSubaccountSchema>;
 
 export const updateSubaccountSchema = z.object({
   businessName: z.string().min(2).max(255).optional(),
-  percentageCharge: z.number().min(1).max(100).optional(),
+  percentageCharge: z.number().int("Percentage charge must be a whole number").min(0).max(100).optional(),
   description: z.string().max(500).optional(),
   primaryContactName: z.string().max(255).optional(),
   primaryContactEmail: z.email().optional(),

@@ -1,0 +1,1 @@
+ALTER TYPE "hostel_gender" ADD VALUE 'unassigned';

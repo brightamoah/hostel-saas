@@ -6,8 +6,8 @@ export default defineEventHandler(async (event) => {
   });
 
   try {
-    const { getStudentByUserId } = await userQueries();
-    const { getAvailableRoomsForStudent, getAllHostels } = await roomQueries();
+    const { getStudentByUserId } = await userQueries(event);
+    const { getAvailableRoomsForStudent, getAllHostels } = await roomQueries(event);
 
     const student = await getStudentByUserId(user.id);
 

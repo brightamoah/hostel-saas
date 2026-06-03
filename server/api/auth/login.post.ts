@@ -30,11 +30,11 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       getUserByEmail,
       getAdminByUserIdUnscoped,
       recordLoginAttempt,
-    } = await userQueries();
+    } = await userQueries(event);
 
-    const { checkActiveOrPendingAllocation } = await roomQueries();
+    const { checkActiveOrPendingAllocation } = await roomQueries(event);
 
-    const { getUserMembershipByUserId } = await companyQueries();
+    const { getUserMembershipByUserId } = await companyQueries(event);
 
     const body = await readValidatedBody(event, body => loginSchema.safeParse(body));
 
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    await checkUserLockedOutByIp(ip);
+    await checkUserLockedOutByIp(ip, event);
 
     const currentUser = await getUserByEmail(normalizedEmail);
 
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       });
     }
 
-    await checkUserLockOutByUserId(currentUser.id, ip);
+    await checkUserLockOutByUserId(currentUser.id, ip, event);
 
     const isValid = await verifyHashedValue(currentUser.password, password);
 
@@ -93,7 +93,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
     }
 
     if (surface === "public" && currentUser.role === "admin") {
-      const { createHandoffToken } = await authHandoffQueries();
+      const { createHandoffToken } = await authHandoffQueries(event);
 
       const { token } = await createHandoffToken(currentUser.id);
 

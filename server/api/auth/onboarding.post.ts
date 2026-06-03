@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getStudentByUserId, createNewStudent } = await userQueries();
+    const { getStudentByUserId, createNewStudent } = await userQueries(event);
 
     const rawBody = await readBody(event);
 

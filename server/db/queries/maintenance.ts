@@ -1,4 +1,5 @@
 import type { AdminScope, AuditContext, MaintenanceCreate, MaintenanceEdit, MaintenanceStatus, Period } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -40,9 +41,9 @@ const maintenanceWithRelations = {
   },
 } as const;
 
-export async function maintenanceQueries() {
-  const { db } = useDB();
-  const { logAudit } = await auditLogQueries();
+export async function maintenanceQueries(event?: H3Event) {
+  const { db } = useDB(event);
+  const { logAudit } = await auditLogQueries(event);
 
   const applyMaintenanceScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);

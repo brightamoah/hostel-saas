@@ -1,0 +1,2 @@
+ALTER TABLE "company_settings" ALTER COLUMN "paystack_percentage_charge" SET DEFAULT '0.00';--> statement-breakpoint
+ALTER TABLE "hostel_settings" ALTER COLUMN "paystack_percentage_charge" SET DEFAULT '0.00';

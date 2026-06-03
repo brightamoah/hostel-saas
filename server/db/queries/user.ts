@@ -1,5 +1,6 @@
 import type { AdminScope, FailedAttempts, Period, StudentInsert } from "~~/shared/types";
 import type { SQL } from "drizzle-orm";
+import type { H3Event } from "h3";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -174,8 +175,8 @@ const bestAllocationWithRelations = {
   },
 } as const;
 
-export async function userQueries() {
-  const { db } = useDB();
+export async function userQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
   const applyAdminTableScope = (scope: AdminScope) => {
     const mode = getScopeMode(scope);

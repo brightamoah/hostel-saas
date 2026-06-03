@@ -139,7 +139,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const cleanContent = sanitizeHtmlContent(content);
-    const { createAnnouncement } = await announcementQueries();
+    const { createAnnouncement } = await announcementQueries(event);
 
     const auditContext = getAuditContext({
       kind: "admin",

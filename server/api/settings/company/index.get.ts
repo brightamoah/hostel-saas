@@ -23,7 +23,7 @@ export default defineEventHandler(async (event): Promise<CompanySettingsResponse
 
     requireCompanyScope(scope, companyId);
 
-    const { getCompanySettings } = await companyQueries();
+    const { getCompanySettings } = await companyQueries(event);
 
     const settings = await getCompanySettings(companyId);
 

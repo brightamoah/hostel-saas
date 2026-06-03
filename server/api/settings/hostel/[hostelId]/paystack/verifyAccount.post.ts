@@ -14,7 +14,7 @@ export default defineEventHandler(async (event): Promise<VerifyAccountResponseDa
       return parsed;
     })();
 
-    const { getHostelByIdScoped } = await roomQueries();
+    const { getHostelByIdScoped } = await roomQueries(event);
 
     const hostelRecord = await getHostelByIdScoped(hostelId, scope);
 

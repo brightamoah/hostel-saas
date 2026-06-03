@@ -1,4 +1,5 @@
 import type { AdminScope, Allocation, InsertEditVisitor, Period, VisitorCreate } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
@@ -81,8 +82,8 @@ const visitorWithRelations = {
   },
 } as const;
 
-export async function visitorQueries() {
-  const { db } = useDB();
+export async function visitorQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
   const applyVisitorScopeSql = (scope: AdminScope) => {
     const mode = getScopeMode(scope);
@@ -314,11 +315,11 @@ export async function visitorQueries() {
         .where(
           and(
             eq(allocation.roomId, roomId),
-            inArray(allocation.status, ["active", "pending"])
-          )
+            inArray(allocation.status, ["active", "pending"]),
+          ),
         );
 
-      const studentIds = roomStudentIds.map((s) => s.id);
+      const studentIds = roomStudentIds.map(s => s.id);
 
       if (studentIds.length === 0) return true; // No students, so limit isn't reached
 
@@ -329,8 +330,8 @@ export async function visitorQueries() {
           and(
             inArray(visitor.studentId, studentIds),
             eq(visitor.visitDate, visitDate),
-            inArray(visitor.status, ["pending", "approved", "checked-in"])
-          )
+            inArray(visitor.status, ["pending", "approved", "checked-in"]),
+          ),
         );
 
       if (visitorCount && visitorCount.count >= hSettings.maxVisitorsPerRoom) {

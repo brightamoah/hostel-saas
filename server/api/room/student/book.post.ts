@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getStudentIdByUserId } = await userQueries();
+    const { getStudentIdByUserId } = await userQueries(event);
 
     const { roomId, endDate, academicPeriod, userId } = body.data;
 

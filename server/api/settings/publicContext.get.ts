@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const user = session.user;
 
   try {
-    const { getStudentForDashboardByUserId } = await userQueries();
+    const { getStudentForDashboardByUserId } = await userQueries(event);
 
     // Only fetch student data if the user is actually a student
     let hostelId: number | undefined;
@@ -13,7 +13,8 @@ export default defineEventHandler(async (event) => {
       const studentData = await getStudentForDashboardByUserId(user.id);
       const allocation = studentData?.studentRecordWithBestAllocation?.allocation;
       hostelId = allocation?.room?.hostel?.id;
-    } else {
+    }
+    else {
       hostelId = user.adminData?.hostelId ?? undefined;
     }
 
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    const { getPublicTenantContext } = await companyQueries();
+    const { getPublicTenantContext } = await companyQueries(event);
 
     const { cSettings, hSettings } = await getPublicTenantContext(companyId, hostelId);
 

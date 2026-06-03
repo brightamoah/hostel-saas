@@ -10,8 +10,8 @@ export default defineEventHandler(async (event) => {
     const {
       // getHostelsPaginated ,
       getAllHostels,
-    } = await roomQueries();
-    const { getStudentGenderByUserId } = await userQueries();
+    } = await roomQueries(event);
+    const { getStudentGenderByUserId } = await userQueries(event);
 
     // const query = getQuery(event);
 

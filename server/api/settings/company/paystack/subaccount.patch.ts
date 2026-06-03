@@ -31,7 +31,7 @@ export default defineEventHandler(async (event): Promise<UpdateSubaccountRespons
 
     const data = body.data;
 
-    const { companySettingsExist, updateCompanySubaccount } = await companyQueries();
+    const { companySettingsExist, updateCompanySubaccount } = await companyQueries(event);
 
     const existing = await companySettingsExist(companyId);
 
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event): Promise<UpdateSubaccountRespons
     const dbUpdate: Partial<NewCompanySettings> = { updatedAt: new Date() };
 
     if (body.data.businessName) dbUpdate.paystackBusinessName = subaccount.businessName;
-    if (body.data.percentageCharge !== undefined) dbUpdate.paystackPercentageCharge = String(subaccount.percentageCharge);
+    if (body.data.percentageCharge !== undefined) dbUpdate.paystackPercentageCharge = subaccount.percentageCharge;
     if (body.data.settlementBank && body.data.accountNumber) {
       dbUpdate.paystackBankCode = body.data.settlementBank;
       dbUpdate.paystackAccountNumber = body.data.accountNumber;

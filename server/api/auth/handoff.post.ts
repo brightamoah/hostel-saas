@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { consumeHandoffToken } = await authHandoffQueries();
+    const { consumeHandoffToken } = await authHandoffQueries(event);
 
     const consumed = await consumeHandoffToken(token);
 
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getUserById, getAdminByUserIdUnscoped } = await userQueries();
+    const { getUserById, getAdminByUserIdUnscoped } = await userQueries(event);
     const currentUser = await getUserById(consumed.userId);
 
     if (!currentUser || currentUser.role !== "admin") {
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     let companyId: number | null = null;
     let companyRole: User["companyRole"] = null;
 
-    const { getUserMembershipByUserId } = await companyQueries();
+    const { getUserMembershipByUserId } = await companyQueries(event);
 
     if (adminData.accessLevel !== "super") {
       const membership = await getUserMembershipByUserId(currentUser.id);

@@ -11,7 +11,7 @@ export default defineEventHandler(async (event): Promise<Companies> => {
   }
 
   try {
-    const { getAllCompaniesWithRelations } = await companyQueries();
+    const { getAllCompaniesWithRelations } = await companyQueries(event);
 
     const companies = await getAllCompaniesWithRelations(scope);
 

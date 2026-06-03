@@ -24,10 +24,10 @@ export default defineEventHandler(async (event) => {
       getUserById,
       getAdminByUserId,
       getOnboardedStudent,
-    } = await userQueries();
+    } = await userQueries(event);
 
-    const { getUserMembershipByUserId } = await companyQueries();
-    const { checkActiveOrPendingAllocation } = await roomQueries();
+    const { getUserMembershipByUserId } = await companyQueries(event);
+    const { checkActiveOrPendingAllocation } = await roomQueries(event);
 
     const freshUser = await getUserById(userId);
 

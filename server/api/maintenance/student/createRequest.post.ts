@@ -38,8 +38,8 @@ export default defineEventHandler(async (event) => {
       mediaAttachments,
     } = body.data;
 
-    const { getStudentForDashboardByUserId } = await userQueries();
-    const { createMaintenance } = await maintenanceQueries();
+    const { getStudentForDashboardByUserId } = await userQueries(event);
+    const { createMaintenance } = await maintenanceQueries(event);
 
     const studentData = await getStudentForDashboardByUserId(user.id);
 

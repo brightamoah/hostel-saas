@@ -24,8 +24,8 @@ export default defineEventHandler(async (event) => {
 
     const { priority, ...rest } = body.data;
 
-    const { createComplaint } = await complaintQueries();
-    const { getStudentForDashboardByUserId } = await userQueries();
+    const { createComplaint } = await complaintQueries(event);
+    const { getStudentForDashboardByUserId } = await userQueries(event);
 
     const studentData = await getStudentForDashboardByUserId(userId);
 

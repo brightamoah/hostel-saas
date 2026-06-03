@@ -1,4 +1,5 @@
 import type { AdminScope, AnnouncementInsert, AuditContext } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { useDB } from "~~/server/utils/db";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
@@ -36,10 +37,10 @@ const announcementWithRelations = {
   },
 } as const;
 
-export async function announcementQueries() {
-  const { db } = useDB();
+export async function announcementQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
-  const { logAudit } = await auditLogQueries();
+  const { logAudit } = await auditLogQueries(event);
 
   type AnnouncementFilter = NonNullable<NonNullable<Parameters<typeof db.query.announcement.findMany>[0]>["where"]>;
 

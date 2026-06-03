@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const {
       getComplaintStatusCount,
       getAllComplaintsScoped,
-    } = await complaintQueries();
+    } = await complaintQueries(event);
 
     const complaints = await getAllComplaintsScoped(scope);
 

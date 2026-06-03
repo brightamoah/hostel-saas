@@ -42,8 +42,8 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { createBilling } = await billingQueries();
-    const { getAllocationByStudentId } = await roomQueries();
+    const { createBilling } = await billingQueries(event);
+    const { getAllocationByStudentId } = await roomQueries(event);
 
     const now = today(getLocalTimeZone());
 

@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
     const verificationTokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    const { registerCompanyOwner } = await companyQueries();
+    const { registerCompanyOwner } = await companyQueries(event);
 
     const auditContext = getAuditContext({
       kind: "system",

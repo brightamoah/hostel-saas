@@ -17,10 +17,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { db } = useDB();
+  const { db } = useDB(event);
   const runtimeConfig = useRuntimeConfig();
 
-  const { getAdminByUserId, checkIfUserExists } = await userQueries();
+  const { getAdminByUserId, checkIfUserExists } = await userQueries(event);
 
   const creatorAdminDetails = await getAdminByUserId(userId, true, scope);
 
@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { getHostelByIdScoped } = await roomQueries();
+  const { getHostelByIdScoped } = await roomQueries(event);
 
   const hostel = await getHostelByIdScoped(assignedHostelId, scope);
 

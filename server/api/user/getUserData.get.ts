@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const { adminData } = scope;
 
   try {
-    const { getUsers } = await userQueries();
+    const { getUsers } = await userQueries(event);
 
     const data = await getUsers(scope);
 

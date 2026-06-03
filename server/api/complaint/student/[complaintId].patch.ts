@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { updateComplaint, getComplaintForStudentById } = await complaintQueries();
+    const { updateComplaint, getComplaintForStudentById } = await complaintQueries(event);
 
     const existingComplaint = await getComplaintForStudentById(complaintId, studentId);
 

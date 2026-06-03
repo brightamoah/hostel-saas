@@ -17,7 +17,7 @@ export default defineEventHandler(async (event): Promise<CreateSubaccountRespons
       return parsed;
     })();
 
-    const { getHostelByIdScoped, createHostelSubaccount } = await roomQueries();
+    const { getHostelByIdScoped, createHostelSubaccount } = await roomQueries(event);
 
     const hostelRecord = await getHostelByIdScoped(hostelId, scope);
 

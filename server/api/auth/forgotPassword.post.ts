@@ -7,7 +7,7 @@ import { randomUUID } from "uncrypto";
 
 export default defineEventHandler(async (event) => {
   try {
-    const { db } = useDB();
+    const { db } = useDB(event);
     const runtimeConfig = useRuntimeConfig(event);
 
     const body = await readValidatedBody(event, body => verifyEmailSchema.safeParse(body));
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const { email } = body.data;
-    const { getUserByEmail } = await userQueries();
+    const { getUserByEmail } = await userQueries(event);
 
     const normalizedEmail = email.trim().toLowerCase();
 

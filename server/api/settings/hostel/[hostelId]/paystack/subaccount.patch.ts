@@ -21,7 +21,7 @@ export default defineEventHandler(async (event): Promise<UpdateSubaccountRespons
       getHostelByIdScoped,
       getHostelSettings,
       updateHostelSubaccount,
-    } = await roomQueries();
+    } = await roomQueries(event);
 
     const hostelRecord = await getHostelByIdScoped(hostelId, scope);
 
@@ -108,7 +108,7 @@ export default defineEventHandler(async (event): Promise<UpdateSubaccountRespons
 
     if (body.data.businessName !== undefined) dbUpdate.paystackBusinessName = subaccount.businessName;
 
-    if (body.data.percentageCharge !== undefined) dbUpdate.paystackPercentageCharge = String(subaccount.percentageCharge);
+    if (body.data.percentageCharge !== undefined) dbUpdate.paystackPercentageCharge = subaccount.percentageCharge;
 
     if (body.data.settlementBank && body.data.accountNumber) {
       dbUpdate.paystackBankCode = body.data.settlementBank;

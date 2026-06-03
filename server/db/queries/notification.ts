@@ -1,9 +1,10 @@
 import type { AdminScope, NotificationDTO } from "~~/shared/types";
+import type { H3Event } from "h3";
 
 import { sql } from "drizzle-orm";
 
-export async function notificationQueries() {
-  const { db } = useDB();
+export async function notificationQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
   const getNotifications = async (scope: AdminScope, limit = 10): Promise<NotificationDTO[]> => {
     const mode = getScopeMode(scope);

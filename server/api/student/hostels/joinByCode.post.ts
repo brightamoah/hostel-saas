@@ -30,14 +30,14 @@ export default defineEventHandler(async (event) => {
 
     const joinCode = body.data.code.trim().toUpperCase();
 
-    const { getStudentGenderByUserId } = await userQueries();
+    const { getStudentGenderByUserId } = await userQueries(event);
 
     const {
       getHostelByCode,
       getAvailableRoomsForStudent,
       getRoomTypes,
       getGenderSpecificRoomStats,
-    } = await roomQueries();
+    } = await roomQueries(event);
 
     const student = await getStudentGenderByUserId(user.id);
 

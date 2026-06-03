@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
     const { action, visitorId } = body.data;
 
-    const { getAdminByUserId } = await userQueries();
+    const { getAdminByUserId } = await userQueries(event);
 
     const adminMakingRequest = await getAdminByUserId(
       userId,

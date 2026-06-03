@@ -75,14 +75,14 @@ export default defineEventHandler(async (event) => {
 
     const { action } = body.data;
 
-    const { updateAnnouncementReadStatus } = await announcementQueries();
+    const { updateAnnouncementReadStatus } = await announcementQueries(event);
 
     let companyId: number | null | undefined = user.companyId;
     let auditContext: AuditContext;
 
     if (user.role === "student") {
       if (!companyId) {
-        const { getStudentByUserId } = await userQueries();
+        const { getStudentByUserId } = await userQueries(event);
         const student = await getStudentByUserId(user.id);
         companyId = student?.companyId;
       }

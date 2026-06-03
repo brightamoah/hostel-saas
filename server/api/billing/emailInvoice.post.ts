@@ -69,7 +69,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { getStudentWithRelations } = await userQueries();
+    const { getStudentWithRelations } = await userQueries(event);
 
     const student = await getStudentWithRelations(studentUserId);
 
@@ -137,9 +137,9 @@ export default defineEventHandler(async (event) => {
       console.error("Failed to send email:", emailError);
     }
 
-    const { logAudit } = await (await import("~~/server/db/queries/auditLog")).auditLogQueries();
+    const { logAudit } = await (await import("~~/server/db/queries/auditLog")).auditLogQueries(event);
     const { useDB } = await import("~~/server/utils/db");
-    const { db } = useDB();
+    const { db } = useDB(event);
 
     const adminData = user.adminData;
 

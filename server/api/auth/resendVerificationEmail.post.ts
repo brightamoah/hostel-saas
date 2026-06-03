@@ -10,7 +10,7 @@ const COOL_DOWN_MS = 2 * 60 * 1000;
 
 export default defineEventHandler(async (event) => {
   try {
-    const { db } = useDB();
+    const { db } = useDB(event);
 
     const runtimeConfig = useRuntimeConfig(event);
 
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const { getUserByEmail } = await userQueries();
+    const { getUserByEmail } = await userQueries(event);
 
     const existingUser = await getUserByEmail(normalizedEmail);
 

@@ -4,7 +4,7 @@ import { getBillingTemplate, getEmailTemplate, getResetPasswordTemplate, getWelc
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
 
-  const { getHostelByIdScoped } = await roomQueries();
+  const { getHostelByIdScoped } = await roomQueries(event);
 
   const config = useRuntimeConfig();
 

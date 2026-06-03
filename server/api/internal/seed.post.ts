@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   const { name, email, password, phoneNumber } = parsed.data;
   const normalizedEmail = email.trim().toLowerCase();
 
-  const { db } = useDB();
+  const { db } = useDB(event);
 
   return await db.transaction(async (tx) => {
     const existing = await tx.query.user.findFirst({

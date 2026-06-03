@@ -5,13 +5,15 @@ export default defineEventHandler(async (event) => {
 
   const { adminData } = scope;
   try {
-    const { getUsers } = await userQueries();
+    const { getUsers } = await userQueries(event);
 
     const result = await getUsers(scope);
 
     const { users } = result;
 
     if (!users.length) throw createError({ statusCode: 404, message: "No users found" });
+
+    if (event.context.cloudflare?.env.HYPERDRIVE.connectionString) console.log(event.context.cloudflare.env.HYPERDRIVE.connectionString);
 
     const flattenUsers = users.map((u) => {
       const hostelName

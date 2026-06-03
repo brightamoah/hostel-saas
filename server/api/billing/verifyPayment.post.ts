@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
       processSuccessfulPayment,
       markPaymentAsFailed,
       getBillingByIdStudent,
-    } = await billingQueries();
+    } = await billingQueries(event);
 
     const existingPayment = await checkExistingPayment(reference);
 

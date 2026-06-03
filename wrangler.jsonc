@@ -16,6 +16,12 @@
       "custom_domain": true
     }
   ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "aa0a7429f97f41e4a723a40308d7ff1e"
+    }
+  ],
   "triggers": {
     "crons": [
       "0 0 * * *"
@@ -97,6 +103,12 @@
           "binding": "CACHE",
           "id": "59d1dbc3ea744cd1af2afdacc13c59d3",
           "preview_id": "2acd94fa2acd45e8bc91d79b3fbfd152"
+        }
+      ],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "18f815c354ea4315b3b454233b1baac3"
         }
       ],
       "vars": {},

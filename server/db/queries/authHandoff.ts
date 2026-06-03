@@ -1,3 +1,5 @@
+import type { H3Event } from "h3";
+
 import { and, eq, isNull } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
@@ -5,8 +7,8 @@ import { authHandoffToken } from "../schema";
 
 const TOKEN_TTL_MS = 2 * 60 * 1000;
 
-export async function authHandoffQueries() {
-  const { db } = useDB();
+export async function authHandoffQueries(event?: H3Event) {
+  const { db } = useDB(event);
 
   const createHandoffToken = async (userId: number) => {
     const token = randomUUID();

@@ -99,7 +99,7 @@ export default defineEventHandler(async (event) => {
       joinCode,
     } = body.data;
 
-    const { createNewHostel } = await roomQueries();
+    const { createNewHostel } = await roomQueries(event);
 
     const auditContext = getAuditContext({
       event,
