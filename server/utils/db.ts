@@ -13,7 +13,11 @@ export function useDB(event?: H3Event) {
   if (event && event.context.cloudflare) databaseUrl = event.context.cloudflare.env.HYPERDRIVE.connectionString;
   else databaseUrl = runtimeConfig.databaseUrl;
 
+  console.log("event.context keys:", Object.keys(event?.context ?? {}));
+
   if (!databaseUrl) throw new Error("Missing runtimeConfig.databaseUrl");
+
+  console.log(databaseUrl);
 
   const db = drizzle({
     connection: databaseUrl,
