@@ -286,10 +286,14 @@ export async function userQueries(event?: H3Event) {
       return result?.value ?? 0;
     }
     catch (error: any) {
-      console.error("QUERY ERROR");
-      console.error("message:", error?.message);
       console.error("cause:", error?.cause);
-      console.error("stack:", error?.stack);
+
+      if (error?.cause instanceof ErrorEvent) {
+        console.error("ErrorEvent type:", error.cause.type);
+        console.error("ErrorEvent target:", error.cause.target);
+      }
+
+      console.error("keys:", Object.keys(error?.cause || {}));
 
       throw error;
     }

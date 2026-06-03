@@ -17,7 +17,7 @@ export function useDB(event?: H3Event) {
 
   if (!databaseUrl) throw new Error("Missing runtimeConfig.databaseUrl");
 
-  console.log(databaseUrl);
+  console.log("Creating DB instance");
 
   const db = drizzle({
     connection: databaseUrl,
