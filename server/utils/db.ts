@@ -1,26 +1,36 @@
 import type { H3Event } from "h3";
 
-import { drizzle } from "drizzle-orm/neon-serverless";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 import { relations } from "../db/relations";
 import * as schema from "../db/schema";
 
+let sqlClient: ReturnType<typeof postgres> | null = null;
+
 export function useDB(event?: H3Event) {
-  const runtimeConfig = useRuntimeConfig();
+  const runtimeConfig = useRuntimeConfig(event);
 
   let databaseUrl: string;
 
-  if (event && event.context.cloudflare) databaseUrl = event.context.cloudflare.env.HYPERDRIVE.connectionString;
-  else databaseUrl = runtimeConfig.databaseUrl;
-
-  console.log("event.context keys:", Object.keys(event?.context ?? {}));
+  event && event.context.cloudflare
+    ? databaseUrl = event.context.cloudflare.env.HYPERDRIVE.connectionString
+    : databaseUrl = runtimeConfig.databaseUrl;
 
   if (!databaseUrl) throw new Error("Missing runtimeConfig.databaseUrl");
 
-  console.log("Creating DB instance");
+  if (!sqlClient) {
+    sqlClient = postgres(databaseUrl, {
+      fetch_types: false,
+      prepare: false,
+      idle_timeout: 20,
+      max_lifetime: 60,
+      max: 1,
+    });
+  }
 
   const db = drizzle({
-    connection: databaseUrl,
+    client: sqlClient,
     relations,
     schema,
     casing: "snake_case",
