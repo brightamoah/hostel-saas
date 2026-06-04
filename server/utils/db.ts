@@ -1,8 +1,6 @@
 import type { H3Event } from "h3";
 
-import { drizzle } from "drizzle-orm/node-postgres";
-// eslint-disable-next-line unused-imports/no-unused-imports
-import pg from "pg";
+import { drizzle } from "drizzle-orm/postgres-js";
 
 import { relations } from "../db/relations";
 // import * as schema from "../db/schema";

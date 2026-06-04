@@ -185,9 +185,6 @@ export default defineNuxtConfig({
         },
       },
     },
-    alias: {
-      "pg-native": "unenv/runtime/mock/empty",
-    },
   },
 
   runtimeConfig: {
