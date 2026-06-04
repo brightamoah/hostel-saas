@@ -1,7 +1,8 @@
 import type { H3Event } from "h3";
 
 import { drizzle } from "drizzle-orm/node-postgres";
-// import pg from "pg";
+// eslint-disable-next-line unused-imports/no-unused-imports
+import pg from "pg";
 
 import { relations } from "../db/relations";
 // import * as schema from "../db/schema";
@@ -22,7 +23,8 @@ export function useDB(event?: H3Event) {
     });
   }
 
-  const db = drizzle(databaseUrl, {
+  const db = drizzle({
+    connection: databaseUrl,
     relations,
     casing: "snake_case",
     logger: false,
