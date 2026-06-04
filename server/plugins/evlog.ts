@@ -8,7 +8,7 @@ export default defineNitroPlugin((nitro) => {
   nitro.hooks.hook("evlog:enrich", auditEnricher());
 
   nitro.hooks.hook("evlog:drain", createAxiomDrain({
-    token: runtimeConfig.axiomToken,
+    apiKey: runtimeConfig.axiomApiKey,
     dataset: runtimeConfig.axiomDataset,
   }));
 

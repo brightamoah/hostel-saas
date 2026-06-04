@@ -220,7 +220,7 @@ export default defineNuxtConfig({
     paystackSecretKey: env.NUXT_PAYSTACK_SECRET_KEY,
     r2Url: env.NUXT_R2_URL,
     // platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
-    axiomToken: env.NUXT_AXIOM_TOKEN,
+    axiomApiKey: env.NUXT_AXIOM_API_KEY,
     axiomDataset: env.NUXT_AXIOM_DATASET,
     sentryDsn: env.NUXT_SENTRY_DSN,
   },
@@ -393,7 +393,7 @@ export default defineNuxtConfig({
       silent: false,
       axiom: {
         dataset: env.NUXT_AXIOM_DATASET,
-        token: env.NUXT_AXIOM_TOKEN,
+        apiKey: env.NUXT_AXIOM_API_KEY,
       },
       sentry: {
         dsn: env.NUXT_SENTRY_DSN,

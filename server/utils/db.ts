@@ -1,12 +1,10 @@
 import type { H3Event } from "h3";
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+// import pg from "pg";
 
 import { relations } from "../db/relations";
-import * as schema from "../db/schema";
-
-let sqlClient: ReturnType<typeof postgres> | null = null;
+// import * as schema from "../db/schema";
 
 export function useDB(event?: H3Event) {
   const runtimeConfig = useRuntimeConfig(event);
@@ -17,22 +15,15 @@ export function useDB(event?: H3Event) {
     ? databaseUrl = event.context.cloudflare.env.HYPERDRIVE.connectionString
     : databaseUrl = runtimeConfig.databaseUrl;
 
-  if (!databaseUrl) throw new Error("Missing runtimeConfig.databaseUrl");
-
-  if (!sqlClient) {
-    sqlClient = postgres(databaseUrl, {
-      fetch_types: false,
-      prepare: false,
-      idle_timeout: 20,
-      max_lifetime: 60,
-      max: 1,
+  if (!databaseUrl) {
+    throw createError({
+      statusCode: 500,
+      message: "Missing database connection string",
     });
   }
 
-  const db = drizzle({
-    client: sqlClient,
+  const db = drizzle(databaseUrl, {
     relations,
-    schema,
     casing: "snake_case",
     logger: false,
   });
