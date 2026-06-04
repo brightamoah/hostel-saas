@@ -16,11 +16,11 @@ export function getTimePeriod() {
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
   return {
-    startOfToday,
-    startOfYesterday,
-    startOfThisWeek,
-    startOfLastWeek,
-    startOfThisMonth,
-    startOfLastMonth,
+    startOfToday: startOfToday.toISOString(),
+    startOfYesterday: startOfYesterday.toISOString(),
+    startOfThisWeek: startOfThisWeek.toISOString(),
+    startOfLastWeek: startOfLastWeek.toISOString(),
+    startOfThisMonth: startOfThisMonth.toISOString(),
+    startOfLastMonth: startOfLastMonth.toISOString(),
   };
 }

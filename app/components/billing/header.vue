@@ -17,12 +17,12 @@ const billingStatus = computed(() => status);
 <template>
   <div class="flex md:flex-row flex-col justify-between md:items-center gap-4">
     <div class="space-y-6">
-      <div class="flex items-start gap-3">
+      <div class="flex items-center gap-3">
         <NuxtImg
           v-if="logoUrl"
           :src="logoUrl"
           alt="Logo"
-          class="size-10 md:size-16 shrink-0 object-contain"
+          class="size-15 md:size-30 shrink-0 object-contain"
         />
 
         <AppLogo
