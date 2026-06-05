@@ -1,5 +1,5 @@
-/* eslint-disable no-console */
 import { and, inArray, sql } from "drizzle-orm";
+import { createError, createLogger } from "evlog";
 
 import { auditLogQueries } from "../db/queries/auditLog";
 import { billing } from "../db/schema";
@@ -12,7 +12,12 @@ export default defineTask({
   async run() {
     const { db } = useDB();
 
-    console.log("Running task: Checking for overdue billings...");
+    const log = createLogger({
+      task: "checkOverdueBillings",
+      service: "scheduler",
+    });
+
+    log.set({ taskStatus: "started" });
 
     try {
       const result = await db
@@ -28,6 +33,8 @@ export default defineTask({
         .returning({ id: billing.id }); ;
 
       const count = result.length;
+      log.set({ count, taskStatus: "completed" });
+      log.emit();
 
       if (Number(count) > 0) {
         const { logAudit } = await auditLogQueries();
@@ -50,9 +57,20 @@ export default defineTask({
       return { result: `Success. Marked ${count} bill(s) as overdue.` };
     }
     catch (error) {
-      if (error && typeof error === "object" && "statusCode" in error) throw error;
+      if (error && typeof error === "object" && "statusCode" in error) {
+        log.set({ taskStatus: "failed" });
+        log.emit();
+        throw error;
+      }
 
-      handleError(error, "Check Overdue Billings");
+      log.set({ taskStatus: "failed" });
+      log.emit();
+      handleError(createError({
+        cause: error as Error,
+        message: "Failed to check overdue billings",
+        why: "An error occurred while executing the database query or audit log insertion.",
+        fix: "Check the database connection, query logic, or audit log configuration.",
+      }), "Check Overdue Billings");
     }
   },
 });

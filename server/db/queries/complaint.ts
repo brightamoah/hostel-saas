@@ -169,7 +169,6 @@ export async function complaintQueries(event?: H3Event) {
   ) => {
     return db.transaction(async (tx) => {
       const adminId = scope.adminData.id;
-      const companyId = scope.companyId!;
       const responderId = scope.userId;
 
       const target = await tx.query.complaint.findFirst({
@@ -180,6 +179,8 @@ export async function complaintQueries(event?: H3Event) {
       });
 
       if (!target) throw new Error("Complaint not found or unauthorized access.");
+
+      const companyId = scope.companyId ?? target.companyId;
 
       const [updatedComplaint] = await tx
         .update(complaint)

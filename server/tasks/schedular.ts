@@ -1,4 +1,5 @@
-/* eslint-disable no-console */
+import { createLogger } from "evlog";
+
 export default defineTask({
   meta: {
     name: "schedular",
@@ -6,21 +7,39 @@ export default defineTask({
   },
 
   async run() {
-    console.log("Running scheduled tasks...");
+    const log = createLogger();
+    log.set({
+      task: "schedular",
+      taskStatus: "started",
+    });
 
-    await runTask("clearExpiredCache");
-    await runTask("checkOverdueBillings");
-    await runTask("cancelUnpaidAllocations");
+    try {
+      await runTask("clearExpiredCache");
+      await runTask("checkOverdueBillings");
+      await runTask("cancelUnpaidAllocations");
 
-    // Weekly task
-    const now = new Date();
-    const isSunday = now.getUTCDay() === 0;
-    const is1am = now.getUTCHours() === 1;
+      // Weekly task
+      const now = new Date();
+      const isSunday = now.getUTCDay() === 0;
+      const is1am = now.getUTCHours() === 1;
 
-    if (isSunday && is1am) {
-      await runTask("applyOverdueLateFee");
+      if (isSunday && is1am) {
+        await runTask("applyOverdueLateFee");
+      }
+
+      log.set({ taskStatus: "completed" });
+      log.emit();
+      return {
+        result: "Scheduled tasks executed successfully.",
+      };
     }
-
-    return { result: "Scheduled tasks executed successfully." };
+    catch (error) {
+      log.set({
+        taskStatus: "failed",
+        error: (error as Error).message,
+      });
+      log.emit();
+      throw error;
+    }
   },
 });

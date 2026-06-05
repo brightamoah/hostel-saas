@@ -852,7 +852,7 @@ export async function roomQueries(event?: H3Event) {
         .query
         .hostelSettings
         .findFirst({
-          where: { hostelId, companyId: scope.companyId! },
+          where: { hostelId, companyId: scope.companyId ?? hostelCompanyId },
           columns: { id: true },
         });
 
@@ -909,7 +909,7 @@ export async function roomQueries(event?: H3Event) {
         .query
         .hostelSettings
         .findFirst({
-          where: { hostelId, companyId: scope.companyId! },
+          where: { hostelId, companyId: scope.companyId ?? companyId },
           columns: {
             id: true,
             paystackSubaccountCode: true,
@@ -998,7 +998,7 @@ export async function roomQueries(event?: H3Event) {
     auditCtx: AuditContext,
   ) => {
     const preCheck = await db.query.hostelSettings.findFirst({
-      where: { hostelId, companyId: scope.companyId! },
+      where: { hostelId, companyId: scope.companyId ?? companyId },
       columns: { paystackSubaccountCode: true },
     });
 
@@ -1022,7 +1022,7 @@ export async function roomQueries(event?: H3Event) {
       const existing = await tx.query.hostelSettings.findFirst({
         where: {
           hostelId,
-          companyId: scope.companyId!,
+          companyId: scope.companyId ?? companyId,
         },
         columns: { id: true, paystackSubaccountCode: true },
       });

@@ -414,4 +414,8 @@ export default defineNuxtConfig({
       nitroConfig.handlers = nitroConfig.handlers?.filter(handler => handler?.route !== "/api/_auth/session");
     },
   },
+
+  csurf: {
+    addCsrfTokenToEventCtx: true,
+  },
 });

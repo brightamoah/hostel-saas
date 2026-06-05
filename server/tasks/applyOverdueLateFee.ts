@@ -1,5 +1,5 @@
-/* eslint-disable no-console */
 import { and, eq, inArray } from "drizzle-orm";
+import { createError, createLogger } from "evlog";
 
 import { auditLogQueries } from "../db/queries/auditLog";
 import { allocation, billing, companySettings } from "../db/schema";
@@ -12,7 +12,12 @@ export default defineTask({
   async run() {
     const { db } = useDB();
 
-    console.log("Running task: Apply cumulative late fees...");
+    const log = createLogger({
+      task: "applyOverdueLateFee",
+      service: "scheduler",
+    });
+
+    log.set({ taskStatus: "started" });
 
     try {
       const overdueBillings = await db
@@ -33,7 +38,8 @@ export default defineTask({
         );
 
       if (overdueBillings.length === 0) {
-        console.log("No overdue billings to process.");
+        log.set({ taskStatus: "completed", message: "No overdue billings to process." });
+        log.emit();
         return { result: "No overdue billings to process." };
       }
 
@@ -104,7 +110,13 @@ export default defineTask({
         }
       }
 
-      console.log("Task completed: Apply late fees - Success. Updated", updatedCount, "billing(s). Total late fees applied:", totalFees);
+      log.set({
+        updatedCount,
+        totalFees,
+        taskStatus: "completed",
+        message: "Apply late fees success",
+      });
+      log.emit();
 
       if (updatedCount > 0) {
         const { logAudit } = await auditLogQueries();
@@ -129,8 +141,20 @@ export default defineTask({
       };
     }
     catch (error) {
-      if (error && typeof error === "object" && "statusCode" in error) throw error;
-      handleError(error, "Apply Overdue Late Fees");
+      if (error && typeof error === "object" && "statusCode" in error) {
+        log.set({ taskStatus: "failed" });
+        log.emit();
+        throw error;
+      }
+
+      log.set({ taskStatus: "failed" });
+      log.emit();
+      handleError(createError({
+        cause: error as Error,
+        message: "Failed to apply overdue late fees",
+        why: "An error occurred while executing the database query or audit log insertion.",
+        fix: "Check the database connection, query logic, or audit log configuration.",
+      }), "Apply Overdue Late Fees");
     }
   },
 });

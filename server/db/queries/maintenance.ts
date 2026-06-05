@@ -239,7 +239,6 @@ export async function maintenanceQueries(event?: H3Event) {
     return db
       .transaction(async (tx) => {
         const userId = scope.userId;
-        const companyId = scope.companyId!;
 
         const target = await tx.query.maintenanceRequest.findFirst({
           where: {
@@ -249,6 +248,8 @@ export async function maintenanceQueries(event?: H3Event) {
         });
 
         if (!target) throw new Error("Maintenance request not found or unauthorized access.");
+
+        const companyId = scope.companyId ?? target.companyId;
 
         const [updatedRequest] = await tx
           .update(maintenanceRequest)

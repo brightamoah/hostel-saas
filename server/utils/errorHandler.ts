@@ -1,6 +1,6 @@
 import type { H3Event } from "h3";
 
-import { createError as evlogCreateError, useLogger } from "evlog";
+import { createLogger, createError as evlogCreateError, useLogger } from "evlog";
 
 type StructuredError = {
   statusCode?: number;
@@ -58,7 +58,12 @@ export function handleError(
     node: { req: { headers: {} } },
   } as unknown as H3Event);
 
-  const log = useLogger(runtimeEvent as unknown as ServerEvent);
+  let log;
+  try {
+    log = event ? useLogger(runtimeEvent as unknown as ServerEvent) : createLogger();
+  } catch (e) {
+    log = createLogger();
+  }
 
   log.set({ context });
 
