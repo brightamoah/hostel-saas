@@ -41,6 +41,7 @@
     "vue-chartjs": "^5.3.3",
     "vue-router": "^5.0.4",
     "worker-mailer": "^1.2.1",
+    "xlsx": "file:vendor\\xlsx-0.20.3.tgz",
     "zod": "^4.2.1"
   },
   "devDependencies": {

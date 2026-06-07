@@ -796,3 +796,22 @@ export type HostelSettingsResponseData = {
   data: HostelSettings | null;
   isFirstSetup: boolean;
 };
+
+export interface ValidationError {
+  column: string;
+  message: string;
+}
+
+export interface InvalidRow {
+  row: number;
+  errors: ValidationError[];
+}
+
+export interface SheetValidation {
+  valid: Record<string, unknown>[];
+  invalid: InvalidRow[];
+}
+
+export interface UploadResult {
+  validation: Record<string, SheetValidation>;
+}

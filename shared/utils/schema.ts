@@ -1065,9 +1065,11 @@ export {
   academicPeriodSchema,
   academicYearSchema,
   addAdminSchema,
+  addressSchema,
   approveDenySchema,
   baseSignupSchema,
   billingStatusSchema,
+  billingTypeSchema,
   bookRoomSchema,
   changePasswordSchema,
   companySchema,
@@ -1107,9 +1109,9 @@ export {
   resetPasswordSchema,
   roleSchema,
   roomFeatureSchema,
+  roomNumberSchema,
   signupSchema,
   updatePhoneNumberSchema,
   verifyEmailSchema,
   verifyPaymentSchema,
-
 };

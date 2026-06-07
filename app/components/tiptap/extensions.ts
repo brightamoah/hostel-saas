@@ -1,4 +1,4 @@
-import { InputRule } from "@tiptap/core";
+const { InputRule } = defineAsyncComponent(() => import("@tiptap/core"));
 
 export const TiptapExtensions = [
   TiptapStarterKit.configure({

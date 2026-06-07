@@ -73,6 +73,12 @@ const links = computed(() => [[
     to: { name: "admin-analytics" },
     onSelect: () => open.value = false,
   },
+  {
+    label: "Onboarding",
+    icon: "i-lucide-cloud-upload",
+    to: { name: "admin-onboarding" },
+    onSelect: () => open.value = false,
+  },
   // {
   //   label: "Settings",
   //   to: "/settings",
