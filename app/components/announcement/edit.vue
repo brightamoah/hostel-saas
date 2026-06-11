@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const { announcementId } = defineProps<{ announcementId: number }>();
 
+const { $handleFormError: handleFormError } = useNuxtApp();
+
 const { getAnnouncementFromCache } = useAnnouncementData();
 const announcementStore = useAnnouncementStore();
 const {
@@ -53,10 +55,6 @@ async function handleSubmit() {
   const success = await editAnnouncement();
 
   if (success) isOpen.value = false;
-}
-
-function handleFormError(event: any) {
-  console.error("Form validation failed:", event);
 }
 </script>
 

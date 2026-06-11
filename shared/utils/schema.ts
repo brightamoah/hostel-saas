@@ -399,7 +399,7 @@ const roomNumberSchema = z
   .regex(/^[A-Z]\d+$/, "Room number must start with a single uppercase letter followed by numbers (e.g., V103).")
   .refine((val) => {
     const numberPart = Number.parseInt(val.substring(1), 10);
-    return numberPart >= 100;
+    return numberPart >= 1;
   }, "The number part of the room number must be 100 or greater.");
 
 const roomFeatureSchema = z.union([
@@ -1060,6 +1060,16 @@ const updatePhoneNumberSchema = z.object({
 });
 
 export type UpdatePhoneNumberSchema = z.output<typeof updatePhoneNumberSchema>;
+
+export const onboardingHistoryKeySchema = z.templateLiteral([
+  "onboarding:history:",
+  z.number(),
+]);
+
+export const onboardingDetailKeySchema = z.templateLiteral([
+  "onboarding:details:",
+  z.number(),
+]);
 
 export {
   academicPeriodSchema,

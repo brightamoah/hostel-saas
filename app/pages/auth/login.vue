@@ -19,6 +19,13 @@ const signUpRouteName = computed<RouteLocationRaw>(() => {
   return { name: "auth-signup" };
 });
 
+// route.query.error === 'token_expired' || route.query.error === 'invalid_token'
+
+const showResendEmailVerification = computed(() => {
+  const error = route.query.error?.toLocaleString().toLocaleLowerCase();
+  return error === "token_expired" || error === "invalid_token" || error === "unverified_email";
+});
+
 onMounted(() => {
   clearStateAndErrors();
 });
@@ -72,7 +79,7 @@ onMounted(() => {
       <template #footer>
         <div class="space-y-3">
           <UAlert
-            v-if="route.query.error === 'token_expired' || route.query.error === 'invalid_token'"
+            v-if="showResendEmailVerification"
             color="neutral"
             title="Having trouble with email verification?"
             class="mt-4"

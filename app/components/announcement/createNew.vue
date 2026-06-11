@@ -12,6 +12,8 @@ const {
   isFetchingDraft,
 } = storeToRefs(announcementStore);
 
+const { $handleFormError: handleFormError } = useNuxtApp();
+
 const { createAnnouncement } = announcementStore;
 
 const { users, status } = useFetchUserData();
@@ -21,21 +23,21 @@ const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
 const userOptions = computed(() => {
   return users.value.map(user => ({
-    label: `${user.name} (${user.email}) — ${user.role}`,
+    label: `${capitalizeWords(user.name)} (${user.email}) — ${capitalizeWords(user.role)}`,
     value: user.id,
   }));
 });
 
 const hostelOptions = computed(() => {
   return hostels.value.map(hostel => ({
-    label: hostel.name,
+    label: capitalizeWords(hostel.name),
     value: hostel.id,
   }));
 });
 
 const roomOptions = computed(() => {
   return rooms.value.map(room => ({
-    label: room.roomNumber,
+    label: capitalizeWords(room.roomNumber),
     value: room.id,
   }));
 });
@@ -106,6 +108,7 @@ const submitLabel = computed(() => isMobile.value ? "Publish" : "Publish Announc
         :status
         :room-status
         @submit="createAnnouncement"
+        @error="handleFormError"
       />
     </template>
 

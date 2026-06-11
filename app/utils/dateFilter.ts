@@ -1,9 +1,9 @@
 import type { Row } from "@tanstack/table-core";
 
-export function dateFilter<T>(row: Row<T>, columnId: string, filterValue?: string) {
+export function dateFilter<T>(row: Row<T>, columnId: string, filterValue?: string, rawDate?: string | Date) {
   if (!filterValue || filterValue === "all-dates") return true;
 
-  const rowDate = row.getValue<string | Date>(columnId);
+  const rowDate = rawDate ?? row.getValue<string | Date>(columnId);
   if (!rowDate) return false;
 
   const toLocalDate = (d: string | Date) => {
@@ -58,9 +58,19 @@ export function dateFilter<T>(row: Row<T>, columnId: string, filterValue?: strin
       return rowDateTimestamp >= nextMonthStart && rowDateTimestamp <= nextMonthEnd;
     }
     case "past-visits":
+    case "past-imports":
       return rowDateTimestamp < today;
     case "future-visits":
       return rowDateTimestamp > today;
+    case "last-month":
+      return rowDateTimestamp >= startOfMonth(new Date(today - 30 * oneDayInMilliseconds)) && rowDateTimestamp <= endOfMonth(new Date(today - 30 * oneDayInMilliseconds));
+    case "last-week": {
+      const weekStart = startOfWeek(today);
+      const weekEnd = endOfWeek(weekStart);
+      return rowDateTimestamp >= weekStart && rowDateTimestamp <= weekEnd;
+    }
+    case "custom-date-range":
+      return rowDateTimestamp >= startOfMonth(new Date(today - 30 * oneDayInMilliseconds)) && rowDateTimestamp <= endOfMonth(new Date(today - 30 * oneDayInMilliseconds));
     default:
       return true;
   }

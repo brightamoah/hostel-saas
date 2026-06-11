@@ -29,8 +29,8 @@ export async function checkUserLockOutByUserId(userId: number, ip: string, event
   const { getFailedAttemptsCount, recordLoginAttempt } = await userQueries(event);
 
   const userFailedCount = await getFailedAttemptsCount(
-    loginAttempts.ip,
-    ip,
+    loginAttempts.userId,
+    userId,
   );
 
   if (userFailedCount >= MAX_FAILED_ATTEMPTS_PER_USER) {

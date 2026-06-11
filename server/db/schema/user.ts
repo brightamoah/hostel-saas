@@ -41,7 +41,7 @@ export const user = pgTable("user", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   name: t.varchar({ length: 255 }).notNull(),
   email: t.varchar({ length: 255 }).notNull().unique(),
-  password: t.varchar({ length: 255 }).notNull(),
+  password: t.text().notNull(),
   role: rolesEnum().default("student").notNull(),
   image: t.text(),
   emailVerified: t.boolean().default(false).notNull(),

@@ -252,9 +252,9 @@ export type TableType<T> = Readonly<ShallowRef<ShallowUnwrapRef<{
   tableApi: Table<T>;
 }> | null>>;
 
-export type FilterOption = {
+export type FilterOption<T = string | number> = {
   label: string;
-  value: string | number;
+  value: T;
 };
 
 export type Companies = CompaniesList;
@@ -544,6 +544,7 @@ export type NotificationDTO = {
 
 export type AuthLoginCode
   = | "LOGIN_SUCCESS"
+    | "UNVERIFIED_EMAIL"
     | "ADMIN_LOGIN"
     | "WRONG_PORTAL";
 
@@ -808,10 +809,38 @@ export interface InvalidRow {
 }
 
 export interface SheetValidation {
-  valid: Record<string, unknown>[];
+  valid: any[];
+  updated: any[];
   invalid: InvalidRow[];
+  skipped: any[];
 }
 
 export interface UploadResult {
   validation: Record<string, SheetValidation>;
+  uploadId?: string;
+  message?: string;
+  success?: boolean;
 }
+
+export type OnboardingImportStatus = "pending" | "completed" | "failed";
+
+export interface Summary {
+  valid: number;
+  updated: number;
+  skipped: number;
+  invalid: number;
+}
+
+export interface OnboardingHistoryItem {
+  id: string;
+  companyId: number;
+  fileName: string;
+  createdAt: string;
+  status: OnboardingImportStatus;
+  summary: { [key: string]: Summary };
+}
+
+export type OnboardingHistoryResponseData = {
+  success: boolean;
+  history: OnboardingHistoryItem[];
+};

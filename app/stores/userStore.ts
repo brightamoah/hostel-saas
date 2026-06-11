@@ -75,7 +75,7 @@ export const useUserStore = defineStore("userStore", () => {
 
   const deleteModalOpen = ref<boolean>(false);
 
-  const deleteUser = async (payload: DeleteItemSchema) => {
+  const deleteUser = async (payload: DeleteItemSchema | { ids: (number | string)[] }) => {
     if (!payload.ids) return;
 
     isLoading.value = true;

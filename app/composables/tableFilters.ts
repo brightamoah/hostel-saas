@@ -16,7 +16,7 @@ type DataType<T> = Ref<{ [key: string]: T[] | any } | null | undefined>;
  * @param data The raw data ref from a useFetch call.
  * @param dataKey The key in the data object that holds the array of items (e.g., 'visitors', 'rooms').
  */
-export function useTableFilters<T extends { id: number }>(
+export function useTableFilters<T extends { id: number | string }>(
   table: TableType<T>,
   data: DataType<T>,
   dataKey: keyof NonNullable<DataType<T>["value"]>,

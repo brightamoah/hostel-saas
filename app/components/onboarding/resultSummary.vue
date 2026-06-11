@@ -3,9 +3,11 @@ defineProps<{
   sheetCount: number;
   totalValid: number;
   totalInvalid: number;
+  totalSkipped: number;
+  isImporting?: boolean;
 }>();
 
-const emit = defineEmits<{ reset: [] }>();
+const emit = defineEmits<{ reset: []; import: [] }>();
 </script>
 
 <template>
@@ -39,17 +41,41 @@ const emit = defineEmits<{ reset: [] }>();
       >
         {{ totalInvalid }} invalid
       </UBadge>
+
+      <UBadge
+        v-if="totalSkipped > 0"
+        color="warning"
+        variant="subtle"
+        size="md"
+      >
+        {{ totalSkipped }} skipped
+      </UBadge>
     </div>
 
-    <UButton
-      size="md"
-      color="neutral"
-      variant="ghost"
-      leading-icon="i-heroicons-arrow-path"
-      class="justify-center border border-default sm:border-transparent w-full sm:w-auto cursor-pointer shrink-0"
-      @click="emit('reset')"
-    >
-      Upload another file
-    </UButton>
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+      <UButton
+        size="md"
+        color="neutral"
+        variant="ghost"
+        leading-icon="i-heroicons-arrow-path"
+        class="justify-center border border-default sm:border-transparent w-full sm:w-auto cursor-pointer shrink-0"
+        @click="emit('reset')"
+        :disabled="isImporting"
+      >
+        Upload another file
+      </UButton>
+
+      <UButton
+        v-if="totalValid > 0"
+        size="md"
+        color="primary"
+        leading-icon="i-heroicons-cloud-arrow-up"
+        class="justify-center w-full sm:w-auto cursor-pointer shrink-0"
+        @click="emit('import')"
+        :loading="isImporting"
+      >
+        Import Data
+      </UButton>
+    </div>
   </div>
 </template>

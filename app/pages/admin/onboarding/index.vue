@@ -6,9 +6,11 @@ definePageMeta({
 
 const {
   isUploading,
+  isImporting,
   uploadResult,
   errorMessage,
   processFile,
+  importData,
   resetUpload,
 } = useOnboardingUpload();
 
@@ -37,6 +39,13 @@ const totalInvalid = computed(() =>
   ),
 );
 
+const totalSkipped = computed(() =>
+  sheets.value.reduce(
+    (sum, k) => sum + (uploadResult.value?.validation?.[k]?.skipped?.length ?? 0),
+    0,
+  ),
+);
+
 const view = computed<"upload" | "results">(() =>
   uploadResult.value ? "results" : "upload",
 );
@@ -44,20 +53,54 @@ const view = computed<"upload" | "results">(() =>
 
 <template>
   <div class="flex flex-1">
-    <UDashboardPanel id="rooms">
+    <UDashboardPanel id="onboarding">
       <template #header>
         <DashboardNav :title />
       </template>
 
       <template #body>
         <UContainer class="max-w-6xl">
-          <div class="flex justify-end items-center mb-6">
+          <div class="flex md:flex-row flex-col justify-between items-center gap-3 mb-6">
             <UButton
-              label="Download Onboarding Template"
+              :to="{ name: 'admin-onboarding-history' }"
+              color="neutral"
+              variant="subtle"
+              label="View Import History"
+              leading-icon="i-lucide-history"
+              size="lg"
+              class="flex justify-center items-center w-[70%] md:w-auto cursor-pointer"
+            />
+
+            <UButton
+              label="Download Excel Template"
               icon="i-lucide-download"
-              class="cursor-pointer"
+              color="primary"
+              size="lg"
+              class="w-full md:w-auto cursor-pointer"
             />
           </div>
+
+          <UAlert
+            v-if="errorMessage"
+            class="mb-6"
+            color="error"
+            variant="subtle"
+            orientation="horizontal"
+            icon="i-lucide-triangle-alert"
+            :title="errorMessage"
+            :actions="[{
+              label: 'Dismiss',
+              color: 'error',
+              variant: 'subtle',
+              class: 'cursor-pointer',
+              icon: 'i-lucide-x',
+              size: 'lg',
+              onClick: () => { errorMessage = '' },
+            }]"
+            :ui="{
+              icon: 'size-6',
+            }"
+          />
 
           <Transition
             name="page-slide"
@@ -67,29 +110,8 @@ const view = computed<"upload" | "results">(() =>
               <template v-if="view === 'upload'">
                 <OnboardingUpload
                   v-model:uploading="isUploading"
+                  class="mx-auto max-w-3xl"
                   @file="processFile"
-                />
-
-                <UAlert
-                  v-if="errorMessage"
-                  class="mt-4"
-                  color="error"
-                  variant="subtle"
-                  orientation="horizontal"
-                  icon="i-lucide-triangle-alert"
-                  :title="errorMessage"
-                  :actions="[{
-                    label: 'Dismiss',
-                    color: 'error',
-                    variant: 'subtle',
-                    class: 'cursor-pointer',
-                    icon: 'i-lucide-x',
-                    size: 'lg',
-                    onClick: () => { errorMessage = '' },
-                  }]"
-                  :ui="{
-                    icon: 'size-6',
-                  }"
                 />
               </template>
 
@@ -98,12 +120,17 @@ const view = computed<"upload" | "results">(() =>
                   :sheet-count="sheets.length"
                   :total-valid
                   :total-invalid
+                  :total-skipped
+                  :is-importing="isImporting"
                   @reset="resetUpload"
+                  @import="importData"
                 />
 
                 <OnboardingResults
                   :result="uploadResult"
                   :sheets
+                  :is-importing="isImporting"
+                  @import="importData"
                 />
               </template>
             </div>

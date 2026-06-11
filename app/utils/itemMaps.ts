@@ -111,3 +111,9 @@ export const paymentStatusColorMap: Record<PaymentStatus, ColorType> = {
   completed: "success",
   refunded: "error",
 };
+
+export const onboardingImportStatusColorMap: Record<OnboardingImportStatus, ColorType> = {
+  completed: "success",
+  pending: "warning",
+  failed: "error",
+};

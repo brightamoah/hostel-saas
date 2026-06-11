@@ -43,7 +43,8 @@ export function parseExcelBuffer(buffer: Buffer) {
         const cleanRow: Record<string, any> = {};
         for (const [key, value] of Object.entries(row)) {
           if (!key.startsWith("__EMPTY")) {
-            cleanRow[key] = typeof value === "string" ? value.trim() : value;
+            const cleanKey = key.endsWith("*") ? key.slice(0, -1) : key;
+            cleanRow[cleanKey] = typeof value === "string" ? value.trim() : value;
           }
         }
         return cleanRow;

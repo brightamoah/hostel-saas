@@ -25,7 +25,7 @@ export function useAdminDashboardData() {
         key: "adminCompanyList",
         method: "GET",
         lazy: true,
-        default: () => { },
+        default: () => [],
         getCachedData: (key, nuxtApp, ctx) => {
           if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
           return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];

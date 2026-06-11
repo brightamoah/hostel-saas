@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { en_gb } from "@nuxt/ui/locale";
-import { breakpointsTailwind, useBreakpoints } from "@vueuse/core";
+import { breakpointsTailwind, useBreakpoints, useIdle } from "@vueuse/core";
 
 const runtimeConfig = useRuntimeConfig();
 
@@ -21,6 +21,23 @@ useHead({
     titleChunk
       ? `${titleChunk} - ${runtimeConfig.public.emailFromName}`
       : runtimeConfig.public.emailFromName,
+});
+
+const { loggedIn } = usePortalUserSession();
+const { idle } = useIdle(10 * 60 * 1000);
+
+watch(idle, async (isIdle) => {
+  if (isIdle && loggedIn.value) {
+    const toast = useToast();
+    toast.add({
+      title: "Session Expired",
+      description: "You have been logged out due to 10 minutes of inactivity.",
+      color: "warning",
+      duration: 8000,
+    });
+
+    await navigateTo({ name: "auth-logout" });
+  }
 });
 </script>
 

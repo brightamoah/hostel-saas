@@ -1,27 +1,52 @@
 <script setup lang="ts">
 import type { TabsItem } from "@nuxt/ui";
 
-defineProps<{
+const props = defineProps<{
   result: UploadResult;
   sheets: string[];
+  isImporting?: boolean;
 }>();
 
 const emit = defineEmits<{ import: [] }>();
 
-const tabs: TabsItem[] = [
-  {
-    label: "Errors",
-    slot: "errors" as const,
-    icon: "i-lucide-circle-alert",
-    value: "errors",
-  },
-  {
-    label: "Valid Data",
-    slot: "valid" as const,
-    icon: "i-lucide-circle-check-big",
-    value: "valid",
-  },
-];
+const tabs = computed<TabsItem[]>(() => {
+  const items: TabsItem[] = [
+    {
+      label: "Errors",
+      slot: "errors" as const,
+      icon: "i-lucide-circle-alert",
+      value: "errors",
+    },
+    {
+      label: "Ready for Import",
+      slot: "valid" as const,
+      icon: "i-lucide-circle-check-big",
+      value: "valid",
+    },
+  ];
+
+  const hasUpdated = props.sheets.some(s => (props.result.validation[s]?.updated?.length ?? 0) > 0);
+  if (hasUpdated) {
+    items.push({
+      label: "Updated",
+      slot: "updated" as const,
+      icon: "i-lucide-refresh-cw",
+      value: "updated",
+    });
+  }
+
+  const hasSkipped = props.sheets.some(s => (props.result.validation[s]?.skipped?.length ?? 0) > 0);
+  if (hasSkipped) {
+    items.push({
+      label: "Skipped",
+      slot: "skipped" as const,
+      icon: "i-lucide-skip-forward",
+      value: "skipped",
+    });
+  }
+
+  return items;
+});
 
 const activeTab = ref("errors");
 </script>
@@ -47,7 +72,22 @@ const activeTab = ref("errors");
         <OnboardingValidSummary
           :result="result"
           :sheets="sheets"
+          :is-importing="isImporting"
           @import="emit('import')"
+        />
+      </template>
+
+      <template #updated>
+        <OnboardingUpdatedSummary
+          :result="result"
+          :sheets="sheets"
+        />
+      </template>
+
+      <template #skipped>
+        <OnboardingSkippedSummary
+          :result="result"
+          :sheets="sheets"
         />
       </template>
     </UTabs>

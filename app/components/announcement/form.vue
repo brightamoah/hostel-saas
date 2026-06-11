@@ -6,8 +6,8 @@ interface Props {
   isMobile: boolean;
   status: Status;
   roomStatus: Status;
-  audience: string[];
-  priority: string[];
+  audience: FilterOption[];
+  priority: FilterOption[];
   userOptions: FilterOption[];
   hostelOptions: FilterOption[];
   roomOptions: FilterOption[];

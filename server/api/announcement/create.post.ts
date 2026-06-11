@@ -151,6 +151,13 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    if (!cleanContent) {
+      throw createError({
+        statusCode: 400,
+        message: "Announcement content cannot be empty.",
+      });
+    }
+
     const newAnnouncement = await createAnnouncement(
       {
         content: cleanContent,

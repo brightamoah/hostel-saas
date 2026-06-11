@@ -92,7 +92,7 @@ export const useVisitorStore = defineStore("visitorStore", () => {
     }
   };
 
-  const deleteVisitors = async (payload: DeleteItemSchema) => {
+  const deleteVisitors = async (payload: DeleteItemSchema | { ids: (number | string)[] }) => {
     if (!payload.ids) return;
 
     isLoading.value = true;

@@ -1,3 +1,5 @@
+import { getRandomValues } from "uncrypto";
+
 /**
  * Generates a secure, random temporary password.
  *
@@ -11,11 +13,16 @@ export function generateTempPassword(): string {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
   const digits = "0123456789";
-  const special = "!@#$%^&*()_+-=[]{}|/<>?";
+  const special = "!@#$%^&*_+-=?";
   const allChars = upper + lower + digits + special;
   const totalLength = 12;
 
-  const randomize = (s: string) => s[Math.floor(Math.random() * s.length)];
+  const randomize = (s: string): string => {
+    const array = new Uint32Array(1);
+    getRandomValues(array);
+    const randomIndex = (array[0] ?? 0) % s.length;
+    return s.charAt(randomIndex);
+  };
 
   // 1. Ensure at least one of each required type
   const passwordParts = [
@@ -28,8 +35,13 @@ export function generateTempPassword(): string {
   for (let i = passwordParts.length; i < totalLength; i++) passwordParts.push(randomize(allChars));
 
   for (let i = passwordParts.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [passwordParts[i], passwordParts[j]] = [passwordParts[j], passwordParts[i]];
+    const array = new Uint32Array(1);
+    getRandomValues(array);
+    const val = array[0] ?? 0;
+    const j = val % (i + 1);
+    const temp = passwordParts[i]!;
+    passwordParts[i] = passwordParts[j]!;
+    passwordParts[j] = temp;
   }
 
   return passwordParts.join("");

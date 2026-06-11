@@ -1,5 +1,6 @@
 import { billingQueries, companyQueries } from "~~/server/db/queries";
 import { resolveSubaccount } from "~~/server/libs/paystack/resolveSubaccount";
+import { randomUUID } from "uncrypto";
 
 export default defineEventHandler(async (event) => {
   const { user } = await requirePortalUserSession(event, {
@@ -84,7 +85,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // reference format: KH-{billingId}-{timestamp}-{studentId}-{random}
-    const reference = `KH-${billing.id}-${Date.now()}-${billing.studentId}-${Math.floor(Math.random() * 10000)}`;
+    const reference = `KH-${billing.id}-${Date.now()}-${billing.studentId}-${randomUUID().split("-")[0]}`;
 
     // console.log("[BILLING INITIALIZED]", reference);
 

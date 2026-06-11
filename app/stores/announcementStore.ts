@@ -26,20 +26,50 @@ export const useAnnouncementStore = defineStore("announcementStore", () => {
 
   const announcementDataKey = computed(() => `announcement-data-${user.value?.id}`);
 
-  const audience = ref<CreateAnnouncementSchema["targetAudience"][]>([
-    "all",
-    "students",
-    "admins",
-    "hostel",
-    "room",
-    "user",
+  const audience = ref<FilterOption<CreateAnnouncementSchema["targetAudience"]>[]>([
+    {
+      label: "All",
+      value: "all",
+    },
+    {
+      label: "Students",
+      value: "students",
+    },
+    {
+      label: "Admins",
+      value: "admins",
+    },
+    {
+      label: "Hostel",
+      value: "hostel",
+    },
+    {
+      label: "Room",
+      value: "room",
+    },
+    {
+      label: "User",
+      value: "user",
+    },
   ]);
 
-  const priority = ref<CreateAnnouncementSchema["priority"][]>([
-    "low",
-    "medium",
-    "high",
-    "emergency",
+  const priority = ref<FilterOption<CreateAnnouncementSchema["priority"]>[]>([
+    {
+      label: "Low",
+      value: "low",
+    },
+    {
+      label: "Medium",
+      value: "medium",
+    },
+    {
+      label: "High",
+      value: "high",
+    },
+    {
+      label: "Emergency",
+      value: "emergency",
+    },
   ]);
 
   const announcementState = ref<Partial<CreateAnnouncementSchema>>({ ...defaultState });

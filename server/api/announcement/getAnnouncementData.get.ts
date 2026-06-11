@@ -50,10 +50,10 @@ export default defineEventHandler(async (event) => {
 
     const announcements = await getAllAnnouncementsForAdmin(scope);
 
-    if (!announcements?.length) return [];
+    if (!announcements?.length) return { announcements: [] };
 
     for (const announcement of announcements) {
-      announcement.content = sanitizeHtmlContent(announcement.content);
+      announcement.content = sanitizeHtmlContent(announcement.content) as string;
     }
 
     return {

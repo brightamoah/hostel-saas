@@ -135,6 +135,18 @@ export const useAuthStore = defineStore("authStore", () => {
         },
       });
 
+      if (response.code === "UNVERIFIED_EMAIL") {
+        toast.add({
+          title: "Email Not Verified",
+          description: response.message || "Your email is not verified. Please verify your email to continue.",
+          color: "error",
+          icon: "i-lucide-triangle-alert",
+          duration: 8000,
+        });
+        await goto(response.nextUrl);
+        return;
+      }
+
       if (response.code === "ADMIN_LOGIN") {
         toast.add({
           title: "Admin Detected",

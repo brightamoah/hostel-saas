@@ -1,5 +1,4 @@
 import type { User } from "#auth-utils";
-import type { AuthLoginResponse } from "~~/shared/types";
 
 import { authHandoffQueries, roomQueries } from "~~/server/db/queries";
 import { companyQueries } from "~~/server/db/queries/company";
@@ -77,10 +76,12 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     if (!currentUser.emailVerified) {
       await recordLoginAttempt(currentUser.id, ip);
-      throw createError({
-        statusCode: 403,
-        message: "Email not verified",
-      });
+      return {
+        success: false,
+        code: "UNVERIFIED_EMAIL",
+        message: "Your email is not verified. Please verify your email to continue.",
+        nextUrl: `${siteBase}/auth/login?error=UNVERIFIED_EMAIL`,
+      };
     }
 
     if (surface === "admin" && currentUser.role !== "admin") {
@@ -163,7 +164,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     const sessionDurationMs = rememberMe
       ? 1000 * 60 * 60 * 24 * 7
-      : 1000 * 60 * 60 * 24 * 1;
+      : 1000 * 60 * 10; // 10 minutes
 
     const expiresAt = new Date(now.getTime() + sessionDurationMs);
 

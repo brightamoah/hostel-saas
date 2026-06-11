@@ -1,12 +1,11 @@
 <script setup lang="ts">
-const { result, sheets } = defineProps<{
+const { result, sheets, isImporting } = defineProps<{
   result: UploadResult;
   sheets: string[];
+  isImporting?: boolean;
 }>();
 
 const emit = defineEmits<{ import: [] }>();
-
-const isImporting = ref(false);
 
 const sheetsWithValid = computed(() =>
   sheets.filter(
@@ -21,14 +20,8 @@ const totalValid = computed(() =>
   ),
 );
 
-async function handleImport() {
-  isImporting.value = true;
-  try {
-    emit("import");
-  }
-  finally {
-    isImporting.value = false;
-  }
+function handleImport() {
+  emit("import");
 }
 </script>
 

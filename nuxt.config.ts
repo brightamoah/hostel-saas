@@ -98,6 +98,19 @@ export default defineNuxtConfig({
         "vue-chartjs",
       ],
     },
+    resolve: {
+      dedupe: [
+        "prosemirror-state",
+        "prosemirror-transform",
+        "prosemirror-model",
+        "prosemirror-view",
+        "@tiptap/pm"
+      ]
+    }
+  },
+  
+  build: {
+    transpile: ['nuxt-tiptap-editor', '@tiptap/pm', '@tiptap/core', '@tiptap/vue-3']
   },
 
   app: {
@@ -200,7 +213,7 @@ export default defineNuxtConfig({
       password: env.NUXT_SESSION_PASSWORD,
       name: env.NUXT_SESSION_NAME,
       cookie: {
-        maxAge: 60 * 60 * 24 * 1, // 1 day in seconds
+        maxAge: 60 * 60 * 24 * 7, // 7 days in seconds
       },
     },
     supportEmail: env.NUXT_SUPPORT_EMAIL,

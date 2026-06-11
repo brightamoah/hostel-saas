@@ -77,8 +77,17 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (data.content) {
-      data.content = sanitizeHtmlContent(data.content);
+    if (data.content !== undefined) {
+      const cleanContent = sanitizeHtmlContent(data.content);
+
+      if (!cleanContent) {
+        throw createError({
+          statusCode: 400,
+          message: "Announcement content cannot be empty.",
+        });
+      }
+
+      data.content = cleanContent;
     }
 
     const { editAnnouncement, getAnnouncementById } = await announcementQueries(event);

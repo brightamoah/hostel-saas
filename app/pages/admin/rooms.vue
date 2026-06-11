@@ -104,35 +104,35 @@ const {
   floorFilterOptions,
   currentRoomsShowing,
   lastRoomShowing,
-  selectedRoomIds,
+  // selectedRoomIds,
   updatePage,
   itemsToDisplay,
 } = useRoomFilters(table, data);
 
 const roomStore = useRoomStore();
-const { deleteRoom } = roomStore;
+// const { deleteRoom } = roomStore;
 const { deleteModalOpen, isLoading } = storeToRefs(roomStore);
 
-async function handleDeleteSelectedRooms() {
-  const payload = selectedRoomIds.value;
-  if (!payload?.ids?.length) return;
-  try {
-    await deleteRoom(payload);
-    deleteModalOpen.value = false;
-    try {
-      rowSelection.value = {};
-      const api = table?.value?.tableApi;
-      api?.resetRowSelection?.();
-      api?.toggleAllPageRowsSelected?.(false);
-    }
-    catch (error) {
-      console.warn("Failed to clear selection after delete:", error);
-    }
-  }
-  catch (error) {
-    console.error("Error deleting selected rooms:", error);
-  }
-}
+// async function handleDeleteSelectedRooms() {
+//   const payload = selectedRoomIds.value;
+//   if (!payload?.ids?.length) return;
+//   try {
+//     await deleteRoom(payload);
+//     deleteModalOpen.value = false;
+//     try {
+//       rowSelection.value = {};
+//       const api = table?.value?.tableApi;
+//       api?.resetRowSelection?.();
+//       api?.toggleAllPageRowsSelected?.(false);
+//     }
+//     catch (error) {
+//       console.warn("Failed to clear selection after delete:", error);
+//     }
+//   }
+//   catch (error) {
+//     console.error("Error deleting selected rooms:", error);
+//   }
+// }
 
 const pagination = ref({
   pageIndex: 0,
@@ -220,7 +220,6 @@ useSeoMeta({
                 render-trigger
                 :title="`Delete ${selectedRoomsLength} Rooms`"
                 :is-loading
-                @confirm="handleDeleteSelectedRooms"
               >
                 <template #trigger="{ show }">
                   <UButton

@@ -6,4 +6,8 @@ allowBuilds:
   unrs-resolver: true
   vue-demi: true
   workerd: true
+
 shamefullyHoist: true
+
+overrides:
+  vite: "npm:rolldown-vite@latest"

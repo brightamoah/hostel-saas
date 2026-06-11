@@ -26,6 +26,11 @@ async function _portalSession(event: H3Event) {
 export async function getPortalUserSession(event: H3Event): Promise<UserSession> {
   const session = await _portalSession(event);
 
+  if (session.data.expiresAt && new Date(session.data.expiresAt) < new Date()) {
+    await clearPortalUserSession(event);
+    return {} as UserSession;
+  }
+
   return {
     ...session.data,
     id: session.id!,

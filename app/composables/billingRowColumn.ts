@@ -210,16 +210,18 @@ export function useBillingRowColumn(
                 {
                   text: "View Billing Details",
                 },
-                [
-                  h(UButton, {
-                    color: "ghost",
-                    variant: "ghost",
-                    size: "md",
-                    icon: "i-lucide-eye",
-                    class: "cursor-pointer",
-                    onClick: () => openBillingDetails(row.original),
-                  }),
-                ],
+                {
+                  default: () => [
+                    h(UButton, {
+                      color: "ghost",
+                      variant: "ghost",
+                      size: "md",
+                      icon: "i-lucide-eye",
+                      class: "cursor-pointer",
+                      onClick: () => openBillingDetails(row.original),
+                    }),
+                  ],
+                },
               ),
               ((user.value?.role === "admin" || (user.value?.role === "student")) && ["unpaid", "partially paid", "overdue"]
                 .some(status => row.original.status.toLowerCase().includes(status)))

@@ -15,154 +15,148 @@ function excelStringPipe(schema: z.ZodType<any, string>) {
 const excelNumber = z.union([z.string(), z.number()]).transform(Number);
 
 export const CompanySchema = z.object({
-  "name*": excelStringPipe(nameSchema),
-  "slug*": excelStringPipe(slugSchema),
-  "status*": z.enum(["active", "inactive"]).default("active"),
+  name: excelStringPipe(nameSchema),
+  slug: excelStringPipe(slugSchema),
+  status: z.enum(["active", "inactive"]).default("active"),
 });
 
 export const UserSchema = z.object({
-  "email*": emailSchema,
-  "name*": excelStringPipe(nameSchema),
-  "password*": excelStringPipe(passwordSchema),
-  "role*": roleSchema,
-  "image": z.string().optional(),
+  email: emailSchema,
+  name: excelStringPipe(nameSchema),
+  password: excelStringPipe(passwordSchema),
+  role: roleSchema,
+  image: z.string().optional(),
 });
 
 export const HostelSchema = z.object({
-  "name*": excelStringPipe(nameSchema),
-  "slug*": excelStringPipe(slugSchema),
-  "company*": z.string().min(1, "Company is required"),
-  "address*": excelStringPipe(addressSchema),
-  "contactNumber*": excelStringPipe(phoneNumberSchema),
-  "email*": emailSchema,
-  "status*": z.enum(["active", "inactive"]).default("active"),
-  "supportEmail": z.union([emailSchema, z.literal("")]).optional(),
-  "supportPhone": z.union([excelStringPipe(phoneNumberSchema), z.literal("")]).optional(),
+  name: excelStringPipe(nameSchema),
+  slug: excelStringPipe(slugSchema),
+  company: z.string().min(1, "Company is required").optional(),
+  address: excelStringPipe(addressSchema),
+  contactNumber: excelStringPipe(phoneNumberSchema),
+  email: emailSchema,
+  status: z.enum(["active", "inactive"]).default("active"),
+  supportEmail: z.union([emailSchema, z.literal("")]).optional(),
+  supportPhone: z.union([excelStringPipe(phoneNumberSchema), z.literal("")]).optional(),
+  joinCode: z.string().optional(),
 });
 
 export const RoomSchema = z.object({
-  "roomNumber*": excelStringPipe(roomNumberSchema),
-  "hostelName*": z.string().min(1, "Hostel name required"),
-  "company*": z.string().min(1, "Company required"),
-  "floor*": excelNumber.pipe(z.number().min(1, "Floor cannot be negative")),
-  "roomType*": z.enum(["single", "double", "triple", "quad"]),
-  "allowedGender*": z.enum(["male", "female", "mixed", "unassigned"]),
-  "amountPerYear*": excelNumber.pipe(z.number().min(1, "Amount per Year cannot be negative")),
-  "status*": z.enum(["vacant", "fully occupied", "partially occupied", "under maintenance", "reserved"]).default("vacant"),
+  roomNumber: excelStringPipe(roomNumberSchema),
+  hostelName: z.string().min(1, "Hostel name required"),
+  company: z.string().min(1, "Company required").optional(),
+  floor: excelNumber.pipe(z.number().min(1, "Floor cannot be negative")),
+  roomType: z.enum(["single", "double", "triple", "quad"]),
+  allowedGender: z.enum(["male", "female", "mixed", "unassigned"]),
+  amountPerYear: excelNumber.pipe(z.number().min(1, "Amount per Year cannot be negative")),
+  status: z.enum(["vacant", "fully occupied", "partially occupied", "under maintenance", "reserved"]).default("vacant"),
+  features: z.string().optional(),
 });
 
 export const StudentSchema = z.object({
-  "userEmail*": emailSchema,
-  "company": z.string().optional(),
-  "hostelName": z.string().optional(),
-  "gender*": z.enum(["male", "female"]),
-  "dateOfBirth*": excelDateString,
-  "phoneNumber*": excelStringPipe(phoneNumberSchema),
-  "address*": excelStringPipe(addressSchema),
-  "emergencyContactName*": excelStringPipe(nameSchema),
-  "emergencyContactPhone*": excelStringPipe(phoneNumberSchema),
-  "residencyStatus*": z.enum(["active", "inactive", "suspended", "graduated", "withdrawn"]).default("active"),
+  userEmail: emailSchema,
+  company: z.string().optional(),
+  hostelName: z.string().optional(),
+  gender: z.enum(["male", "female"]),
+  dateOfBirth: excelDateString,
+  phoneNumber: excelStringPipe(phoneNumberSchema),
+  address: excelStringPipe(addressSchema),
+  emergencyContactName: excelStringPipe(nameSchema),
+  emergencyContactPhone: excelStringPipe(phoneNumberSchema),
+  residencyStatus: z.enum(["active", "inactive", "suspended", "graduated", "withdrawn"]).default("active"),
 });
 
 export const AllocationSchema = z.object({
-  "studentEmail*": emailSchema,
-  "roomNumber*": excelStringPipe(roomNumberSchema),
-  "hostelName*": z.string().min(1, "Hostel required"),
-  "company*": z.string().min(1, "Company required"),
-  "allocationDate*": excelDateString,
-  "academicPeriod*": academicPeriodSchema,
-  "academicYear*": academicYearSchema,
-  "status*": z.enum(["active", "expired", "pending", "cancelled"]).default("active"),
+  studentEmail: emailSchema,
+  roomNumber: excelStringPipe(roomNumberSchema),
+  hostelName: z.string().min(1, "Hostel required"),
+  company: z.string().min(1, "Company required").optional(),
+  allocationDate: excelDateString,
+  academicPeriod: academicPeriodSchema,
+  academicYear: academicYearSchema,
+  status: z.enum(["active", "expired", "pending", "cancelled"]).default("active"),
 });
 
 export const BillingSchema = z.object({
-  "studentEmail*": emailSchema,
-  "allocationRef*": z.string().min(1, "Allocation Ref required"),
-  "hostelName*": z.string().min(1, "Hostel required"),
-  "company*": z.string().min(1, "Company required"),
-  "amount*": excelNumber.pipe(z.number().positive("Amount must be positive")),
-  "billingType*": billingTypeSchema,
-  "academicPeriod*": academicPeriodSchema,
-  "dueDate*": excelDateString,
-  "status*": billingStatusSchema,
+  studentEmail: emailSchema,
+  allocationRef: z.string().optional(),
+  hostelName: z.string().min(1, "Hostel required"),
+  company: z.string().min(1, "Company required").optional(),
+  amount: excelNumber.pipe(z.number().positive("Amount must be positive")),
+  billingType: billingTypeSchema,
+  academicPeriod: academicPeriodSchema,
+  dueDate: excelDateString,
+  status: billingStatusSchema,
 });
 
 export const AdminSchema = z.object({
-  "email*": emailSchema,
-  "name*": excelStringPipe(nameSchema),
-  "phoneNumber*": excelStringPipe(phoneNumberSchema),
-  "role*": z.enum(["admin", "owner", "support", "staff"]),
-  "department*": z.string().min(1, "Department required"),
-  "accessLevel*": z.enum(["regular", "super", "support"]),
-  "hostelName": z.string().optional(),
-  "company*": z.string().min(1, "Company required"),
+  userEmail: emailSchema,
+  phoneNumber: excelStringPipe(phoneNumberSchema),
+  department: z.string().min(1, "Department required"),
+  accessLevel: z.enum(["regular", "super", "support"]),
+  hostelName: z.string().optional(),
+  company: z.string().optional(),
 });
 
 export const PaymentSchema = z.object({
-  "studentEmail*": emailSchema,
-  "billingRef*": z.string().min(1, "Billing reference required"),
-  "amount*": excelNumber.pipe(z.number().positive("Amount must be positive")),
-  "reference*": z.string().min(1, "Payment reference required"),
-  "paymentDate*": excelDateString,
-  "status*": z.enum(["success", "pending", "failed"]),
+  studentEmail: emailSchema,
+  billingRef: z.string().optional(),
+  amount: excelNumber.pipe(z.number().positive("Amount must be positive")),
+  reference: z.string().min(1, "Payment reference required"),
+  paymentDate: excelDateString,
+  status: z.enum(["success", "pending", "failed"]),
 });
 
 export const VisitorSchema = z.object({
-  "studentEmail*": emailSchema,
-  "visitorName*": excelStringPipe(nameSchema),
-  "email": z.union([emailSchema, z.literal("")]).optional(),
-  "phoneNumber*": excelStringPipe(phoneNumberSchema),
-  "visitDate*": excelDateString,
-  "relationship*": z.string().min(1, "Relationship required"),
-  "purpose*": z.string().min(1, "Purpose required"),
-  "hostelName*": z.string().min(1, "Hostel required"),
-  "status*": z.enum(["pending", "approved", "denied", "checked-in", "checked-out", "cancelled"]).default("pending"),
+  studentEmail: emailSchema,
+  visitorName: excelStringPipe(nameSchema),
+  email: z.union([emailSchema, z.literal("")]).optional(),
+  phoneNumber: excelStringPipe(phoneNumberSchema),
+  visitDate: excelDateString,
+  relationship: z.string().min(1, "Relationship required"),
+  purpose: z.string().min(1, "Purpose required"),
+  hostelName: z.string().min(1, "Hostel required"),
+  status: z.enum(["pending", "approved", "denied", "checked-in", "checked-out", "cancelled"]).default("pending"),
 });
 
 export const ComplaintSchema = z.object({
-  "studentEmail*": emailSchema,
-  "hostelName*": z.string().min(1, "Hostel required"),
-  "roomNumber": z.string().optional(),
-  "description*": z.string().min(10, "Description must be at least 10 chars"),
-  "priority*": z.enum(["low", "medium", "high", "emergency"]),
-  "type*": z.enum(["noise", "amenities", "billing issue", "room condition", "staff behavior", "security", "other"]),
+  studentEmail: emailSchema,
+  hostelName: z.string().min(1, "Hostel required"),
+  roomNumber: z.string().optional(),
+  description: z.string().min(10, "Description must be at least 10 chars"),
+  priority: z.enum(["low", "medium", "high", "emergency"]),
+  type: z.enum(["noise", "amenities", "billing issue", "room condition", "staff behavior", "security", "other"]),
 });
 
 export const MaintenanceRequestSchema = z.object({
-  "studentEmail*": emailSchema,
-  "hostelName*": z.string().min(1, "Hostel required"),
-  "roomNumber*": excelStringPipe(roomNumberSchema),
-  "description*": z.string().min(10, "Description must be at least 10 chars"),
-  "issueType*": z.enum(["plumbing", "electrical", "appliance", "structural", "pest control", "other", "furniture", "cleaning", "internet/Wi-Fi"]),
-  "priority*": z.enum(["low", "medium", "high", "emergency"]),
+  studentEmail: emailSchema,
+  hostelName: z.string().min(1, "Hostel required"),
+  roomNumber: excelStringPipe(roomNumberSchema),
+  description: z.string().min(10, "Description must be at least 10 chars"),
+  issueType: z.enum(["plumbing", "electrical", "appliance", "structural", "pest control", "other", "furniture", "cleaning", "internet/Wi-Fi"]),
+  priority: z.enum(["low", "medium", "high", "emergency"]),
 });
 
 export const AnnouncementSchema = z.object({
-  "title*": z.string().min(5, "Title must be at least 5 chars"),
-  "content*": z.string().min(10, "Content must be at least 10 chars"),
-  "priority*": z.enum(["low", "medium", "high", "emergency"]),
-  "targetAudience*": z.enum(["all", "students", "admins", "hostel", "room", "user"]),
-  "company*": z.string().min(1, "Company required"),
-  "hostelName": z.string().optional(),
-  "roomNumber": z.string().optional(),
-  "userEmail": z.union([emailSchema, z.literal("")]).optional(),
+  title: z.string().min(5, "Title must be at least 5 chars"),
+  content: z.string().min(10, "Content must be at least 10 chars"),
+  priority: z.enum(["low", "medium", "high", "emergency"]),
+  targetAudience: z.enum(["all", "students", "admins", "hostel", "room", "user"]),
+  company: z.string().min(1, "Company required").optional(),
+  hostelName: z.string().optional(),
+  roomNumber: z.string().optional(),
+  userEmail: z.union([emailSchema, z.literal("")]).optional(),
 });
 
-// Toggle to control whether '*' is kept or stripped from the column name in error messages
-// e.g. true: 'name*' -> 'name*', false: 'name*' -> 'name'
-const KEEP_ASTERISK = true;
-
-function mapColumnName(col: string) {
-  if (!KEEP_ASTERISK && col.endsWith("*")) {
-    return col.slice(0, -1);
-  }
-  return col;
-}
 
 export function validateSheetData<T>(schema: z.ZodType<T>, rows: any[], required: boolean = false) {
+
+
   if (required && (!rows || rows.length === 0)) {
     return {
       valid: [],
+      updated: [],
+      skipped: [],
       invalid: [{
         row: 0,
         data: {},
@@ -172,6 +166,7 @@ export function validateSheetData<T>(schema: z.ZodType<T>, rows: any[], required
   }
 
   const valid: T[] = [];
+  const skipped: any[] = [];
   const invalid: { row: number; data: any; errors: { column: string; message: string }[] }[] = [];
 
   rows.forEach((row, index) => {
@@ -186,7 +181,7 @@ export function validateSheetData<T>(schema: z.ZodType<T>, rows: any[], required
         errors: result.error.issues.map((e) => {
           const colName = e.path.join(".");
           return {
-            column: mapColumnName(colName),
+            column: colName,
             message: e.message,
           };
         }),
@@ -194,5 +189,10 @@ export function validateSheetData<T>(schema: z.ZodType<T>, rows: any[], required
     }
   });
 
-  return { valid, invalid };
+  return {
+    valid,
+    updated: [],
+    skipped,
+    invalid,
+  };
 }
