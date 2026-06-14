@@ -3,7 +3,7 @@ import type { AuditActor } from "evlog";
 import type { H3Event } from "h3";
 
 import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
-import { auditDiff, useLogger } from "evlog";
+import { auditDiff, createLogger, useLogger } from "evlog";
 
 import { auditLog } from "../schema";
 
@@ -50,7 +50,9 @@ export async function auditLogQueries(event?: H3Event) {
         ? computeAuditDiff(before, after)
         : null;
 
-    const log = useLogger(ctx.event as H3Event & ServerEvent);
+    const log = ctx.event
+      ? useLogger(ctx.event as H3Event & ServerEvent)
+      : createLogger({ service: "system", task: "auditLog" });
 
     await db.insert(auditLog).values({
       companyId: ctx.companyId,
