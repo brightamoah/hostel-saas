@@ -25,9 +25,35 @@ export default defineEventHandler(async (event) => {
 
   const csrfToken = event.context.csrfToken;
 
+  const userDetails = db.query.user.findFirst({
+    with: {
+      admin: true,
+      student: true,
+      companies: {
+        with: {
+          admins: {
+            with: {
+              user: true,
+            },
+          },
+          hostels: {
+            with: {
+              admins: {
+                with: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
   return {
     result,
     csrf: getCookie(event, "csrf"),
     csrfToken,
+    userDetails,
   };
 });

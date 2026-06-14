@@ -164,7 +164,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
 
     const sessionDurationMs = rememberMe
       ? 1000 * 60 * 60 * 24 * 7
-      : 1000 * 60 * 10; // 10 minutes
+      : 1000 * 60 * 15; // 15 minutes
 
     const expiresAt = new Date(now.getTime() + sessionDurationMs);
 

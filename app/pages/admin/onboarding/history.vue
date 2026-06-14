@@ -31,7 +31,6 @@ const {
   handleRefresh,
 } = useOnboardingUpload();
 
-// ── Slideover state ───────────────────────────────────────────────────────────
 const isSlideoverOpen = ref(false);
 const selectedId = ref<string | null>(null);
 
@@ -50,14 +49,12 @@ async function viewDetails(item: OnboardingHistoryItem) {
   await fetchUploadDetails(item.id);
 }
 
-// ── Row columns ───────────────────────────────────────────────────────────────
 const { columns } = useHistoryRowColumn(
   UButton,
   UBadge,
   viewDetails,
 );
 
-// ── Filters & pagination ──────────────────────────────────────────────────────
 const {
   statusFilter,
   dateFilter,
@@ -73,10 +70,9 @@ const {
 
 const pagination = ref({
   pageIndex: 0,
-  pageSize: 10,
+  pageSize: 5,
 });
 
-// ── Stats cards ───────────────────────────────────────────────────────────────
 const cards = computed<StatsCard[]>(() => [
   {
     id: "total",
@@ -108,7 +104,6 @@ const cards = computed<StatsCard[]>(() => [
   },
 ]);
 
-// ── Status helpers (for slideover) ────────────────────────────────────────────
 function statusMeta(status: OnboardingImportStatus) {
   const map: Record<OnboardingImportStatus, { icon: string; color: "success" | "warning" | "error"; label: string }> = {
     completed: { icon: "i-lucide-check-circle-2", color: "success", label: "Completed" },
@@ -130,7 +125,6 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// ── Refresh on import success ─────────────────────────────────────────────────
 watch(isImporting, async (newVal, oldVal) => {
   if (!newVal && oldVal && !errorMessage.value) {
     await handleRefresh({ force: true });
@@ -252,15 +246,15 @@ watch(isImporting, async (newVal, oldVal) => {
           :update-page
         />
 
-        <!-- ── Detail Slideover ──────────────────────────────────────────── -->
         <USlideover
           v-model:open="isSlideoverOpen"
           :title="selectedItem?.fileName || 'Upload Details'"
           :description="selectedItem ? `${formatDate(selectedItem.createdAt)} at ${formatTime(selectedItem.createdAt)}` : ''"
+          :ui="{ content: 'max-w-2xl' }"
         >
           <template
             v-if="selectedItem"
-            #header
+            #header="{ close }"
           >
             <div class="flex flex-col gap-3 w-full">
               <div class="flex items-center gap-3">
@@ -280,6 +274,14 @@ watch(isImporting, async (newVal, oldVal) => {
                     {{ formatDate(selectedItem.createdAt) }} · {{ formatTime(selectedItem.createdAt) }}
                   </p>
                 </div>
+
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-x"
+                  class="cursor-pointer shrink-0"
+                  @click="close"
+                />
               </div>
 
               <div class="flex flex-wrap items-center gap-2">
@@ -339,7 +341,8 @@ watch(isImporting, async (newVal, oldVal) => {
               v-else
               :result="uploadResult"
               :sheets
-              :is-importing="isImporting"
+              :is-importing
+              :onboarding-status="selectedItem?.status as OnboardingImportStatus"
               @import="importData"
             />
           </template>

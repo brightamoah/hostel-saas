@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from "@nuxt/ui";
+import type { CommandPaletteItem, NavigationMenuItem } from "@nuxt/ui";
 
 const {
   sidebar = true,
@@ -16,69 +16,66 @@ const { refreshSession } = useAuthStore();
 const { unreadAnnouncementCount } = useAnnouncementData();
 const { userProfile } = useUser();
 const { tenantContext } = useTenantContext();
+const { isPlatformAdminOrOwner } = usePortalUserSession();
 
-const links = computed(() => [[
-  {
-    label: "Dashboard",
-    icon: "i-lucide-house",
-    to: { name: "admin-dashboard" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Rooms",
-    icon: "i-lucide-building-2",
-    to: { name: "admin-rooms" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Users",
-    icon: "i-lucide-user",
-    to: { name: "admin-users" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Visitors",
-    icon: "i-lucide-users",
-    to: { name: "admin-visitors" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Maintenance",
-    icon: "i-heroicons-wrench-screwdriver",
-    to: { name: "admin-maintenance" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Complaints",
-    icon: "i-lucide-message-square-warning",
-    to: { name: "admin-complaints" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Billings",
-    icon: "i-lucide-credit-card",
-    to: { name: "admin-billings" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Announcements",
-    icon: "i-lucide-megaphone",
-    to: { name: "admin-announcements" },
-    badge: unreadAnnouncementCount.value,
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Analytics",
-    icon: "i-lucide-chart-no-axes-combined",
-    to: { name: "admin-analytics" },
-    onSelect: () => open.value = false,
-  },
-  {
-    label: "Onboarding",
-    icon: "i-lucide-cloud-upload",
-    to: { name: "admin-onboarding" },
-    onSelect: () => open.value = false,
-  },
+const links = computed(() => {
+  const items: NavigationMenuItem[] = [
+    {
+      label: "Dashboard",
+      icon: "i-lucide-house",
+      to: { name: "admin-dashboard" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Rooms",
+      icon: "i-lucide-building-2",
+      to: { name: "admin-rooms" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Users",
+      icon: "i-lucide-user",
+      to: { name: "admin-users" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Visitors",
+      icon: "i-lucide-users",
+      to: { name: "admin-visitors" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Maintenance",
+      icon: "i-heroicons-wrench-screwdriver",
+      to: { name: "admin-maintenance" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Complaints",
+      icon: "i-lucide-message-square-warning",
+      to: { name: "admin-complaints" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Billings",
+      icon: "i-lucide-credit-card",
+      to: { name: "admin-billings" },
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Announcements",
+      icon: "i-lucide-megaphone",
+      to: { name: "admin-announcements" },
+      badge: unreadAnnouncementCount.value,
+      onSelect: () => open.value = false,
+    },
+    {
+      label: "Analytics",
+      icon: "i-lucide-chart-no-axes-combined",
+      to: { name: "admin-analytics" },
+      onSelect: () => open.value = false,
+    },
+
   // {
   //   label: "Settings",
   //   to: "/settings",
@@ -112,28 +109,45 @@ const links = computed(() => [[
   //     },
   //   }],
   // },
-], [{
-  label: "Feedback",
-  icon: "i-lucide-message-circle",
-  to: "https://github.com/brightamoah/hostel-app.git",
-  target: "_blank",
-}, {
-  label: "Help & Support",
-  icon: "i-lucide-info",
-  to: "https://github.com/brightamoah/hostel-app.git",
-  target: "_blank",
-}]] satisfies NavigationMenuItem[][]);
+  ];
+  // [{
+  //   label: "Feedback",
+  //   icon: "i-lucide-message-circle",
+  //   to: "https://github.com/brightamoah/hostel-app.git",
+  //   target: "_blank",
+  // }, {
+  //   label: "Help & Support",
+  //   icon: "i-lucide-info",
+  //   to: "https://github.com/brightamoah/hostel-app.git",
+  //   target: "_blank",
+  // }]
+
+  if (isPlatformAdminOrOwner) {
+    items.push(
+      {
+        label: "Onboarding",
+        to: { name: "admin-onboarding" },
+        icon: "i-lucide-cloud-upload",
+        onSelect: () => open.value = false,
+      },
+    );
+  }
+
+  return items;
+});
 
 const pages = computed(() => [
   {
     label: "Company Settings",
     icon: "i-lucide-building",
     to: { name: "admin-settings-company" },
+    onSelect: () => open.value = false,
   },
   {
     label: "Hostel Settings",
     icon: "i-lucide-hotel",
     to: { name: "admin-settings-hostel" },
+    onSelect: () => open.value = false,
   },
   {
     label: "Profile",
@@ -203,7 +217,12 @@ const groups = computed(() => [
   {
     id: "links",
     label: "Go to",
-    items: groupItems.value,
+    items: groupItems.value.map((link): CommandPaletteItem => ({
+      label: link.label as string,
+      icon: link.icon,
+      to: link.to,
+      onSelect: link.onSelect,
+    })),
   },
   // {
   //   id: "code",
@@ -320,7 +339,7 @@ onMounted(async () => {
 
         <UNavigationMenu
           :collapsed="collapsed && !open"
-          :items="links[0]"
+          :items="links"
           orientation="vertical"
           tooltip
           popover
@@ -331,13 +350,13 @@ onMounted(async () => {
           }"
         />
 
-        <UNavigationMenu
+        <!-- <UNavigationMenu
           :collapsed="collapsed && !open"
           :items="links[1]"
           orientation="vertical"
           tooltip
           class="mt-auto"
-        />
+        /> -->
       </template>
 
       <template #footer="{ collapsed }">

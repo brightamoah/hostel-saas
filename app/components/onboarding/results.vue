@@ -5,6 +5,7 @@ const props = defineProps<{
   result: UploadResult;
   sheets: string[];
   isImporting?: boolean;
+  onboardingStatus?: OnboardingImportStatus;
 }>();
 
 const emit = defineEmits<{ import: [] }>();
@@ -70,24 +71,25 @@ const activeTab = ref("errors");
 
       <template #valid>
         <OnboardingValidSummary
-          :result="result"
-          :sheets="sheets"
-          :is-importing="isImporting"
+          :result
+          :sheets
+          :is-importing
+          :onboarding-status
           @import="emit('import')"
         />
       </template>
 
       <template #updated>
         <OnboardingUpdatedSummary
-          :result="result"
-          :sheets="sheets"
+          :result
+          :sheets
         />
       </template>
 
       <template #skipped>
         <OnboardingSkippedSummary
-          :result="result"
-          :sheets="sheets"
+          :result
+          :sheets
         />
       </template>
     </UTabs>

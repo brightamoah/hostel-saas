@@ -180,7 +180,7 @@ export async function billingQueries(event?: H3Event) {
         paidLastMonth: sql<number>`coalesce(sum(CASE WHEN ${payment.paymentDate} < ${startOfThisMonth} THEN ${payment.amount} ELSE 0 END), 0)`,
       })
       .from(payment)
-      .where(and(...paymentConditions, gt(payment.paymentDate, startOfLastMonth)));
+      .where(and(...paymentConditions, gt(payment.paymentDate, new Date(startOfLastMonth))));
 
     return {
       totalBillings: {
@@ -264,7 +264,7 @@ export async function billingQueries(event?: H3Event) {
       .where(and(
         eq(payment.studentId, studentId),
         eq(payment.status, "completed"),
-        gt(payment.paymentDate, startOfLastWeek),
+        gt(payment.paymentDate, new Date(startOfLastWeek)),
       ));
 
     return {

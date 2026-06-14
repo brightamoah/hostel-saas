@@ -13,7 +13,7 @@
     "lint:fix": "eslint --fix",
     "db:g": "drizzle-kit generate",
     "db:m": "drizzle-kit migrate",
-    "tc": "nuxi prepare && vue-tsc --noEmit"
+    "tc": "nuxt typecheck"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

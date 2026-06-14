@@ -1,8 +1,9 @@
 <script setup lang="ts">
-const { result, sheets, isImporting } = defineProps<{
+const { result, sheets, isImporting, onboardingStatus } = defineProps<{
   result: UploadResult;
   sheets: string[];
   isImporting?: boolean;
+  onboardingStatus?: OnboardingImportStatus;
 }>();
 
 const emit = defineEmits<{ import: [] }>();
@@ -89,7 +90,7 @@ function handleImport() {
     </div>
 
     <div
-      v-if="sheetsWithValid.length > 0"
+      v-if="sheetsWithValid.length > 0 && onboardingStatus !== 'completed'"
       class="flex sm:flex-row flex-col sm:justify-between items-start sm:items-center gap-4 bg-elevated/30 px-5 py-4 border border-default rounded-xl"
     >
       <div>

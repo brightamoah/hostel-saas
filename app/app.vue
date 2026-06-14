@@ -24,14 +24,14 @@ useHead({
 });
 
 const { loggedIn } = usePortalUserSession();
-const { idle } = useIdle(10 * 60 * 1000);
+const { idle } = useIdle(15 * 60 * 1000);
 
 watch(idle, async (isIdle) => {
   if (isIdle && loggedIn.value) {
     const toast = useToast();
     toast.add({
       title: "Session Expired",
-      description: "You have been logged out due to 10 minutes of inactivity.",
+      description: "You have been logged out due to 15 minutes of inactivity.",
       color: "warning",
       duration: 8000,
     });
