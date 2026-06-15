@@ -1,4 +1,5 @@
-import { userQueries } from "~~/server/db/queries/user";
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { user } from "~~/server/db/schema";
 import { handleError } from "~~/server/utils/errorHandler";
 import { eq } from "drizzle-orm";
@@ -6,7 +7,6 @@ import { eq } from "drizzle-orm";
 export default defineEventHandler(async (event) => {
   try {
     const { db } = useDB(event);
-    const { getUserById } = await userQueries(event);
 
     const body = await readValidatedBody(event, body => passwordResetSchema.safeParse(body));
 
@@ -19,16 +19,25 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { token, newPassword, id } = body.data;
+    const { token, newPassword } = body.data;
 
-    if (!token || !newPassword || !id) {
+    if (!token || !newPassword) {
       throw createError({
         statusCode: 400,
-        message: "ID, token and new password required",
+        message: "Token and new password required",
       });
     }
 
-    const existingUser = await getUserById(id);
+    const hashedToken = bytesToHex(sha256(utf8ToBytes(token.trim())));
+
+    const existingUser = await db
+      .query
+      .user
+      .findFirst({
+        where: {
+          resetToken: hashedToken,
+        },
+      });
 
     if (
       !existingUser
@@ -37,7 +46,7 @@ export default defineEventHandler(async (event) => {
     ) {
       throw createError({
         statusCode: 400,
-        message: "Invalid password reset token",
+        message: "Invalid or expired password reset token",
       });
     }
 
@@ -51,15 +60,6 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 410,
         message: "Password reset token has expired. Please request a new one.",
-      });
-    }
-
-    const isTokenValid = await verifyHashedValue(existingUser.resetToken!, token);
-
-    if (!isTokenValid) {
-      throw createError({
-        statusCode: 400,
-        message: "Invalid or expired token reset token",
       });
     }
 

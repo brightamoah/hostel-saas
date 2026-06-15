@@ -1,3 +1,5 @@
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { useDB } from "~~/server/utils/db";
@@ -59,7 +61,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const verificationToken = randomUUID();
-    const hashedVerificationToken = await hash(verificationToken);
+    const hashedVerificationToken = bytesToHex(sha256(utf8ToBytes(verificationToken)));
     const tokenExpiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
     // Update user with new token

@@ -1,3 +1,5 @@
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { companyQueries } from "~~/server/db/queries/company";
 import { randomUUID } from "uncrypto";
 
@@ -47,7 +49,8 @@ export default defineEventHandler(async (event) => {
     const hashedConfirmPassword = await hash(confirmPassword);
 
     const verificationToken = randomUUID();
-    const hashedVerificationToken = await hash(verificationToken);
+
+    const hashedVerificationToken = bytesToHex(sha256(utf8ToBytes(verificationToken)));
 
     const verificationTokenExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
 

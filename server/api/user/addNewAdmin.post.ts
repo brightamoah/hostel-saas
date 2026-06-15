@@ -1,3 +1,5 @@
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { roomQueries } from "~~/server/db/queries";
 import { userQueries } from "~~/server/db/queries/user";
 import { admin, companyMember, user } from "~~/server/db/schema";
@@ -96,7 +98,7 @@ export default defineEventHandler(async (event) => {
   const generatedPassword = generateTempPassword();
   const passwordHash = await hash(generatedPassword);
   const verificationToken = randomUUID();
-  const hashedVerificationToken = await hash(verificationToken);
+  const hashedVerificationToken = bytesToHex(sha256(utf8ToBytes(verificationToken)));
 
   if (!assignedHostelId) {
     throw createError({

@@ -77,6 +77,9 @@ const view = computed<"upload" | "results">(() =>
               color="primary"
               size="lg"
               class="w-full md:w-auto cursor-pointer"
+              to="/api/onboarding/template"
+              target="_blank"
+              external
             />
           </div>
 

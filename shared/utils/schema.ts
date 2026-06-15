@@ -354,7 +354,6 @@ const resetPasswordSchema = z.object({
 export type ResetPasswordSchema = z.output<typeof resetPasswordSchema>;
 
 const passwordResetSchema = z.object({
-  id: idSchema,
   token: z.string({ error: "Token is required" }),
   newPassword: passwordSchema,
 });

@@ -61,7 +61,8 @@ export function handleError(
   let log;
   try {
     log = event ? useLogger(runtimeEvent as unknown as ServerEvent) : createLogger();
-  } catch (e) {
+  }
+  catch {
     log = createLogger();
   }
 
@@ -144,6 +145,12 @@ export function handleError(
     "internal server error",
     "null value in column",
     "permission denied",
+    "getaddrinfo enotfound",
+    "enotfound",
+    "neon.tech",
+    "econnrefused",
+    "pooler",
+    "etimedout",
   ];
 
   if (serverPatterns.some(p => lower.includes(p))) {

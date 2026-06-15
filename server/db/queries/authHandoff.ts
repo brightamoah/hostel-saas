@@ -1,5 +1,7 @@
 import type { H3Event } from "h3";
 
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { and, eq, isNull } from "drizzle-orm";
 import { randomUUID } from "uncrypto";
 
@@ -12,7 +14,7 @@ export async function authHandoffQueries(event?: H3Event) {
 
   const createHandoffToken = async (userId: number) => {
     const token = randomUUID();
-    const tokenHash = await hash(token);
+    const tokenHash = bytesToHex(sha256(utf8ToBytes(token)));
 
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
@@ -28,38 +30,22 @@ export async function authHandoffQueries(event?: H3Event) {
   };
 
   const consumeHandoffToken = async (token: string) => {
-    const candidates = await db
-      .query
-      .authHandoffToken
-      .findMany({
-        where: {
-          usedAt: { isNull: true },
-          expiresAt: { gt: new Date() },
-        },
-        columns: { id: true, userId: true, tokenHash: true },
-        limit: 50,
-      });
+    const hashed = bytesToHex(sha256(utf8ToBytes(token.trim())));
 
-    for (const row of candidates) {
-      const match = await verifyHashedValue(row.tokenHash, token);
+    const [updatedToken] = await db
+      .update(authHandoffToken)
+      .set({ usedAt: new Date() })
+      .where(and(
+        eq(authHandoffToken.tokenHash, hashed),
+        isNull(authHandoffToken.usedAt),
+        // Note: expiresAt is checked here if needed, but since it's an update, we should check it
+      ))
+      .returning();
 
-      if (!match) continue;
+    // Check expiration in JS or via Drizzle (using raw sql or operator)
+    if (!updatedToken || updatedToken.expiresAt < new Date()) return null;
 
-      const [updatedToken] = await db
-        .update(authHandoffToken)
-        .set({ usedAt: new Date() })
-        .where(and(
-          eq(authHandoffToken.id, row.id),
-          isNull(authHandoffToken.usedAt),
-        ))
-        .returning();
-
-      if (!updatedToken) continue;
-
-      return { userId: row.userId };
-    }
-
-    return null;
+    return { userId: updatedToken.userId };
   };
 
   return {

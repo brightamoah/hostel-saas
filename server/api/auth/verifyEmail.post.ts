@@ -1,3 +1,5 @@
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { useDB } from "~~/server/utils/db";
@@ -59,10 +61,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const isTokenValid = await verifyHashedValue(
-      userToVerify.verificationToken!,
-      token,
-    );
+    const isTokenValid = userToVerify.verificationToken === bytesToHex(sha256(utf8ToBytes(token.trim())));
 
     if (!isTokenValid) {
       throw createError({

@@ -1,3 +1,5 @@
+import { sha256 } from "@noble/hashes/sha2.js";
+import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { handleError } from "~~/server/utils/errorHandler";
@@ -31,7 +33,7 @@ export default defineEventHandler(async (event) => {
     if (!existingUser || !existingUser.emailVerified) return { success: true, message: "If an account exists, a reset email has been sent." };
 
     const resetToken = randomUUID();
-    const hashedToken = await hash(resetToken);
+    const hashedToken = bytesToHex(sha256(utf8ToBytes(resetToken)));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     await db.update(user)
@@ -41,7 +43,7 @@ export default defineEventHandler(async (event) => {
       })
       .where(eq(user.id, existingUser.id));
 
-    const resetUrl = `${event.headers.get("origin")}/auth/resetPassword?token=${resetToken}&id=${existingUser.id}`;
+    const resetUrl = `${event.headers.get("origin")}/auth/resetPassword?token=${resetToken}`;
 
     const appName = "KayaNest";
     const { html, text } = getResetPasswordTemplate(resetUrl, existingUser.name, appName);
