@@ -2,7 +2,9 @@ import type { UserSession, UserSessionComposable } from "#auth-utils";
 
 export function usePortalUserSession(): UserSessionComposable & { isPlatformAdminOrOwner: ComputedRef<boolean>; isPlatformAdmin: ComputedRef<boolean> } {
   const serverEvent = import.meta.server ? useRequestEvent() : null;
+
   const sessionState = useState<UserSession | null>("app-session", () => null);
+
   const authReadyState = useState("app-auth-ready", () => false);
 
   const clear = async () => {

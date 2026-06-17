@@ -50,6 +50,7 @@ export const RoomSchema = z.object({
   allowedGender: z.enum(["male", "female", "mixed", "unassigned"]),
   amountPerYear: excelNumber.pipe(z.number().min(1, "Amount per Year cannot be negative")),
   status: z.enum(["vacant", "fully occupied", "partially occupied", "under maintenance", "reserved"]).default("vacant"),
+  capacity: excelNumber.pipe(z.number().min(1, "Capacity must be positive")).optional(),
   features: z.string().optional(),
 });
 

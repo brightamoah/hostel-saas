@@ -621,6 +621,12 @@ export async function companyQueries(event?: H3Event) {
     return { cSettings, hSettings };
   };
 
+  const getCompanyById = async (id: number) => {
+    return await db.query.company.findFirst({
+      where: { id },
+    });
+  };
+
   return {
     registerCompanyOwner,
     getUserMembershipByUserId,
@@ -635,6 +641,7 @@ export async function companyQueries(event?: H3Event) {
     createSubaccount,
     getAllCompaniesWithRelations,
     getPublicTenantContext,
+    getCompanyById,
   };
 }
 

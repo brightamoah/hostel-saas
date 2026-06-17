@@ -1,7 +1,9 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { loggedIn, user, fetch: fetchUserSession } = usePortalUserSession();
+  const { loggedIn, user, ready, fetch: fetchUserSession } = usePortalUserSession();
 
-  await fetchUserSession();
+  if (!ready.value) {
+    await fetchUserSession();
+  }
 
   if (!loggedIn.value || !user.value) {
     const toast = useToast();
