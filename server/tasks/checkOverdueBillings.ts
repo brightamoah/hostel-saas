@@ -9,8 +9,8 @@ export default defineTask({
     name: "checkOverdueBillings",
     description: "Mark unpaid and partially paid bills as overdue if past their due date",
   },
-  async run() {
-    const { db } = useDB();
+  async run({ context }) {
+    const { db } = useDB(context);
 
     const log = createLogger({
       task: "checkOverdueBillings",

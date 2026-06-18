@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   const csrfToken = event.context.csrfToken;
 
-  const userDetails = db.query.user.findFirst({
+  const userDetails = await db.query.user.findFirst({
     with: {
       admin: true,
       student: true,

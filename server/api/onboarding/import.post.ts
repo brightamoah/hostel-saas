@@ -14,9 +14,16 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const query = getQuery(event);
+  const rawCompanyId = scope.companyId ?? (query.companyId ? Number(query.companyId) : null);
+  
+  if (scope.isPlatformAdmin && !rawCompanyId) {
+    throw createError({ statusCode: 400, message: "companyId query parameter is required for platform admins" });
+  }
+
   const kv = useStorage("kv");
   const detailsKey = `onboarding:details:${uploadId}`;
-  const historyKey = `onboarding:history:${scope.companyId}`;
+  const historyKey = `onboarding:history:${rawCompanyId}`;
 
   const existingHistory = await kv.getItem<any[]>(historyKey) || [];
   const ownsUpload = existingHistory.some(h => h.id === uploadId);

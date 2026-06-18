@@ -9,8 +9,8 @@ export default defineTask({
     name: "applyOverdueLateFee",
     description: "Apply late fees to overdue billings based on company settings (frequency, grace period)",
   },
-  async run() {
-    const { db } = useDB();
+  async run({ context }) {
+    const { db } = useDB(context);
 
     const log = createLogger({
       task: "applyOverdueLateFee",

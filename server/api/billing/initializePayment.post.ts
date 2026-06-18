@@ -84,8 +84,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // reference format: KH-{billingId}-{timestamp}-{studentId}-{random}
-    const reference = `KH-${billing.id}-${Date.now()}-${billing.studentId}-${randomUUID().split("-")[0]}`;
+    // reference format: KH-{billingId}-{randomHash}
+    const reference = `KH-${billing.id}-${randomUUID().split("-")[0]}`;
 
     // console.log("[BILLING INITIALIZED]", reference);
 

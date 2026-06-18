@@ -8,14 +8,14 @@ export default defineTask({
     name: "cancelUnpaidAllocations",
     description: "Cancel pending allocations without 60% payment after 3 days",
   },
-  async run() {
+  async run({ context }) {
     const log = createLogger({
       task: "cancelUnpaidAllocations",
       service: "scheduler",
     });
 
     try {
-      const { db } = useDB();
+      const { db } = useDB(context);
 
       const thresholdDate = new Date();
 

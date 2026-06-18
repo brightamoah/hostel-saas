@@ -1,13 +1,34 @@
 export function useOnboardingUpload() {
   const { $apiFetch } = useNuxtApp();
+  const { isPlatformAdmin } = usePortalUserSession();
 
   const isUploading = ref(false);
   const isImporting = ref(false);
   const uploadResult = ref<UploadResult | null>(null);
   const errorMessage = ref("");
 
+  const route = useRoute();
+  const router = useRouter();
+
+  const selectedCompanyId = computed({
+    get: () => route.query.companyId ? Number(route.query.companyId) : undefined,
+    set: async (val) => {
+      await router.replace({
+        query: {
+          ...route.query,
+          companyId: val || undefined,
+        },
+      });
+    },
+  });
+
+  const queryParams = computed(() => {
+    return selectedCompanyId.value ? { companyId: selectedCompanyId.value } : {};
+  });
+
   const { data: historyData, status: historyStatus, error: historyError, refresh: refreshHistory } = useFetch<OnboardingHistoryResponseData>("/api/onboarding/history", {
     lazy: true,
+    query: queryParams,
     default: () => ({ success: false, history: [] }),
     getCachedData: (key, nuxtApp, ctx) => {
       if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
@@ -45,14 +66,17 @@ export function useOnboardingUpload() {
 
   async function fetchUploadDetails(id: string) {
     try {
-      const res = await $apiFetch<{ details: Record<string, any> }>(`/api/onboarding/history/${id}`);
+      const res = await $apiFetch<{ details: Record<string, SheetValidation> }>(`/api/onboarding/history/${id}`, {
+        query: queryParams.value,
+      });
       uploadResult.value = {
         uploadId: id,
         validation: res.details,
       };
     }
-    catch (err: any) {
-      errorMessage.value = err.data?.message || err.message || "Failed to fetch upload details";
+    catch (err: unknown) {
+      const error = err as { data?: { message?: string }; message?: string };
+      errorMessage.value = error.data?.message || error.message || "Failed to fetch upload details";
     }
   }
 
@@ -77,14 +101,16 @@ export function useOnboardingUpload() {
         "/api/onboarding/preview",
         {
           method: "POST",
+          query: queryParams.value,
           body: formData,
         },
       );
     }
-    catch (err: any) {
+    catch (err: unknown) {
+      const error = err as { data?: { message?: string }; message?: string };
       errorMessage.value
-        = err.data?.message
-          || err.message
+        = error.data?.message
+          || error.message
           || "Upload failed";
     }
     finally {
@@ -106,6 +132,7 @@ export function useOnboardingUpload() {
     try {
       await $apiFetch("/api/onboarding/import", {
         method: "POST",
+        query: queryParams.value,
         body: { uploadId: uploadResult.value.uploadId },
       });
 
@@ -118,10 +145,11 @@ export function useOnboardingUpload() {
 
       resetUpload();
     }
-    catch (err: any) {
+    catch (err: unknown) {
+      const error = err as { data?: { message?: string }; message?: string };
       errorMessage.value
-        = err.data?.message
-          || err.message
+        = error.data?.message
+          || error.message
           || "Import failed";
 
       const toast = useToast();
@@ -135,6 +163,24 @@ export function useOnboardingUpload() {
       isImporting.value = false;
     }
   }
+
+  const { data: companiesData } = useFetch<Companies>("/api/admin/company", {
+    key: "companiesList",
+    lazy: true,
+    immediate: isPlatformAdmin.value,
+    getCachedData: (key, nuxtApp, ctx) => {
+      if (ctx.cause === "refresh:manual" || ctx.cause === "refresh:hook") return undefined;
+      return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key];
+    },
+  });
+
+  const companiesOptions = computed(() => {
+    const list = companiesData.value ?? [];
+    return list.map(company => ({
+      label: company.name,
+      value: company.id,
+    }));
+  });
 
   return {
     processFile,
@@ -157,5 +203,7 @@ export function useOnboardingUpload() {
     refreshIsLoading,
     canResend,
     handleRefresh,
+    companiesOptions,
+    selectedCompanyId,
   };
 }

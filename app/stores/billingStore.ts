@@ -184,6 +184,8 @@ export const useBillingStore = defineStore("billingStore", () => {
 
     isLoading.value = true;
 
+    let isSuccess = false;
+
     try {
       const response = await $apiFetch("/api/billing/initializePayment", {
         method: "POST",
@@ -200,6 +202,7 @@ export const useBillingStore = defineStore("billingStore", () => {
         throw new Error(response.message || "Failed to initialize payment");
       }
 
+      isSuccess = true;
       window.location.href = response?.data?.authorizationUrl || "";
     }
     catch (error) {
@@ -213,7 +216,7 @@ export const useBillingStore = defineStore("billingStore", () => {
       });
     }
     finally {
-      isLoading.value = false;
+      if (!isSuccess) isLoading.value = false;
     }
   }
 

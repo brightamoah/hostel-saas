@@ -4,6 +4,10 @@ definePageMeta({
   middleware: ["requires-auth", "platform-or-owner"],
 });
 
+const { isPlatformAdmin } = usePortalUserSession();
+
+const route = useRoute();
+
 const {
   isUploading,
   isImporting,
@@ -12,6 +16,8 @@ const {
   processFile,
   importData,
   resetUpload,
+  companiesOptions,
+  selectedCompanyId,
 } = useOnboardingUpload();
 
 const title = "Onboarding";
@@ -55,14 +61,35 @@ const view = computed<"upload" | "results">(() =>
   <div class="flex flex-1">
     <UDashboardPanel id="onboarding">
       <template #header>
-        <DashboardNav :title />
+        <DashboardNav :title>
+          <div
+            v-if="isPlatformAdmin"
+            class="flex items-center gap-2"
+          >
+            <div class="hidden sm:block font-medium text-muted text-sm">
+              Platform Admin Context
+            </div>
+
+            <USelectMenu
+              v-model="selectedCompanyId"
+              :items="companiesOptions"
+              value-key="value"
+              size="md"
+              placeholder="Select Target Company"
+              class="w-30 md:w-60 cursor-pointer"
+              :ui="{
+                item: 'cursor-pointer',
+              }"
+            />
+          </div>
+        </DashboardNav>
       </template>
 
       <template #body>
         <UContainer class="max-w-6xl">
           <div class="flex md:flex-row flex-col justify-between items-center gap-3 mb-6">
             <UButton
-              :to="{ name: 'admin-onboarding-history' }"
+              :to="{ name: 'admin-onboarding-history', query: route.query }"
               color="neutral"
               variant="subtle"
               label="View Import History"
@@ -77,7 +104,7 @@ const view = computed<"upload" | "results">(() =>
               color="primary"
               size="lg"
               class="w-full md:w-auto cursor-pointer"
-              to="/api/onboarding/template"
+              :to="`/api/onboarding/template${selectedCompanyId ? `?companyId=${selectedCompanyId}` : ''}`"
               target="_blank"
               external
             />

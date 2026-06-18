@@ -1,9 +1,25 @@
 /// <reference types="@cloudflare/workers-types" />
 
-interface CloudflareEnv {
-  KV: KVNamespace;
-  BUCKET: R2Bucket;
-  HYPERDRIVE: Hyperdrive;
+declare global {
+  interface CloudflareEnv {
+    STORAGE: KVNamespace;
+    BUCKET: R2Bucket;
+    HYPERDRIVE: Hyperdrive;
+  }
+
+  interface CloudflareContext {
+    cloudflare?: {
+      env: CloudflareEnv;
+    };
+  }
+
+  interface GlobalEnv {
+    __env__?: {
+      HYPERDRIVE?: {
+        connectionString: string;
+      };
+    };
+  }
 }
 
 declare module "h3" {
@@ -16,6 +32,10 @@ declare module "h3" {
       };
     };
   }
+}
+
+declare module "nitropack" {
+  interface TaskContext extends CloudflareContext {}
 }
 
 export {};

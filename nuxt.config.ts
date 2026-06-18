@@ -104,13 +104,16 @@ export default defineNuxtConfig({
         "prosemirror-transform",
         "prosemirror-model",
         "prosemirror-view",
-        "@tiptap/pm"
-      ]
-    }
+        "@tiptap/pm",
+      ],
+    },
+    // server:{
+    //   allowedHosts: true
+    // }
   },
-  
+
   build: {
-    transpile: ['nuxt-tiptap-editor', '@tiptap/pm', '@tiptap/core', '@tiptap/vue-3']
+    transpile: ["nuxt-tiptap-editor", "@tiptap/pm", "@tiptap/core", "@tiptap/vue-3"],
   },
 
   app: {
@@ -251,6 +254,12 @@ export default defineNuxtConfig({
   },
 
   routeRules: {
+    "/api/paystack/webhook": {
+      security: {
+        csrf: false,
+        rateLimiter: false,
+      },
+    },
     "/_nitro/tasks/**": {
       security: {
         csrf: false,

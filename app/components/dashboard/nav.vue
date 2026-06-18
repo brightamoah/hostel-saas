@@ -42,6 +42,8 @@ const unreadCount = computed(() => {
     </template>
 
     <template #right>
+      <slot />
+
       <AppThemeToggle />
 
       <UTooltip

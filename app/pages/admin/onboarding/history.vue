@@ -29,6 +29,8 @@ const {
   canResend,
   coolDownTime,
   handleRefresh,
+  companiesOptions,
+  selectedCompanyId,
 } = useOnboardingUpload();
 
 const isSlideoverOpen = ref(false);
@@ -68,6 +70,9 @@ const {
   updatePage,
 } = useOnboardingHistoryFilters(tableRef, historyData);
 
+const { isPlatformAdmin } = usePortalUserSession();
+
+const route = useRoute();
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5,
@@ -136,7 +141,28 @@ watch(isImporting, async (newVal, oldVal) => {
   <div class="flex flex-1">
     <UDashboardPanel id="onboarding-history">
       <template #header>
-        <DashboardNav :title />
+        <DashboardNav :title>
+          <div
+            v-if="isPlatformAdmin"
+            class="flex items-center gap-2"
+          >
+            <div class="hidden sm:block font-medium text-muted text-sm">
+              Platform Admin Context
+            </div>
+
+            <USelectMenu
+              v-model="selectedCompanyId"
+              :items="companiesOptions"
+              value-key="value"
+              size="md"
+              placeholder="Select Target Company"
+              class="w-44 md:w-60 cursor-pointer"
+              :ui="{
+                item: 'cursor-pointer',
+              }"
+            />
+          </div>
+        </DashboardNav>
       </template>
 
       <template #body>
@@ -185,7 +211,7 @@ watch(isImporting, async (newVal, oldVal) => {
               />
 
               <UButton
-                :to="{ name: 'admin-onboarding' }"
+                :to="{ name: 'admin-onboarding', query: route.query }"
                 label="Upload New File"
                 icon="i-lucide-cloud-upload"
                 color="primary"

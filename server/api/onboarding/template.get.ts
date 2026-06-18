@@ -5,8 +5,15 @@ export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
   requireCompanyRole(scope, ["owner", "admin"]);
 
+  const query = getQuery(event);
+  const rawCompanyId = scope.companyId ?? (query.companyId ? Number(query.companyId) : null);
+  
+  if (scope.isPlatformAdmin && !rawCompanyId) {
+    throw createError({ statusCode: 400, message: "companyId query parameter is required for platform admins" });
+  }
+
   const { getCompanyById } = await companyQueries(event);
-  const currentCompany = await getCompanyById(scope.companyId!);
+  const currentCompany = await getCompanyById(rawCompanyId!);
 
   const templateData = await useStorage("assets:server").getItemRaw("templates:HMS_Onboarding_Template.xlsx");
 

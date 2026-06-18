@@ -14,7 +14,7 @@ const { $apiFetch } = useNuxtApp();
 const { user } = usePortalUserSession();
 
 const isVerifying = ref(true);
-const verificationStatus = ref<"success" | "error" | "processing">("processing");
+const verificationStatus = ref<"success" | "error" | "processing" | "pending">("processing");
 const message = ref("");
 
 const billingKey = computed(() => user.value?.role === "admin"
@@ -118,6 +118,7 @@ onMounted(async () => {
       message: string;
       success: boolean;
       alreadyProcessed: boolean;
+      isPending?: boolean;
       data: {
         amount: number;
         status: Billing["status"];
@@ -130,6 +131,11 @@ onMounted(async () => {
     });
 
     if (!response.success && !response.data) {
+      if (response.isPending) {
+        verificationStatus.value = "pending";
+        message.value = response.message;
+        return;
+      }
       throw new Error(response.message);
     }
 
@@ -284,6 +290,27 @@ async function goToBilling() {
         <div class="text-center">
           <h3 class="mb-2 font-semibold text-error text-xl">
             Verification Failed
+          </h3>
+
+          <p class="text-default">
+            {{ message }}
+          </p>
+        </div>
+      </div>
+
+      <div
+        v-if="verificationStatus === 'pending'"
+        class="flex flex-col items-center gap-4"
+      >
+        <UIcon
+          name="i-lucide-clock"
+          size="48"
+          class="mx-auto text-warning"
+        />
+
+        <div class="text-center">
+          <h3 class="mb-2 font-semibold text-warning text-xl">
+            Payment Processing
           </h3>
 
           <p class="text-default">

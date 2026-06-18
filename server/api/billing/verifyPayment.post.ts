@@ -103,16 +103,35 @@ export default defineEventHandler(async (event) => {
           userId: user.id,
           event,
         });
-    if (!verifyResponse.status || verifyResponse.data?.status !== "success") {
-      await markPaymentAsFailed(reference, auditContext);
-
+    if (!verifyResponse.status) {
       throw createError({
         statusCode: 400,
-        message: `Payment failed: ${verifyResponse.data?.gateway_response || "Transaction was not successful"}`,
+        message: "Failed to verify payment with Paystack.",
       });
     }
 
     const transaction = verifyResponse.data;
+
+    const pendingStatuses = ["ongoing", "pending", "processing", "queued"];
+
+    if (transaction?.status && pendingStatuses.includes(transaction.status)) {
+      return {
+        success: false,
+        isPending: true,
+        message: "Your payment is currently processing. It may take a few moments to complete. Please check back later.",
+        alreadyProcessed: false,
+        data: null,
+      };
+    }
+
+    if (transaction?.status !== "success") {
+      await markPaymentAsFailed(reference, auditContext);
+
+      throw createError({
+        statusCode: 400,
+        message: `Payment failed: ${transaction?.gateway_response || "Transaction was not successful"}`,
+      });
+    }
 
     const verifiedAmount = Number(transaction.amount) / 100;
     const prevPaid = Number(currentBilling.paidAmount || 0);

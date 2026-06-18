@@ -8,17 +8,26 @@ export default defineEventHandler(async (event) => {
   const secretKey = runtimeConfig.paystackSecretKey;
 
   if (!secretKey) {
-    throw createError({ statusCode: 500, message: "Paystack secret key is missing" });
+    throw createError({
+      statusCode: 500,
+      message: "Paystack secret key is missing",
+    });
   }
 
   const signature = getHeader(event, "x-paystack-signature");
   if (!signature) {
-    throw createError({ statusCode: 400, message: "Missing Paystack signature" });
+    throw createError({
+      statusCode: 400,
+      message: "Missing Paystack signature",
+    });
   }
 
-  const rawBody = await readRawBody(event);
+  const rawBody = await readRawBody(event, "utf8");
   if (!rawBody) {
-    throw createError({ statusCode: 400, message: "Missing request body" });
+    throw createError({
+      statusCode: 400,
+      message: "Missing request body",
+    });
   }
 
   // HMAC SHA-512 verification

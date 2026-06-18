@@ -6,7 +6,7 @@ export default defineTask({
     description: "Runs scheduled tasks at specified intervals",
   },
 
-  async run() {
+  async run({ context }) {
     const log = createLogger();
     log.set({
       task: "schedular",
@@ -14,9 +14,9 @@ export default defineTask({
     });
 
     try {
-      await runTask("clearExpiredCache");
-      await runTask("checkOverdueBillings");
-      await runTask("cancelUnpaidAllocations");
+      await runTask("clearExpiredCache", { context });
+      await runTask("checkOverdueBillings", { context });
+      await runTask("cancelUnpaidAllocations", { context });
 
       // Weekly task
       const now = new Date();
@@ -24,7 +24,7 @@ export default defineTask({
       const is1am = now.getUTCHours() === 1;
 
       if (isSunday && is1am) {
-        await runTask("applyOverdueLateFee");
+        await runTask("applyOverdueLateFee", { context });
       }
 
       log.set({ taskStatus: "completed" });

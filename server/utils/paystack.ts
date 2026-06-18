@@ -77,14 +77,17 @@ async function withPaystackErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   }
-  catch (paystackError: any) {
-    if (paystackError?.response?.data) {
-      console.error("[Paystack API Error]", paystackError.response.data);
-      throw createError({
-        statusCode: paystackError.response.status || 400,
-        message: paystackError.response.data.message || "Paystack API request failed",
-        data: paystackError.response.data,
-      });
+  catch (paystackError: unknown) {
+    if (typeof paystackError === "object" && paystackError !== null && "response" in paystackError) {
+      const err = paystackError as { response?: { data?: { message?: string }, status?: number } };
+      if (err.response?.data) {
+        console.error("[Paystack API Error]", err.response.data);
+        throw createError({
+          statusCode: err.response.status || 400,
+          message: err.response.data.message || "Paystack API request failed",
+          data: err.response.data,
+        });
+      }
     }
     throw paystackError;
   }
@@ -131,7 +134,7 @@ export async function initializePaystackTransaction(
 ) {
   const paystack = getPaystackClient();
 
-  const payload: Parameters<typeof paystack.transaction.initialize>[0] = {
+  const payload: Parameters<typeof paystack.transaction.initialize>[0] & { split_code?: string; transaction_charge?: number } = {
     email: params.email,
     amount: Math.ceil(params.amount * 100).toString(),
     reference: params.reference,
@@ -149,8 +152,13 @@ export async function initializePaystackTransaction(
   };
 
   if (params.subaccountCode) {
-    payload.subaccount = params.subaccountCode;
-    payload.bearer = params.bearer ?? "subaccount";
+    if (params.subaccountCode.startsWith("SPL_")) {
+      payload.split_code = params.subaccountCode;
+    } else {
+      payload.subaccount = params.subaccountCode;
+      payload.bearer = params.bearer ?? "subaccount";
+      payload.transaction_charge = 0; // Forces flat fee override
+    }
   }
 
   return withPaystackErrorHandling(() => paystack.transaction.initialize(payload));
@@ -331,11 +339,11 @@ export async function updatePaystackSubaccount(
 ) {
   const paystack = getPaystackClient();
 
-  const payload: Partial<NonNullable<Parameters<typeof paystack.subAccount.update>[1]>> = {};
+  const payload: Partial<NonNullable<Parameters<typeof paystack.subAccount.update>[1]>> & { active?: boolean } = {};
 
   if (params.businessName !== undefined) payload.business_name = params.businessName;
   if (params.percentageCharge !== undefined) payload.percentage_charge = Math.round(Number(params.percentageCharge));
-  if (params.active !== undefined) (payload as any).active = params.active;
+  if (params.active !== undefined) payload.active = params.active;
   if (params.description) payload.description = params.description;
   if (params.primaryContactName) payload.primary_contact_name = params.primaryContactName;
   if (params.primaryContactEmail) payload.primary_contact_email = params.primaryContactEmail;

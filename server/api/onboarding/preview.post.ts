@@ -55,7 +55,14 @@ export default defineEventHandler(async (event) => {
       Announcements: validateSheetData(AnnouncementSchema, parsedData.Announcements || [], false),
     };
 
-    const companyId = scope.companyId!;
+    const query = getQuery(event);
+    const rawCompanyId = scope.companyId ?? (query.companyId ? Number(query.companyId) : null);
+    
+    if (scope.isPlatformAdmin && !rawCompanyId) {
+      throw createError({ statusCode: 400, message: "companyId query parameter is required for platform admins" });
+    }
+
+    const companyId = rawCompanyId!;
     const comparedResults = await compareOnboardingData(companyId, validationResults);
 
     const uploadId = randomUUID();
