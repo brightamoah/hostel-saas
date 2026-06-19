@@ -238,7 +238,6 @@ export default defineNuxtConfig({
     // platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
     axiomApiKey: env.NUXT_AXIOM_API_KEY,
     axiomDataset: env.NUXT_AXIOM_DATASET,
-    sentryDsn: env.NUXT_SENTRY_DSN,
   },
 
   experimental: {
@@ -416,13 +415,6 @@ export default defineNuxtConfig({
       axiom: {
         dataset: env.NUXT_AXIOM_DATASET,
         apiKey: env.NUXT_AXIOM_API_KEY,
-      },
-      sentry: {
-        dsn: env.NUXT_SENTRY_DSN,
-        environment: env.NODE_ENV,
-        tags: {
-          service: "kayanest-app",
-        },
       },
       sampling: {
         rates: { info: 10, warn: 30, debug: 10, error: 100 },

@@ -36,7 +36,6 @@ const fullSchema = z.object({
   NUXT_R2_URL: z.url(),
   NUXT_AXIOM_API_KEY: z.string(),
   NUXT_AXIOM_DATASET: z.string(),
-  NUXT_SENTRY_DSN: z.string(),
 });
 
 tryParseEnv(fullSchema);
