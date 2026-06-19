@@ -87,8 +87,6 @@ export default defineEventHandler(async (event) => {
     // reference format: KH-{billingId}-{randomHash}
     const reference = `KH-${billing.id}-${randomUUID().split("-")[0]}`;
 
-    // console.log("[BILLING INITIALIZED]", reference);
-
     const portalUrl = getRequestHeader(event, "origin");
 
     const baseUrl: string = import.meta.dev
@@ -106,8 +104,6 @@ export default defineEventHandler(async (event) => {
       billing.hostelId,
       companyId,
     );
-
-    // console.log("[SUBACCOUNT, SPLITTYPE]", subaccountCode, splitType);
 
     const response = await initializePaystackTransaction({
       email,
@@ -157,8 +153,6 @@ export default defineEventHandler(async (event) => {
         message: "Failed to initialize payment. Please try again later.",
       });
     }
-
-    // console.log("[BILLING INITIALIZED]", response);
 
     const auditContext = getAuditContext({
       kind: "student",

@@ -30,7 +30,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // HMAC SHA-512 verification
   const hash = bytesToHex(hmac(sha512, utf8ToBytes(secretKey), utf8ToBytes(rawBody)));
 
   if (hash !== signature) {
@@ -42,7 +41,6 @@ export default defineEventHandler(async (event) => {
 
   const payload = JSON.parse(rawBody);
 
-  // We only care about charge.success
   if (payload.event === "charge.success") {
     const transaction = payload.data;
     const reference = transaction.reference;
