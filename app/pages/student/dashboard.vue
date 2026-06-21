@@ -158,7 +158,9 @@ const cards = computed<StatsCard[]>(() => [
           </template>
         </DashboardStatsCard>
 
-        <LazyStudentCard />
+        <StudentCardSkeleton v-if="status === 'pending'" />
+
+        <LazyStudentCard v-else />
       </template>
     </UDashboardPanel>
   </div>
