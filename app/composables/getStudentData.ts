@@ -16,11 +16,13 @@ export function useStudentData() {
     },
   });
 
-  const hasProfile = computed(() => data.value?.hasProfile ?? false);
+  const { session } = usePortalUserSession();
 
-  const hasActiveBooking = computed(() => data.value?.hasActiveBooking ?? false);
+  const hasProfile = computed(() => session.value?.onboarded ?? false);
 
-  const studentId = computed(() => data.value?.studentId);
+  const hasActiveBooking = computed(() => session.value?.hasActiveAllocation ?? false);
+
+  const studentId = computed(() => session.value?.studentId);
 
   const studentData = computed(() => data.value?.student);
 

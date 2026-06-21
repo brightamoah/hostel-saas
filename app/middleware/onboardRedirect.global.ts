@@ -62,6 +62,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (!loggedIn.value && !user.value) return;
 
     if (user.value?.role === "admin") {
+      const surface = usePortalSurface();
+      if (surface === "public") {
+        const config = useRuntimeConfig();
+        return await goto(`${config.public.adminBaseUrl}/admin/dashboard`);
+      }
       return navigateTo("/admin/dashboard");
     }
 

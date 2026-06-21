@@ -9,13 +9,13 @@ export const useAuthStore = defineStore("authStore", () => {
 
   const { $apiFetch } = useNuxtApp();
 
-  const { hasProfile, studentData } = useStudentData();
+  const { studentData } = useStudentData();
+
+  const { user, loggedIn: isLoggedIn, session, fetch: refreshSession } = usePortalUserSession();
 
   const isLoading = ref<boolean>(false);
   const errorMessage = ref<string | null>(null);
-  const isOnboarded = computed(() => !!hasProfile.value);
-
-  const { user, loggedIn: isLoggedIn, session, fetch: refreshSession } = usePortalUserSession();
+  const isOnboarded = computed(() => !!session.value?.onboarded);
 
   const refreshSessionWithFreshData = async () => {
     try {
