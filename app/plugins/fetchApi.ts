@@ -6,8 +6,11 @@ export default defineNuxtPlugin(() => {
       context.options.headers = new Headers(context.options.headers || {});
       context.options.headers.append(headerName, csrf);
     },
-    async onResponseError({ response }) {
-      if (response.status === 401) {
+    async onResponseError({ request, response }) {
+      const url = typeof request === "string" ? request : response.url;
+      const isLoginRequest = url.includes("/api/auth/login");
+
+      if (response.status === 401 && !isLoginRequest) {
         if (import.meta.client) {
           const toast = useToast();
           toast.add({
