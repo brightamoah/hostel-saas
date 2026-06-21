@@ -11,7 +11,10 @@ shamefullyHoist: true
 
 shellEmulator: true
 
-trustPolicy: no-downgrade
+# eslint-disable-next-line pnpm/yaml-enforce-settings
+trustPolicy: high
 
 overrides:
+  nanoid: 5.1.15
   vite: "npm:rolldown-vite@latest"
+  xlsx: "file:vendor/xlsx-0.20.3.tgz"
