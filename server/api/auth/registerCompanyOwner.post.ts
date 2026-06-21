@@ -1,7 +1,7 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
-import { companyQueries } from "~~/server/db/queries/company";
 import { randomUUID } from "uncrypto";
+import { companyQueries } from "~~/server/db/queries/company";
 
 export default defineEventHandler(async (event) => {
   try {

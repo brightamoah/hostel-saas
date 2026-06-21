@@ -1,8 +1,8 @@
 <script setup lang="ts">
-const title = "Bright Kweku Amoah | Contact";
-const description = "Contact me for any inquiries or collaborations.";
+const title = "Contact";
+const description = "Have questions about accommodation, payments, or maintenance? We're here to help.";
 const image = "/images/hostel.jpg";
-const url = "https://bkamoah.vercel.app/contact";
+const url = "https://kayanest.app";
 
 useHead({
   titleTemplate: title,

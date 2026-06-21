@@ -137,7 +137,7 @@ const pagination = ref({
       <template #header>
         <h6 class="flex items-center gap-2 font-bold text-primary">
           <UIcon
-            name="i-lucide-credit-card"
+            name="i-heroicons-credit-card"
             class="size-4"
           />
           Payment Information

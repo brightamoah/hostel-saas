@@ -1,5 +1,5 @@
-import { admin, allocation, billing, companyMember, hostel, room, student, user } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { admin, allocation, billing, companyMember, hostel, room, student, user } from "~~/server/db/schema";
 
 export async function importData(companyId: number, validatedData: Record<string, { valid: any[]; updated: any[] }>) {
   const { db } = useDB();

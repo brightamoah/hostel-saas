@@ -1,5 +1,5 @@
-import { room } from "~~/server/db/schema";
 import { and, eq, sql } from "drizzle-orm";
+import { room } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);

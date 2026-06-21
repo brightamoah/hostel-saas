@@ -1,10 +1,10 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
+import { eq } from "drizzle-orm";
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { useDB } from "~~/server/utils/db";
 import { handleError } from "~~/server/utils/errorHandler";
-import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   await clearPortalUserSession(event);

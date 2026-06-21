@@ -1,6 +1,6 @@
-import { scrypt as nobleScrypt } from "@noble/hashes/scrypt.js";
 import { Buffer } from "node:buffer";
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { scrypt as nobleScrypt } from "@noble/hashes/scrypt.js";
 import { getRandomValues } from "uncrypto";
 
 const keyLength = 64;

@@ -1,5 +1,5 @@
-import type { AdminScope, AuditContext, ServerEvent } from "~~/shared/types";
 import type { H3Event } from "h3";
+import type { AdminScope, AuditContext, ServerEvent } from "~~/shared/types";
 
 import { randomUUID } from "uncrypto";
 

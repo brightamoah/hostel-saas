@@ -1,8 +1,8 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
+import { eq } from "drizzle-orm";
 import { user } from "~~/server/db/schema";
 import { handleError } from "~~/server/utils/errorHandler";
-import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {

@@ -143,7 +143,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
     },
     {
       label: "Billing",
-      icon: "i-lucide-credit-card",
+      icon: "i-heroicons-credit-card",
       to: isAdmin.value
         ? { name: "admin-billings" }
         : { name: "student-billing" },

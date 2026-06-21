@@ -59,8 +59,8 @@ const emit = defineEmits<{ reset: []; import: [] }>();
         variant="ghost"
         leading-icon="i-heroicons-arrow-path"
         class="justify-center border border-default sm:border-transparent w-full sm:w-auto cursor-pointer shrink-0"
-        @click="emit('reset')"
         :disabled="isImporting"
+        @click="emit('reset')"
       >
         Upload another file
       </UButton>
@@ -71,8 +71,8 @@ const emit = defineEmits<{ reset: []; import: [] }>();
         color="primary"
         leading-icon="i-heroicons-cloud-arrow-up"
         class="justify-center w-full sm:w-auto cursor-pointer shrink-0"
-        @click="emit('import')"
         :loading="isImporting"
+        @click="emit('import')"
       >
         Import Data
       </UButton>

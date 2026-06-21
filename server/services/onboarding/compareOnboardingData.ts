@@ -1,5 +1,5 @@
-import { hostel, room } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { hostel, room } from "~~/server/db/schema";
 
 export async function compareOnboardingData(companyId: number, validationResults: Record<string, SheetValidation>) {
   const { db } = useDB();

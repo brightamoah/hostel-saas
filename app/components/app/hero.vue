@@ -39,7 +39,7 @@ const features = ref([
     description: "Self-service portal for bookings, payments, and communication.",
   },
   {
-    icon: "i-lucide-credit-card",
+    icon: "i-heroicons-credit-card",
     title: "Automated Billing",
     description: "Seamless payment processing with multiple payment options.",
   },

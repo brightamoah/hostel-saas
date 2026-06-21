@@ -60,7 +60,7 @@ const links = computed(() => {
   if (tenantContext.value?.portal?.allowStudentSelfCheckout !== false) {
     baseLinks.push({
       label: "Billings",
-      icon: "i-lucide-credit-card",
+      icon: "i-heroicons-credit-card",
       to: { name: "student-billing" },
       onSelect: () => open.value = false,
     });
@@ -202,7 +202,7 @@ onMounted(async () => {
             v-if="tenantContext?.branding?.logoUrl"
             :src="tenantContext.branding.logoUrl"
             alt="Logo"
-            class="h-8 w-auto object-contain"
+            class="w-auto h-8 object-contain"
             :class="{
               'mx-auto': collapsed,
               'mx-0': !collapsed,
@@ -220,7 +220,7 @@ onMounted(async () => {
 
           <h2
             v-if="!collapsed"
-            class="font-newsreader font-semibold text-2xl truncate max-w-50"
+            class="max-w-50 font-newsreader font-semibold text-2xl truncate"
           >
             {{ userProfile?.hostel ?? "Kayanest" }}
           </h2>

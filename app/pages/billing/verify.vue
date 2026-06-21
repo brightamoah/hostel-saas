@@ -76,7 +76,7 @@ const paymentDetailsOutput = computed(() => {
     {
       label: "Payment Method",
       value: paymentDetails.value.paymentMethod,
-      icon: "i-lucide-credit-card",
+      icon: "i-heroicons-credit-card",
       border: true,
     },
   ];

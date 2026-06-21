@@ -19,62 +19,54 @@ const { tenantContext } = useTenantContext();
 const { isPlatformAdminOrOwner } = usePortalUserSession();
 
 const links = computed(() => {
-  const items: NavigationMenuItem[] = [
-    {
+  const items: NavigationMenuItem[][] = [
+    [{
       label: "Dashboard",
       icon: "i-lucide-house",
       to: { name: "admin-dashboard" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Rooms",
       icon: "i-lucide-building-2",
       to: { name: "admin-rooms" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Users",
       icon: "i-lucide-user",
       to: { name: "admin-users" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Visitors",
       icon: "i-lucide-users",
       to: { name: "admin-visitors" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Maintenance",
       icon: "i-heroicons-wrench-screwdriver",
       to: { name: "admin-maintenance" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Complaints",
       icon: "i-lucide-message-square-warning",
       to: { name: "admin-complaints" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Billings",
-      icon: "i-lucide-credit-card",
+      icon: "i-heroicons-credit-card",
       to: { name: "admin-billings" },
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Announcements",
       icon: "i-lucide-megaphone",
       to: { name: "admin-announcements" },
       badge: unreadAnnouncementCount.value,
       onSelect: () => open.value = false,
-    },
-    {
+    }, {
       label: "Analytics",
       icon: "i-lucide-chart-no-axes-combined",
       to: { name: "admin-analytics" },
       onSelect: () => open.value = false,
-    },
+    }],
 
   // {
   //   label: "Settings",
@@ -124,12 +116,12 @@ const links = computed(() => {
 
   if (isPlatformAdminOrOwner) {
     items.push(
-      {
+      [{
         label: "Onboarding",
         to: { name: "admin-onboarding" },
         icon: "i-lucide-cloud-upload",
         onSelect: () => open.value = false,
-      },
+      }],
     );
   }
 
@@ -147,6 +139,12 @@ const pages = computed(() => [
     label: "Hostel Settings",
     icon: "i-lucide-hotel",
     to: { name: "admin-settings-hostel" },
+    onSelect: () => open.value = false,
+  },
+  {
+    label: "Transactions",
+    icon: "i-heroicons-banknotes",
+    to: { name: "admin-secure-transactions" },
     onSelect: () => open.value = false,
   },
   {

@@ -1,8 +1,8 @@
-import type { AdminScope, AnnouncementInsert, AuditContext } from "~~/shared/types";
 import type { H3Event } from "h3";
+import type { AdminScope, AnnouncementInsert, AuditContext } from "~~/shared/types";
 
-import { useDB } from "~~/server/utils/db";
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { useDB } from "~~/server/utils/db";
 
 import { announcement, announcementReads } from "../schema";
 import { auditLogQueries } from "./auditLog";

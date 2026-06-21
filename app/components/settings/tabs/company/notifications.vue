@@ -13,10 +13,6 @@ const state = defineModel<Partial<CompanyNotificationSettingsSchema>>("state", {
 const initialState = ref(JSON.stringify(state.value));
 const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
 
-watch(() => state.value, (newVal) => {
-  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
-}, { deep: true });
-
 const formRef = useTemplateRef("formRef");
 
 const toggles = [
@@ -62,6 +58,10 @@ function onSubmit(_e: FormSubmitEvent<CompanyNotificationSettingsSchema>) {
   initialState.value = JSON.stringify(state.value);
   emit("save");
 }
+
+defineExpose({
+  formRef,
+});
 </script>
 
 <template>

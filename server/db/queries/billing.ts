@@ -1,13 +1,13 @@
-import type { AdminScope, AuditContext, BillingInsert, Period } from "~~/shared/types";
 import type { H3Event } from "h3";
+import type { AdminScope, AuditContext, BillingInsert, Period } from "~~/shared/types";
 
+import type { paymentMethod } from "../schema";
+import { and, eq, exists, gt, ne, sql } from "drizzle-orm";
 import { computeAuditDiff } from "~~/server/utils/auditLogUtils";
 import { calcChange, getTimePeriod } from "~~/server/utils/calcChange";
 import { useDB } from "~~/server/utils/db";
-import { getScopeMode } from "~~/server/utils/permissionScope";
-import { and, eq, exists, gt, ne, sql } from "drizzle-orm";
 
-import type { paymentMethod } from "../schema";
+import { getScopeMode } from "~~/server/utils/permissionScope";
 
 import { billing, payment } from "../schema";
 import { auditLogQueries } from "./auditLog";
@@ -112,6 +112,110 @@ export async function billingQueries(event?: H3Event) {
           createdAt: "desc",
         },
       });
+  };
+
+  //  const conditions = [];
+  //   const mode = getScopeMode(scope);
+  //   if (mode === "company" && scope.companyId) {
+  //     conditions.push(eq(payment.companyId, scope.companyId));
+  //   } else if (mode === "hostel" && scope.hostelId) {
+  //     conditions.push(
+  //       exists(
+  //         db.select()
+  //           .from(billing)
+  //           .where(and(
+  //             eq(billing.id, payment.billingId),
+  //             eq(billing.hostelId, scope.hostelId),
+  //           )),
+  //       ),
+  //     );
+  //   } else if (mode !== "platform") {
+  //     conditions.push(sql`FALSE`);
+  //   }
+
+  //   return await db
+  //     .select({
+  //       id: payment.id,
+  //       amount: payment.amount,
+  //       paymentDate: payment.paymentDate,
+  //       transactionReference: payment.transactionReference,
+  //       paymentMethod: payment.paymentMethod,
+  //       status: payment.status,
+  //       companyId: payment.companyId,
+  //       student: {
+  //         firstName: student.firstName,
+  //         lastName: student.lastName,
+  //         email: student.email,
+  //       },
+  //       billing: {
+  //         id: billing.id,
+  //         type: billing.type,
+  //         description: billing.description,
+  //         invoiceNumber: sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
+  //       },
+  //     })
+  //     .from(payment)
+  //     .leftJoin(student, eq(payment.studentId, student.id))
+  //     .leftJoin(billing, eq(payment.billingId, billing.id))
+  //     .where(and(...conditions))
+  //     .orderBy(desc(payment.paymentDate));
+
+  const getScopedPaymentsAdmin = async (scope: AdminScope) => {
+    const paymentWithData = await db.query.payment.findMany({
+      where: {
+        ...applyBillingScope(scope),
+      },
+      columns: {
+        id: true,
+        amount: true,
+        paymentDate: true,
+        transactionReference: true,
+        paymentMethod: true,
+        status: true,
+        companyId: true,
+      },
+      with: {
+        student: {
+          columns: {
+            id: true,
+            phoneNumber: true,
+            address: true,
+            gender: true,
+          },
+          with: {
+            user: {
+              columns: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+          },
+        },
+        billing: {
+          columns: {
+            id: true,
+            type: true,
+            description: true,
+          },
+          with: {
+            hostel: {
+              columns: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          extras: {
+            invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
+          },
+        },
+      },
+      orderBy: { paymentDate: "desc" },
+    });
+
+    return paymentWithData;
   };
 
   const getBillingStatusCount = async (scope: AdminScope) => {
@@ -445,6 +549,7 @@ export async function billingQueries(event?: H3Event) {
   return {
     getBillingById,
     getScopedBillingsAdmin,
+    getScopedPaymentsAdmin,
     getBillingStatusCount,
     createBilling,
     getStudentScopedBillings,
@@ -463,3 +568,6 @@ export type BillingType = NonNullable<BillingWithRelations>;
 export type AdminBillingStats = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getBillingStatusCount"]>>;
 
 export type StudentBillingStats = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getStudentBillingStatusCount"]>>;
+
+export type PaymentType = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getScopedPaymentsAdmin"]>>[number];
+export type PaymentsWithData = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getScopedPaymentsAdmin"]>>;

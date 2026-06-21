@@ -30,7 +30,7 @@ const features = [
   },
   {
     id: "payments",
-    icon: "i-lucide-credit-card",
+    icon: "i-heroicons-credit-card",
     label: "Payments",
     headline: "Fee collection without friction.",
     description: "Accept hostel fees securely via Paystack. Automated receipts, payment history, and outstanding balance tracking built in.",

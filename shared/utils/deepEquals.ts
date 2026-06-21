@@ -34,7 +34,7 @@ export function isDeepEqual(x: any, y: any): boolean {
     if (keys.length !== Object.keys(y).length) return false;
 
     for (const key of keys) {
-      if (!Object.prototype.hasOwnProperty.call(y, key)) return false;
+      if (!Object.hasOwn(y, key)) return false;
     }
 
     for (const key of keys) {

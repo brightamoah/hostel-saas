@@ -13,10 +13,6 @@ const state = defineModel<Partial<CompanyPortalSettingsSchema>>("state", { requi
 const initialState = ref(JSON.stringify(state.value));
 const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
 
-watch(() => state.value, (newVal) => {
-  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
-}, { deep: true });
-
 const formRef = useTemplateRef("formRef");
 
 const toggles = [
@@ -24,7 +20,7 @@ const toggles = [
     key: "allowStudentSelfCheckout" as const,
     label: "Self-Checkout",
     description: "Students can initiate their own payments from the portal.",
-    icon: "i-lucide-credit-card",
+    icon: "i-heroicons-credit-card",
   },
   {
     key: "allowStudentViewRoommates" as const,
@@ -50,6 +46,10 @@ function onSubmit(_e: FormSubmitEvent<CompanyPortalSettingsSchema>) {
   initialState.value = JSON.stringify(state.value);
   emit("save");
 }
+
+defineExpose({
+  formRef,
+});
 </script>
 
 <template>

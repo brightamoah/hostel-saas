@@ -1,6 +1,6 @@
+import z from "zod";
 import { roomQueries, userQueries } from "~~/server/db/queries";
 import { joinCodeSchema } from "~~/shared/utils/schema";
-import z from "zod";
 
 export default defineEventHandler(async (event) => {
   try {

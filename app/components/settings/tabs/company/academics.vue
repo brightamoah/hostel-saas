@@ -13,15 +13,11 @@ const state = defineModel<Partial<CompanyAcademicSettingsSchema>>("state", { req
 const initialState = ref(JSON.stringify(state.value));
 const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
 
-watch(() => state.value, (newVal) => {
-  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
-}, { deep: true });
-
 const formRef = useTemplateRef("formRef");
 
-const periodOptions = companyAcademicSettingsSchema.shape.defaultAcademicPeriod.options.map(p => ({
-  label: capitalizeWords(p),
-  value: p,
+const periodOptions = companyAcademicSettingsSchema.shape.defaultAcademicPeriod.options.map(period => ({
+  label: capitalizeWords(period),
+  value: period,
 }));
 
 const yearIsValid = computed(() =>
@@ -32,6 +28,10 @@ function onSubmit(_e: FormSubmitEvent<CompanyAcademicSettingsSchema>) {
   initialState.value = JSON.stringify(state.value);
   emit("save");
 }
+
+defineExpose({
+  formRef,
+});
 </script>
 
 <template>

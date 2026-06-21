@@ -99,6 +99,7 @@ export const billingStatusColorMap: Record<Billing["status"], ColorType> = {
 };
 
 export type PaymentStatus = PaystackStatus | Billing["payments"][number]["status"];
+
 export const paymentStatusColorMap: Record<PaymentStatus, ColorType> = {
   pending: "warning",
   success: "success",
@@ -116,4 +117,18 @@ export const onboardingImportStatusColorMap: Record<OnboardingImportStatus, Colo
   completed: "success",
   pending: "warning",
   failed: "error",
+};
+
+export const paymentMethodIconMap: Record<Payment["paymentMethod"], string> = {
+  "card": "i-heroicons-credit-card",
+  "bank transfer": "i-heroicons-building-library",
+  "cash": "i-heroicons-banknotes",
+  "mobile money": "i-lucide-smartphone",
+};
+
+export const transactionStatusIconMap: Record<PaymentTransaction["status"], string> = {
+  pending: "i-lucide-clock",
+  failed: "i-lucide-circle-x",
+  completed: "i-lucide-circle-check-big",
+  refunded: "i-heroicons-credit-card",
 };

@@ -1,5 +1,5 @@
-import { hostel, room } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { hostel, room } from "~~/server/db/schema";
 
 /**
  * Mutates and returns the validationResults object by moving already-existing

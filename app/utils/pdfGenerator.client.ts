@@ -46,8 +46,8 @@ function getDaysDifference(start: Date | string, end: Date | string) {
 }
 
 export function generateInvoicePDF(
-  billing: Billing, 
-  paymentContext?: { bankName?: string; accountNumber?: string; supportPhone?: string }
+  billing: Billing,
+  paymentContext?: { bankName?: string; accountNumber?: string; supportPhone?: string },
 ): Promise<Blob> {
   return new Promise((resolve) => {
     const doc = new JSPDF({ orientation: "portrait", unit: "mm", format: "a4" });

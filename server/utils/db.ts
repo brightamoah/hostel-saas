@@ -12,11 +12,11 @@ export function useDB(eventOrContext?: H3Event | CloudflareContext) {
   let databaseUrl: string | undefined;
 
   if (
-    eventOrContext &&
-    "context" in eventOrContext &&
-    typeof eventOrContext.context === "object" &&
-    eventOrContext.context &&
-    "cloudflare" in eventOrContext.context
+    eventOrContext
+    && "context" in eventOrContext
+    && typeof eventOrContext.context === "object"
+    && eventOrContext.context
+    && "cloudflare" in eventOrContext.context
   ) {
     databaseUrl = eventOrContext.context.cloudflare?.env?.HYPERDRIVE?.connectionString;
   }

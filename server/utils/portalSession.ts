@@ -1,6 +1,6 @@
-import type { UserSession, UserSessionRequired } from "#auth-utils";
-import type { OmitWithIndexSignature } from "~~/shared/types";
 import type { H3Event } from "h3";
+import type { OmitWithIndexSignature } from "~~/shared/types";
+import type { UserSession, UserSessionRequired } from "#auth-utils";
 
 import { defu } from "defu";
 import { useSession } from "h3";

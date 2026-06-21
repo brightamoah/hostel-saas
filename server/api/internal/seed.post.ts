@@ -1,6 +1,6 @@
-import { admin, user } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { admin, user } from "~~/server/db/schema";
 
 const seedPlatformAdminSchema = z.object({
   name: z.string().trim().min(2).max(255),

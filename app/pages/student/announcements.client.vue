@@ -41,7 +41,7 @@ const isAnnouncementPanelOpen = computed({
 });
 
 watch(filteredAnnouncements, () => {
-  if (!filteredAnnouncements.value.find(announcement => announcement.id === selectedAnnouncement.value?.id)) selectedAnnouncement.value = null;
+  if (!filteredAnnouncements.value.some(announcement => announcement.id === selectedAnnouncement.value?.id)) selectedAnnouncement.value = null;
 });
 </script>
 

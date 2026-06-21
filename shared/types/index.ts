@@ -4,9 +4,17 @@ import type { CalendarDate, DateValue } from "@internationalized/date";
 import type { DropdownMenuItem } from "@nuxt/ui";
 import type { Table } from "@tanstack/vue-table";
 import type { useEditor } from "@tiptap/vue-3";
-import type { User } from "#auth-utils";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import type { H3EventContext } from "evlog";
+import type { H3Event, useSession } from "h3";
+import type { Bank } from "paystack-sdk/dist/misc/interface";
+import type { Transaction } from "paystack-sdk/dist/transaction/interface";
+import type { randomUUID } from "uncrypto";
+import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
+import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
+import type z from "zod";
 import type { AnnouncementType } from "~~/server/db/queries/announcement";
-import type { AdminBillingStats, BillingType, StudentBillingStats } from "~~/server/db/queries/billing";
+import type { AdminBillingStats, BillingType, PaymentsWithData, PaymentType, StudentBillingStats } from "~~/server/db/queries/billing";
 import type { CompaniesList } from "~~/server/db/queries/company";
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
@@ -15,14 +23,7 @@ import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, auditLog, billing, companySettings, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, hostelSettings, loginAttempts, maintenanceRequest, maintenanceStatusEnum, payment, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { useDB } from "~~/server/utils/db";
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import type { H3EventContext } from "evlog";
-import type { H3Event, useSession } from "h3";
-import type { Bank } from "paystack-sdk/dist/misc/interface";
-import type { randomUUID } from "uncrypto";
-import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef, ShallowUnwrapRef } from "vue";
-import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
-import type z from "zod";
+import type { User } from "#auth-utils";
 
 import type { ComplaintStatusResponseSchema, CreateMaintenanceSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
 
@@ -844,3 +845,19 @@ export type OnboardingHistoryResponseData = {
   success: boolean;
   history: OnboardingHistoryItem[];
 };
+
+export interface TransactionCustom extends Transaction {
+  fees_split: {
+    paystack: number;
+    integration: number;
+    subaccount: number;
+    params: {
+      bearer: string;
+      transaction_charge: number;
+      percentage_charge: number;
+    };
+  };
+}
+
+export type PaymentTransactions = { data: PaymentsWithData };
+export type PaymentTransaction = PaymentType;

@@ -106,9 +106,6 @@ export default withNuxt(
       "node/prefer-global/process": ["off"],
       "node/no-process-env": ["error"],
       "antfu/top-level-functions": ["off"],
-      "perfectionist/sort-imports": ["error", {
-        tsconfigRootDir: ".",
-      }],
       "unicorn/filename-case": ["error", {
         case: "camelCase",
         ignore: ["README.md", "pnpm-workspace.yaml"],

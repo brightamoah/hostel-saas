@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event);
   const rawCompanyId = scope.companyId ?? (query.companyId ? Number(query.companyId) : null);
-  
+
   if (scope.isPlatformAdmin && !rawCompanyId) {
     return { success: true, history: [] };
   }

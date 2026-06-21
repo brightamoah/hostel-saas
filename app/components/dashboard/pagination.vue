@@ -42,6 +42,8 @@ const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
     <div class="flex items-center gap-1.5">
       <UPagination
+        show-edges
+        :sibling-count="1"
         :items-per-page
         :size="isMobile ? 'xs' : 'md'"
         :page="defaultPage"

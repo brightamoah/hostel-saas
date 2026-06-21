@@ -79,7 +79,7 @@ async function withPaystackErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
   }
   catch (paystackError: unknown) {
     if (typeof paystackError === "object" && paystackError !== null && "response" in paystackError) {
-      const err = paystackError as { response?: { data?: { message?: string }, status?: number } };
+      const err = paystackError as { response?: { data?: { message?: string }; status?: number } };
       if (err.response?.data) {
         console.error("[Paystack API Error]", err.response.data);
         throw createError({
@@ -154,7 +154,8 @@ export async function initializePaystackTransaction(
   if (params.subaccountCode) {
     if (params.subaccountCode.startsWith("SPL_")) {
       payload.split_code = params.subaccountCode;
-    } else {
+    }
+    else {
       payload.subaccount = params.subaccountCode;
       payload.bearer = params.bearer ?? "subaccount";
       payload.transaction_charge = 0; // Forces flat fee override

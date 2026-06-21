@@ -1,11 +1,11 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
+import { randomUUID } from "uncrypto";
 import { roomQueries } from "~~/server/db/queries";
 import { userQueries } from "~~/server/db/queries/user";
 import { admin, companyMember, user } from "~~/server/db/schema";
 import { generateTempPassword } from "~~/server/utils/generateTemporaryPassword";
 import { getEmailTemplate, getWelcomeAdminTemplate } from "~~/shared/utils/emailTemplate";
-import { randomUUID } from "uncrypto";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);

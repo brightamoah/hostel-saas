@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { User } from "#auth-utils";
 import type { NavigationFailure, RouteLocationRaw } from "vue-router";
+import type { User } from "#auth-utils";
 
 const { handleSignOut, isLoggedIn, user } = defineProps<{
   isLoggedIn: boolean;

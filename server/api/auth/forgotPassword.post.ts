@@ -1,11 +1,11 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
+import { eq } from "drizzle-orm";
+import { randomUUID } from "uncrypto";
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { handleError } from "~~/server/utils/errorHandler";
 import { getResetPasswordTemplate } from "~~/shared/utils/emailTemplate";
-import { eq } from "drizzle-orm";
-import { randomUUID } from "uncrypto";
 
 export default defineEventHandler(async (event) => {
   try {

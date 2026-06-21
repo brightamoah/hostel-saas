@@ -1,8 +1,8 @@
-import type { AdminScope, AuditContext } from "~~/shared/types";
 import type { H3Event } from "h3";
+import type { AdminScope, AuditContext } from "~~/shared/types";
 
-import { getActorLabel } from "~~/server/utils/auditLogUtils";
 import { and, count, eq, sql } from "drizzle-orm";
+import { getActorLabel } from "~~/server/utils/auditLogUtils";
 
 import { admin, company, companyMember, companySettings, hostel, hostelSettings, room, student, user } from "../schema";
 import { auditLogQueries } from "./auditLog";

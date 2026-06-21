@@ -103,7 +103,7 @@ This project uses a modern, type-safe, full-stack architecture:
 
 ---
 
-# 📁 Folder Structure
+## 📁 Folder Structure
 
 ```
 ├── app/

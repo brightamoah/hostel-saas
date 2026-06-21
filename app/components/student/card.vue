@@ -34,7 +34,7 @@ const cards = ref([
   {
     id: "billing" as const,
     title: "Billing & Payments",
-    icon: "i-lucide-credit-card",
+    icon: "i-heroicons-credit-card",
     color: "error",
     value: "Room 101",
     class: "",

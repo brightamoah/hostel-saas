@@ -1,6 +1,6 @@
+import { randomUUID } from "uncrypto";
 import { billingQueries, companyQueries } from "~~/server/db/queries";
 import { resolveSubaccount } from "~~/server/libs/paystack/resolveSubaccount";
-import { randomUUID } from "uncrypto";
 
 export default defineEventHandler(async (event) => {
   const { user } = await requirePortalUserSession(event, {

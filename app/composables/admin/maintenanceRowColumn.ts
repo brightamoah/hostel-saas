@@ -1,9 +1,9 @@
 import type { FormSubmitEvent, TableColumn } from "@nuxt/ui";
 import type { Row } from "@tanstack/table-core";
 
-import { useDateFormat } from "@vueuse/core";
-
 import type { RowActionItem } from "~/types/rowAction";
+
+import { useDateFormat } from "@vueuse/core";
 
 const MaintenanceDetailModal = defineAsyncComponent(() => import("~/components/maintenance/details.vue"));
 

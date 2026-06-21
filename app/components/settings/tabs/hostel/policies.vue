@@ -13,10 +13,6 @@ const state = defineModel<Partial<HostelPoliciesSchema>>("state", { required: tr
 const initialState = ref(JSON.stringify(state.value));
 const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
 
-watch(() => state.value, (newVal) => {
-  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
-}, { deep: true });
-
 const genderPolicyOptions = [
   {
     label: "Per Room",

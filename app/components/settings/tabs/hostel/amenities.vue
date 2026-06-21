@@ -13,10 +13,6 @@ const state = defineModel<Partial<HostelAmenitiesSchema>>("state", { required: t
 const initialState = ref(JSON.stringify(state.value));
 const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
 
-watch(() => state.value, (newVal) => {
-  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
-}, { deep: true });
-
 const AMENITY_OPTIONS: { label: string; value: string }[] = [
   { label: "CCTV / Security cameras", value: "CCTV" },
   { label: "24/7 Security", value: "24/7 Security" },
@@ -68,7 +64,7 @@ function removeAmenity(value: string) {
 }
 
 const customAmenities = computed(() =>
-  selected.value.filter(v => !AMENITY_OPTIONS.find(o => o.value === v)),
+  selected.value.filter(v => !AMENITY_OPTIONS.some(o => o.value === v)),
 );
 
 function onSubmit(_e: FormSubmitEvent<HostelAmenitiesSchema>) {

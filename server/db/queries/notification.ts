@@ -1,5 +1,5 @@
-import type { AdminScope, NotificationDTO } from "~~/shared/types";
 import type { H3Event } from "h3";
+import type { AdminScope, NotificationDTO } from "~~/shared/types";
 
 import { sql } from "drizzle-orm";
 

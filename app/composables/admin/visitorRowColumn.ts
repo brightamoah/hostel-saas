@@ -1,9 +1,9 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Row } from "@tanstack/table-core";
 
-import { useDateFormat } from "@vueuse/core";
-
 import type { RowActionItem } from "~/types/rowAction";
+
+import { useDateFormat } from "@vueuse/core";
 
 const VisitorDetailsModal = defineAsyncComponent(() => import("~/components/visitor/details.vue"));
 

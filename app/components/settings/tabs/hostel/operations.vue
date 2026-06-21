@@ -13,10 +13,6 @@ const state = defineModel<Partial<HostelOperationsSchema>>("state", { required: 
 const initialState = ref(JSON.stringify(state.value));
 const isDirty = computed(() => JSON.stringify(state.value) !== initialState.value);
 
-watch(() => state.value, (newVal) => {
-  if (!isSaving && JSON.stringify(newVal) === initialState.value) return;
-}, { deep: true });
-
 function onSubmit(_e: FormSubmitEvent<HostelOperationsSchema>) {
   initialState.value = JSON.stringify(state.value);
   emit("save");

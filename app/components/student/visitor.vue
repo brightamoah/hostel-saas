@@ -2,9 +2,9 @@
 import type { TableColumn } from "@nuxt/ui";
 import type { Row } from "@tanstack/table-core";
 
-import { useDateFormat, useNow } from "@vueuse/core";
-
 import type { RowActionItem } from "~/types/rowAction";
+
+import { useDateFormat, useNow } from "@vueuse/core";
 
 const { visitors: AllVisitors } = useFetchStudentVisitorData();
 

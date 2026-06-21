@@ -5,6 +5,7 @@ export { useFetchBillingDataAdmin } from "./admin/fetchBillingDataAdmin";
 export { useFetchComplaintData } from "./admin/fetchComplaintData";
 export { useFetchMaintenanceData } from "./admin/fetchMaintenanceData";
 export { useFetchRoomData } from "./admin/fetchRoomData";
+export { useFetchTransactionData } from "./admin/fetchTransactionData";
 export { useFetchUserData } from "./admin/fetchUserData";
 export { useFetchVisitorData } from "./admin/fetchVisitorData";
 export { useHostelSettings } from "./admin/hostelSettings";

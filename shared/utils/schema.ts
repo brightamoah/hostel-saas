@@ -905,6 +905,24 @@ const emailInvoiceSchema = z.object({
 });
 export type EmailInvoiceSchema = z.output<typeof emailInvoiceSchema>;
 
+const paymentStatusSchema = z.enum([
+  "completed",
+  "failed",
+  "pending",
+  "refunded",
+], "Payment status is required");
+export type PaymentStatusSchema = z.output<typeof paymentStatusSchema>;
+
+const paymentMethodSchema = z.enum([
+  "card",
+  "mobile money",
+  "bank transfer",
+  "cash",
+  "other",
+], "Payment method is required");
+
+export type PaymentMethodSchema = z.output<typeof paymentMethodSchema>;
+
 const paymentSchema = z.object({
   billingId: createIdSchema("Billing"),
   amount: z.number("Amount is required").min(1, "Amount must be at least 1"),
@@ -939,8 +957,8 @@ export type PaymentSchema = z.output<typeof paymentSchema>;
 const referenceSchema = z.string()
   .nonempty("Reference is required")
   .regex(
-    /^KH-\d+-[a-fA-F0-9]{8}$/,
-    "Reference must be in the format KH-{billingId}-{randomHash}",
+    /^KH-\d+-.*$/,
+    "Reference must be in the format KH-{billingId}-{hashOrUuid}",
   );
 
 const verifyPaymentSchema = z.object({
@@ -1107,7 +1125,9 @@ export {
   ownerSchema,
   passwordResetSchema,
   passwordSchema,
+  paymentMethodSchema,
   paymentSchema,
+  paymentStatusSchema,
   personalDetailsSchema,
   phoneNumberSchema,
   promoteDemoteSchema,

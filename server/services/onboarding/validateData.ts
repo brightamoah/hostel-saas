@@ -149,10 +149,7 @@ export const AnnouncementSchema = z.object({
   userEmail: z.union([emailSchema, z.literal("")]).optional(),
 });
 
-
 export function validateSheetData<T>(schema: z.ZodType<T>, rows: any[], required: boolean = false) {
-
-
   if (required && (!rows || rows.length === 0)) {
     return {
       valid: [],
@@ -161,8 +158,8 @@ export function validateSheetData<T>(schema: z.ZodType<T>, rows: any[], required
       invalid: [{
         row: 0,
         data: {},
-        errors: [{ column: "Sheet", message: "This sheet is required but contains no valid data." }]
-      }]
+        errors: [{ column: "Sheet", message: "This sheet is required but contains no valid data." }],
+      }],
     };
   }
 

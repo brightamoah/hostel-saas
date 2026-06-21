@@ -1,8 +1,12 @@
+import { billingQueries } from "~~/server/db/queries";
+
 export default defineEventHandler(async (event) => {
-  await adminSessionCheck(event);
+  const scope = await adminSessionCheck(event);
 
   try {
-    const transactions = await fetchTransactions();
+    const { getScopedPaymentsAdmin } = await billingQueries(event);
+
+    const transactions = await getScopedPaymentsAdmin(scope);
 
     return {
       data: transactions,
@@ -10,6 +14,6 @@ export default defineEventHandler(async (event) => {
   }
   catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) throw error;
-    handleError(error, "Get Paystack Transactions", event);
+    handleError(error, "Get Local Transactions", event);
   }
 });

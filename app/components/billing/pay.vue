@@ -215,7 +215,7 @@ function closeModal() {
           color="primary"
           variant="solid"
           class="cursor-pointer"
-          icon="i-lucide-credit-card"
+          icon="i-heroicons-credit-card"
           :loading="isLoading"
           @click="paymentForm?.submit()"
         />

@@ -94,6 +94,15 @@ const { columns } = useBillingRowColumn(
   UTooltip,
 );
 
+const { isPlatformAdminOrOwner } = usePortalUserSession();
+
+watch(isPlatformAdminOrOwner, (canSeeHostel) => {
+  columnVisibility.value = {
+    id: false,
+    hostel: !!canSeeHostel,
+  };
+}, { immediate: true });
+
 const pagination = ref({
   pageIndex: 0,
   pageSize: 10,
@@ -110,54 +119,68 @@ const description = computed(() => hasActiveFilters.value
   ? "No billings match your current filters."
   : "There is currently no data to display in this table.",
 );
+
+const isMobile = inject(isMobileKey);
 </script>
 
 <template>
   <div class="flex flex-1">
     <UDashboardPanel id="billings-management">
       <template #header>
-        <DashboardNav :title />
+        <DashboardNav :title>
+          <UButton
+            v-if="!isMobile"
+            label="View Transactions"
+            icon="i-lucide-receipt"
+            variant="subtle"
+            class="cursor-pointer"
+            :to="{ name: 'admin-secure-transactions' }"
+          />
+        </DashboardNav>
       </template>
 
       <template #body>
-        <DashboardCardSkeleton v-if="status === 'pending'" />
+        <div class="p-2 md:p-4">
+          <DashboardCardSkeleton v-if="status === 'pending'" />
 
-        <DashboardStatsCard
-          v-else
-          :cards
-        >
-          <template #value="{ card }">
-            <h3 class="font-medium text-xl">
-              {{ card.value }}
-            </h3>
-          </template>
-        </DashboardStatsCard>
+          <DashboardStatsCard
+            v-else
+            :cards
+          >
+            <template #value="{ card }">
+              <h3 class="font-medium text-xl">
+                {{ card.value }}
+              </h3>
+            </template>
+          </DashboardStatsCard>
 
-        <BillingSearchFilter
-          v-model="globalFilter"
-          v-model:status-filter="statusFilter"
-          v-model:student-filter="studentFilter"
-          v-model:hostel-filter="hostelFilter"
-          :user
-          :status-filter-options
-          :student-filter-options
-          :hostel-filter-options
-        >
-          <template #actions>
-            <BillingNew />
+          <BillingSearchFilter
+            v-model="globalFilter"
+            v-model:status-filter="statusFilter"
+            v-model:student-filter="studentFilter"
+            v-model:hostel-filter="hostelFilter"
+            :user
+            :status-filter-options
+            :student-filter-options
+            :hostel-filter-options
+            class="mt-10"
+          >
+            <template #actions>
+              <BillingNew />
 
-            <BillingVerifyPayment />
+              <BillingVerifyPayment />
 
-            <DashboardRefreshButton
-              :can-resend
-              :cool-down-time
-              :refresh-is-loading
-              :handle-refresh
-            />
+              <DashboardRefreshButton
+                :can-resend
+                :cool-down-time
+                :refresh-is-loading
+                :handle-refresh
+              />
 
-            <DashboardItemsToDisplay :items-to-display />
-          </template>
-        </BillingSearchFilter>
+              <DashboardItemsToDisplay :items-to-display />
+            </template>
+          </BillingSearchFilter>
+        </div>
 
         <UTable
           ref="tableRef"

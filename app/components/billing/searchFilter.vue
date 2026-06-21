@@ -11,6 +11,8 @@ defineProps<{
 
 const globalFilter = defineModel({ required: true, type: String });
 
+const { isPlatformAdminOrOwner } = usePortalUserSession();
+
 const statusFilter = defineModel<string>("statusFilter", { required: true });
 
 const studentFilter = defineModel<string>("studentFilter", { required: false });
@@ -19,21 +21,21 @@ const hostelFilter = defineModel<string>("hostelFilter", { required: false });
 </script>
 
 <template>
-  <div class="flex flex-col lg:flex-row gap-4 w-full">
+  <div class="md:flex md:justify-between md:items-center md:gap-4 space-y-4 md:space-y-0">
     <UInput
       v-model="globalFilter"
       placeholder="Search billings..."
       size="lg"
       icon="lucide-search"
-      class="w-full lg:flex-1 lg:max-w-md"
+      class="w-full md:max-w-sm"
     />
 
-    <div class="flex flex-col sm:flex-row gap-3 flex-1">
+    <div class="flex sm:flex-row flex-col gap-3 md:gap-4">
       <USelectMenu
         v-model="statusFilter"
         arrow
         placeholder="Filter by Status"
-        class="w-full flex-1 text-center cursor-pointer"
+        class="w-full sm:min-w-40 text-center cursor-pointer"
         size="xl"
         clear
         value-key="value"
@@ -49,7 +51,7 @@ const hostelFilter = defineModel<string>("hostelFilter", { required: false });
         v-model="studentFilter"
         arrow
         placeholder="Filter by Student"
-        class="w-full flex-1 text-center cursor-pointer"
+        class="w-full sm:min-w-40 text-center cursor-pointer"
         size="xl"
         clear
         value-key="value"
@@ -61,11 +63,11 @@ const hostelFilter = defineModel<string>("hostelFilter", { required: false });
       />
 
       <USelectMenu
-        v-if="user?.role === 'admin' && user?.adminData?.accessLevel === 'super'"
+        v-if="isPlatformAdminOrOwner"
         v-model="hostelFilter"
         arrow
         placeholder="Filter by Hostel"
-        class="w-full flex-1 text-center cursor-pointer"
+        class="w-full sm:min-w-40 text-center cursor-pointer"
         size="xl"
         clear
         value-key="value"
@@ -79,7 +81,7 @@ const hostelFilter = defineModel<string>("hostelFilter", { required: false });
 
     <div
       v-auto-animate
-      class="flex flex-col sm:flex-row gap-3 lg:shrink-0"
+      class="flex sm:flex-row flex-col gap-3 lg:shrink-0"
     >
       <slot name="actions" />
     </div>
