@@ -584,6 +584,45 @@ export type EditVisitorSchema = z.output<typeof editVisitorSchema>;
 
 export type RegisterVisitorSchema = z.output<typeof registerVisitorSchema>;
 
+export const REPORT_MODULES = [
+  "billing",
+  "rooms",
+  "student",
+  "visitor",
+  "maintenanceRequest",
+  "complaint",
+  "user",
+] as const;
+export type ReportModule = typeof REPORT_MODULES[number];
+
+export const sortDirSchema = z.enum(["asc", "desc"]);
+
+export const reportConfigSchema = z.object({
+  type: z.enum(["custom", "prebuilt"]),
+  module: z.enum(REPORT_MODULES),
+  fields: z.array(z.string()).min(1, "At least one field must be selected"),
+  statusFilter: z.array(z.string()).optional(),
+  filters: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  dateRange: z.object({
+    start: z.string().optional(),
+    end: z.string().optional(),
+  }).optional(),
+  sortBy: z.string().optional(),
+  sortDir: sortDirSchema.optional().default("asc"),
+  groupBy: z.string().optional(),
+});
+
+export type ReportConfigSchema = z.output<typeof reportConfigSchema>;
+
+export const createReportTemplateSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  module: reportConfigSchema.shape.module,
+  config: reportConfigSchema,
+});
+
+export type CreateReportTemplateSchema = z.output<typeof createReportTemplateSchema>;
+
 const maintenanceStatusSchema = z.union([
   z.enum([
     "pending",

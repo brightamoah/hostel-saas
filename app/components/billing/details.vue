@@ -5,6 +5,7 @@ const { billing } = defineProps<{
 }>();
 
 const toast = useToast();
+const { tenantContext } = useTenantContext();
 
 const isGenerating = ref(false);
 
@@ -85,7 +86,7 @@ async function handleDownload() {
   isGenerating.value = true;
   try {
     const paymentContext = billingContext.value;
-    const pdfBlob = await generateInvoicePDF(billing, paymentContext);
+    const pdfBlob = await generateInvoicePDF(billing, paymentContext, tenantContext.value?.branding as BrandingContext);
 
     const url = window.URL.createObjectURL(pdfBlob);
     const link = document.createElement("a");
@@ -133,6 +134,7 @@ async function handleDownload() {
       description: 'text-base text-muted',
       close: 'cursor-pointer',
       overlay: 'backdrop-blur-sm',
+
     }"
   >
     <template #body>

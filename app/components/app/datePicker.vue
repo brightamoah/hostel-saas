@@ -1,17 +1,26 @@
 <script setup lang="ts">
 import type { DateValue } from "@internationalized/date";
 
+interface Props {
+  size?: SizeType;
+  buttonSize?: SizeType;
+  min?: DateValue;
+  max?: DateValue;
+  range?: boolean;
+}
+
 const {
   range = false,
   min,
   max,
-} = defineProps<{
-  min?: DateValue;
-  max?: DateValue;
-  range?: boolean;
-}>();
+  size,
+  buttonSize,
+} = defineProps<Props>();
 
 const isMobile = inject("isMobile", computed(() => false)) as ComputedRef<boolean>;
+
+const computedSize = computed(() => size ?? (isMobile.value ? 'lg' : 'xl'));
+const computedButtonSize = computed(() => buttonSize ?? (isMobile.value ? 'sm' : 'md'));
 
 const modelValue = defineModel<DateModel>("date");
 </script>
@@ -21,7 +30,7 @@ const modelValue = defineModel<DateModel>("date");
     v-model="modelValue"
     :min-value="min"
     :max-value="max"
-    :size="isMobile ? 'lg' : 'xl'"
+    :size="computedSize"
     :range
     class="w-full"
   >
@@ -30,7 +39,7 @@ const modelValue = defineModel<DateModel>("date");
         <UButton
           color="neutral"
           variant="link"
-          :size="isMobile ? 'sm' : 'md'"
+          :size="computedButtonSize"
           icon="i-lucide-calendar-days"
           aria-label="Select a date"
           class="px-0 cursor-pointer"

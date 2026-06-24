@@ -62,9 +62,9 @@ const links = computed(() => {
       badge: unreadAnnouncementCount.value,
       onSelect: () => open.value = false,
     }, {
-      label: "Analytics",
-      icon: "i-lucide-chart-no-axes-combined",
-      to: { name: "admin-analytics" },
+      label: "Reports",
+      icon: "i-lucide-file-text",
+      to: { name: "admin-secure-reports" },
       onSelect: () => open.value = false,
     }],
 

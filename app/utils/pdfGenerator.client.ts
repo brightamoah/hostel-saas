@@ -2,11 +2,14 @@ import { useDateFormat } from "@vueuse/core";
 import { jsPDF as JSPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const PRIMARY_COLOR = "#214d49";
+type DateType = "short" | "long" | "medium";
+
+// const PRIMARY_COLOR = "#214d49";
 const TEXT_COLOR = "#333333";
 const GRAY_COLOR = "#666666";
 const BG_COLOR = "#f8f9fa";
 const BORDER_COLOR = "#dee2e6";
+const WHITE = "#ffffff";
 
 const STATUS_COLORS: Record<string, string> = {
   "fully paid": "#16a34a",
@@ -31,9 +34,24 @@ function formatMoney(amount: number | string) {
   }).format(Number(amount));
 }
 
-function formatDate(date: Date | string | null) {
+function formatDate(date: Date | string | null, type: DateType = "long") {
   if (!date) return "N/A";
-  return useDateFormat(date, "dddd, MMMM D, YYYY").value;
+
+  if (type === "short") return useDateFormat(date, "D MMM YYYY").value;
+
+  else if (type === "medium") return useDateFormat(date, "ddd, MMM D, YYYY").value;
+
+  else return useDateFormat(date, "dddd, MMMM D, YYYY").value;
+}
+
+function formatDatetime(date: Date | string | null, type: DateType = "long") {
+  if (!date) return "N/A";
+
+  if (type === "short") return useDateFormat(date, "D MMM YYYY - HH:mm").value;
+
+  else if (type === "medium") return useDateFormat(date, "ddd, MMM D, YYYY - HH:mm").value;
+
+  else return useDateFormat(date, "dddd, MMMM D, YYYY - HH:mm").value;
 }
 
 function getDaysDifference(start: Date | string, end: Date | string) {
@@ -45,10 +63,64 @@ function getDaysDifference(start: Date | string, end: Date | string) {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-export function generateInvoicePDF(
+export interface BrandingContext {
+  name?: string;
+  address?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  supportEmail?: string;
+  supportPhone?: string;
+}
+
+export function resolveColorToHex(color?: string, defaultHex = "#214d49"): string {
+  if (!color) return defaultHex;
+  if (color.startsWith("#")) return color;
+  const map: Record<string, string> = {
+    slate: "#64748b",
+    gray: "#6b7280",
+    zinc: "#71717a",
+    neutral: "#737373",
+    stone: "#78716c",
+    red: "#ef4444",
+    orange: "#f97316",
+    amber: "#f59e0b",
+    yellow: "#eab308",
+    lime: "#84cc16",
+    green: "#22c55e",
+    emerald: "#10b981",
+    teal: "#14b8a6",
+    cyan: "#06b6d4",
+    sky: "#0ea5e9",
+    blue: "#3b82f6",
+    indigo: "#6366f1",
+    violet: "#8b5cf6",
+    purple: "#a855f7",
+    fuchsia: "#d946ef",
+    pink: "#ec4899",
+    rose: "#f43f5e",
+  };
+  return map[color.toLowerCase()] || defaultHex;
+}
+
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await $fetch<{ data: string }>(`/api/utils/proxyImage?url=${encodeURIComponent(url)}`);
+    return response.data || null;
+  }
+  catch {
+    return null;
+  }
+}
+
+export async function generateInvoicePDF(
   billing: Billing,
   paymentContext?: { bankName?: string; accountNumber?: string; supportPhone?: string },
+  branding?: BrandingContext,
 ): Promise<Blob> {
+  const logoData = branding?.logoUrl ? await fetchImageAsBase64(branding.logoUrl) : null;
+  const primaryHex = resolveColorToHex(branding?.primaryColor);
+
   return new Promise((resolve) => {
     const doc = new JSPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -57,22 +129,37 @@ export function generateInvoicePDF(
     let y = 20;
 
     // --- 1. Header
+    const businessName = branding?.name || billing.hostel?.name || "Kayanest";
+    const address = branding?.address || billing.hostel?.address || "Address not provided";
+    const supportEmail = branding?.supportEmail || billing.hostel?.email || "support@kayanest.com";
+    const supportPhone = branding?.supportPhone || billing.hostel?.contactNumber || "";
+
+    if (logoData) {
+      doc.addImage(logoData, "PNG", MARGIN, y, 20, 20, undefined, "FAST");
+    }
+
+    const textX = logoData ? MARGIN + 25 : MARGIN;
+    let textY = y + 8;
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.setTextColor(PRIMARY_COLOR);
-    doc.text(billing.hostel?.name || "Kayanest", PAGE_WIDTH / 2, y, { align: "center" });
+    doc.setTextColor(primaryHex);
+    doc.text(businessName, textX, textY);
 
-    y += 6;
+    textY += 6;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(GRAY_COLOR);
-    doc.text(billing.hostel?.address || "University Campus, Accra, Ghana", PAGE_WIDTH / 2, y, { align: "center" });
+    doc.text(address, textX, textY);
 
-    y += 5;
-    doc.text(`${billing.hostel?.email || "support@kayanest.com"} | ${billing.hostel?.contactNumber || ""}`, PAGE_WIDTH / 2, y, { align: "center" });
+    textY += 5;
+    if (supportEmail || supportPhone) {
+      doc.text(`${supportEmail} ${supportPhone ? `| ${supportPhone}` : ""}`, textX, textY);
+    }
 
-    y += 8;
-    doc.setDrawColor(PRIMARY_COLOR);
+    y = Math.max(y + 20, textY) + 8;
+
+    doc.setDrawColor(primaryHex);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
 
@@ -130,16 +217,16 @@ export function generateInvoicePDF(
     y += 8;
     const boxHeight = 42;
     doc.setFillColor(BG_COLOR);
-    doc.setDrawColor(PRIMARY_COLOR);
+    doc.setDrawColor(primaryHex);
     doc.rect(MARGIN, y, PAGE_WIDTH - (MARGIN * 2), boxHeight, "F");
-    doc.setFillColor(PRIMARY_COLOR);
+    doc.setFillColor(primaryHex);
     doc.rect(MARGIN, y, 1.5, boxHeight, "F");
 
     let boxY = y + 10;
     const boxX = MARGIN + 8;
 
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(PRIMARY_COLOR);
+    doc.setTextColor(primaryHex);
     doc.text("Billed To:", boxX, boxY);
 
     boxY += 8;
@@ -174,7 +261,7 @@ export function generateInvoicePDF(
         ["1", billing.description || billing.type || "Hostel Fee", formatMoney(subtotal)],
       ],
       theme: "grid",
-      headStyles: { fillColor: PRIMARY_COLOR, textColor: 255, fontStyle: "bold", halign: "left" },
+      headStyles: { fillColor: primaryHex, textColor: 255, fontStyle: "bold", halign: "left" },
       columnStyles: {
         0: { cellWidth: 15, halign: "center" },
         2: { cellWidth: 40, halign: "right" },
@@ -194,7 +281,7 @@ export function generateInvoicePDF(
 
     const addRow = (label: string, value: string, isBold = false, color = TEXT_COLOR, borderTop = false) => {
       if (borderTop) {
-        doc.setDrawColor(PRIMARY_COLOR);
+        doc.setDrawColor(primaryHex);
         doc.line(rightColLabelX, y - 4, PAGE_WIDTH - MARGIN, y - 4);
       }
 
@@ -224,7 +311,7 @@ export function generateInvoicePDF(
     let payY = y + 7;
     const payX = MARGIN + 5;
 
-    doc.setTextColor(PRIMARY_COLOR);
+    doc.setTextColor(primaryHex);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Payment Information", payX, payY);
@@ -236,15 +323,15 @@ export function generateInvoicePDF(
     doc.setFont("helvetica", "bold");
     doc.text("Bank Name:", payX, payY);
     doc.setFont("helvetica", "normal");
-    doc.text(paymentContext?.bankName || "N/A", payX + 25, payY);
+    doc.text(paymentContext?.bankName || "N/A", payX + 20, payY);
 
     // Use actual account number without masking
     const acctNum = paymentContext?.accountNumber || "N/A";
 
     doc.setFont("helvetica", "bold");
-    doc.text("Account No:", payX + 85, payY);
+    doc.text("Account No:", payX + 90, payY);
     doc.setFont("helvetica", "normal");
-    doc.text(acctNum, payX + 110, payY);
+    doc.text(acctNum, payX + 111, payY);
 
     payY += 5;
     doc.setFont("helvetica", "bold");
@@ -253,14 +340,14 @@ export function generateInvoicePDF(
     doc.text(billing.hostel?.name || "Kayanest", payX + 25, payY);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Support Contact:", payX + 85, payY);
+    doc.text("Support Contact:", payX + 90, payY);
     doc.setFont("helvetica", "normal");
-    doc.text(paymentContext?.supportPhone || "N/A", payX + 110, payY);
+    doc.text(paymentContext?.supportPhone || "N/A", payX + 118, payY);
 
     y += 38;
 
     // 7. Transaction History
-    doc.setTextColor(PRIMARY_COLOR);
+    doc.setTextColor(primaryHex);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("Transaction History", MARGIN, y);
@@ -350,7 +437,7 @@ export function generateInvoicePDF(
     doc.rect(MARGIN, y, PAGE_WIDTH - (MARGIN * 2), contentHeight, "FD");
 
     y += TERMS_PADDING_TOP;
-    doc.setTextColor(PRIMARY_COLOR);
+    doc.setTextColor(primaryHex);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Terms & Conditions", MARGIN + 5, y);
@@ -368,6 +455,253 @@ export function generateInvoicePDF(
     });
 
     y += 10;
+
+    resolve(doc.output("blob"));
+  });
+}
+
+export interface DynamicReportOptions {
+  title: string;
+  config: ReportConfigSchema;
+  data: Record<string, any>[];
+  hostelName?: string;
+  hostelAddress?: string;
+}
+
+function fmt(hex: string): [number, number, number] {
+  const c = hex.replace("#", "");
+  return [
+    Number.parseInt(c.slice(0, 2), 16),
+    Number.parseInt(c.slice(2, 4), 16),
+    Number.parseInt(c.slice(4, 6), 16),
+  ];
+}
+
+function cellText(value: any, d: FieldDescriptor): string {
+  if (value === null || value === undefined) return "—";
+  switch (d.type) {
+    case "currency": return formatMoney(value);
+    case "date": return formatDate(value, "short");
+    case "datetime": return formatDatetime(value, "short");
+    case "number": return String(Number(value));
+    case "badge": return capitalizeWords(String(value));
+    default: return String(value);
+  }
+}
+
+export async function generateDynamicReportPDF({
+  title,
+  config,
+  data,
+  hostelName,
+  hostelAddress,
+  branding,
+}: DynamicReportOptions & { branding?: BrandingContext }): Promise<Blob> {
+  const logoData = branding?.logoUrl ? await fetchImageAsBase64(branding.logoUrl) : null;
+  const primaryHex = resolveColorToHex(branding?.primaryColor);
+  const businessName = branding?.name || hostelName || "Kayanest";
+  const address = branding?.address || hostelAddress || "";
+
+  return new Promise((resolve) => {
+    const orientation = config.fields.length > 5 ? "landscape" : "portrait";
+    const doc = new JSPDF({ orientation, unit: "mm", format: "a4" });
+
+    const PW = doc.internal.pageSize.width;
+    const PH = doc.internal.pageSize.height;
+    const MARGIN = 14;
+    let y = MARGIN;
+
+    // ── Logo and business info ────────────────────
+    if (logoData) {
+      doc.addImage(logoData, "PNG", MARGIN, y, 20, 20, undefined, "FAST");
+    }
+
+    const textX = logoData ? MARGIN + 26 : MARGIN;
+    const textY = y + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(primaryHex);
+    doc.text(businessName, textX, textY);
+
+    if (address) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(GRAY_COLOR);
+      doc.text(`Location: ${address}`, textX, textY + 8);
+    }
+
+    // ── Header Date ─────────────────────────────
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(GRAY_COLOR);
+    doc.text(
+      `Generated: ${formatDate(new Date())}`,
+      PW - MARGIN,
+      textY,
+      { align: "right" },
+    );
+
+    y = Math.max(y + 20, textY + 8) + 12;
+
+    // ── Report title ──────────────────────────────
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor(primaryHex);
+    doc.text(title, MARGIN, y);
+    y += 7;
+
+    // ── Meta row: module, date range, status filters, sort ───────────────────
+    const metaParts: string[] = [
+      `Module: ${capitalizeWords(config.module)}`,
+    ];
+    if (config.dateRange?.start || config.dateRange?.end) {
+      metaParts.push(`Period: ${config.dateRange?.start ?? "—"}  →  ${config.dateRange?.end ?? "—"}`);
+    }
+    if (config.statusFilter?.length) {
+      metaParts.push(`Status: ${config.statusFilter.map(status => capitalizeWords(status)).join(", ")}`);
+    }
+    if (config.sortBy) {
+      metaParts.push(`Sorted by: ${config.sortBy} (${config.sortDir})`);
+    }
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(GRAY_COLOR);
+    doc.text(metaParts.join("   ·   "), MARGIN, y);
+    y += 4;
+
+    // Divider
+    doc.setDrawColor(...fmt(primaryHex));
+    doc.setLineWidth(0.4);
+    doc.line(MARGIN, y, PW - MARGIN, y);
+    y += 5;
+
+    // ── Resolve descriptors in selected order ─────────────────────────────────
+    const allDescriptors = MODULE_FIELDS[config.module as ReportModule] ?? [];
+    const descriptors = config.fields
+      .map(k => allDescriptors.find(d => d.key === k))
+      .filter((d): d is FieldDescriptor => !!d);
+
+    // ── Table head ────────────────────────────────────────────────────────────
+    const head = [descriptors.map(d => d.label)];
+
+    // ── Table body — badge cells get colour objects ────────────────────────────
+    const body = data.map(row =>
+      descriptors.map((d) => {
+        const raw = row[d.key];
+        if (d.type === "badge" && d.badgeMap) {
+          const colour = d.badgeMap[String(raw ?? "").toLowerCase()];
+          return {
+            content: capitalizeWords(String(raw ?? "—")),
+            styles: {
+              textColor: colour ? fmt(colour) : fmt(TEXT_COLOR),
+              fontStyle: "bold" as const,
+              halign: "center" as const,
+            },
+          };
+        }
+        return cellText(raw, d);
+      }),
+    );
+
+    // ── Column width hints ────────────────────────────────────────────────────
+    const colStyles: Record<number, any> = {};
+    descriptors.forEach((d, i) => {
+      if (d.type === "currency" || d.type === "number") {
+        colStyles[i] = { halign: "right", cellWidth: orientation === "landscape" ? 28 : 32 };
+      }
+      else if (d.type === "date") {
+        colStyles[i] = { cellWidth: 24 };
+      }
+      else if (d.type === "datetime") {
+        colStyles[i] = { cellWidth: 34 };
+      }
+      else if (d.type === "badge") {
+        colStyles[i] = { halign: "center", cellWidth: 28 };
+      }
+    });
+
+    // ── Render table ──────────────────────────────────────────────────────────
+    autoTable(doc, {
+      startY: y,
+      head,
+      body,
+      theme: "grid",
+      headStyles: {
+        fillColor: fmt(primaryHex),
+        textColor: fmt(WHITE),
+        fontStyle: "bold",
+        fontSize: 8,
+        cellPadding: 3,
+      },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: fmt(TEXT_COLOR),
+        cellPadding: 2.5,
+        overflow: "linebreak",
+      },
+      alternateRowStyles: {
+        fillColor: fmt(BG_COLOR),
+      },
+      columnStyles: colStyles,
+      styles: {
+        lineColor: fmt(BORDER_COLOR),
+        lineWidth: 0.1,
+      },
+      margin: { left: MARGIN, right: MARGIN },
+
+      // Footer on every page
+      didDrawPage: (hookData) => {
+        const pageCount = doc.getNumberOfPages();
+
+        // Left: report title
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(GRAY_COLOR);
+        doc.text(title, MARGIN, PH - 5);
+
+        // Centre: page N of M
+        doc.text(
+          `Page ${hookData.pageNumber} of ${pageCount}`,
+          PW / 2,
+          PH - 5,
+          { align: "center" },
+        );
+
+        // Right: business name
+        doc.text(businessName, PW - MARGIN, PH - 5, { align: "right" });
+      },
+    });
+
+    // ── Row count + summary line ──────────────────────────────────────────────
+    // @ts-expect-error: jspdf-autotable injects lastAutoTable at runtime
+    const finalY: number = doc.lastAutoTable.finalY + 7;
+
+    if (finalY < PH - 18) {
+      // Box around summary
+      doc.setFillColor(...fmt(BG_COLOR));
+      doc.setDrawColor(...fmt(BORDER_COLOR));
+      doc.rect(MARGIN, finalY, PW - MARGIN * 2, 10, "FD");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(GRAY_COLOR);
+      doc.text(`Total records: ${data.length}`, MARGIN + 4, finalY + 6.5);
+
+      // Aggregate for currency columns
+      const currencyFields = descriptors.filter(d => d.type === "currency");
+      let xOffset = 60;
+      for (const cf of currencyFields.slice(0, 3)) {
+        const total = data.reduce((sum, row) => sum + Number(row[cf.key] ?? 0), 0);
+        doc.text(
+          `Total ${cf.label}: ${formatMoney(total)}`,
+          MARGIN + xOffset,
+          finalY + 6.5,
+        );
+        xOffset += 55;
+      }
+    }
 
     resolve(doc.output("blob"));
   });

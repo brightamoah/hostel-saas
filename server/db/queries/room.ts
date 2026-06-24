@@ -341,6 +341,25 @@ export async function roomQueries(event?: H3Event) {
     });
   };
 
+  const getHostelById = async (hostelId: number) => {
+    const hostel = await db
+      .query
+      .hostel
+      .findFirst({
+        where: { id: hostelId },
+        columns: {
+          name: true,
+          address: true,
+          logoUrl: true,
+          primaryColor: true,
+          slug: true,
+          supportEmail: true,
+          supportPhone: true,
+        },
+      });
+    return hostel;
+  };
+
   const getAllHostels = async (gender: "male" | "female") => {
     const hostels = await db
       .query
@@ -1083,6 +1102,7 @@ export async function roomQueries(event?: H3Event) {
     editRoomById,
     getRoomsByIds,
     getAllHostels,
+    getHostelById,
     getScopedHostels,
     addNewRoom,
     getExistingRoomByRoomNumberAndHostel,

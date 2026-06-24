@@ -10,6 +10,7 @@ export default defineEventHandler(async (event) => {
       user,
       expiresAt,
       loggedInAt,
+      sessionDurationMs,
       selectedHostelId,
       selectedHostelSlug,
     } = await requirePortalUserSession(event, {
@@ -80,6 +81,9 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    const durationMs = sessionDurationMs ?? (1000 * 60 * 60); // default to 1 hour if not found
+    const newExpiresAt = new Date(Date.now() + durationMs);
+
     await setPortalUserSession(event, {
       user: {
         id: freshUser.id,
@@ -97,15 +101,21 @@ export default defineEventHandler(async (event) => {
         companyRole,
       } as User,
       loggedInAt,
-      expiresAt,
+      expiresAt: newExpiresAt,
       onboarded,
       hasActiveAllocation,
       selectedHostelId: selectedHostelId ?? null,
       selectedHostelSlug: selectedHostelSlug ?? null,
       portal: surface,
+      sessionDurationMs: durationMs,
     });
 
-    return { success: true, message: "Session refreshed" };
+    return {
+      success: true,
+      message: "Session refreshed",
+      expiresAt,
+      newExpiresAt,
+    };
   }
   catch (error) {
     if (error && typeof error === "object" && "statusCode" in error) throw error;

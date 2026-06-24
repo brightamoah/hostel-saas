@@ -62,6 +62,7 @@ export const relations = defineRelations(schema, r => ({
       from: r.company.id,
       to: r.companySettings.companyId,
     }),
+    reportTemplates: r.many.reportTemplate(),
   },
   companySettings: {
     company: r.one.company({
@@ -164,6 +165,11 @@ export const relations = defineRelations(schema, r => ({
     visitorLogs: r.many.visitorLogs({
       from: r.user.id.through(r.visitor.studentId),
       to: r.visitorLogs.visitorId.through(r.visitor.studentId),
+    }),
+    reportTemplates: r.many.reportTemplate({
+      from: r.user.id,
+      to: r.reportTemplate.userId,
+      alias: "reportTemplate_userId_user_id",
     }),
   },
   allocation: {
@@ -454,6 +460,18 @@ export const relations = defineRelations(schema, r => ({
     visitor: r.one.visitor({
       from: r.visitorLogs.visitorId,
       to: r.visitor.id,
+    }),
+  },
+
+  reportTemplate: {
+    company: r.one.company({
+      from: r.reportTemplate.companyId,
+      to: r.company.id,
+    }),
+    createdBy: r.one.user({
+      from: r.reportTemplate.userId,
+      to: r.user.id,
+      alias: "reportTemplate_userId_user_id",
     }),
   },
 }));

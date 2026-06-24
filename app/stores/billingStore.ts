@@ -16,7 +16,7 @@ const baseBilling: Partial<CreateBillingSchema> = {
 
 export const useBillingStore = defineStore("billingStore", () => {
   const toast = useToast();
-  // eslint-disable-next-line unused-imports/no-unused-vars
+
   const { tenantContext } = useTenantContext();
 
   const { $apiFetch } = useNuxtApp();
@@ -115,7 +115,11 @@ export const useBillingStore = defineStore("billingStore", () => {
       };
 
       const paymentContext = getBillingContext(billing);
-      const pdfBlob = await generateInvoicePDF(billing, paymentContext);
+      const pdfBlob = await generateInvoicePDF(
+        billing,
+        paymentContext,
+        tenantContext.value?.branding as BrandingContext,
+      );
 
       const amount = Number(billing.amount);
       const lateFee = Number(billing.lateFee || 0);

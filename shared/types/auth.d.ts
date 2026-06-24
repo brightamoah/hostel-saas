@@ -38,6 +38,7 @@ declare module "#auth-utils" {
     selectedHostelId?: number | null;
     selectedHostelSlug?: string | null;
     portal: "admin" | "public";
+    sessionDurationMs?: number;
   }
 }
 

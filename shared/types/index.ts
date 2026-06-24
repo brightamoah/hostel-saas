@@ -21,10 +21,11 @@ import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/s
 import type { AdminRoomStats, HostelRoomType, PaginatedHostel, Room as RoomType } from "~~/server/db/queries/room";
 import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/queries/user";
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
-import type { admin, allocation, announcement, auditLog, billing, companySettings, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, hostelSettings, loginAttempts, maintenanceRequest, maintenanceStatusEnum, payment, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
+import type { admin, allocation, announcement, auditLog, billing, companySettings, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, hostelSettings, loginAttempts, maintenanceRequest, maintenanceStatusEnum, payment, reportTemplate, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { useDB } from "~~/server/utils/db";
 import type { User } from "#auth-utils";
 
+import type { PrebuiltTemplate } from "../utils/reportConfig";
 import type { ComplaintStatusResponseSchema, CreateMaintenanceSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
 
 export type DeepNonNullable<T> = {
@@ -182,7 +183,9 @@ export type Stat = {
 
 export type Period = "daily" | "weekly" | "monthly" | "yearly";
 export type ColorType = "primary" | "error" | "warning" | "info" | "success" | "neutral" | "secondary";
-export type VariantType = "outline" | "soft" | "subtle" | "ghost" | "none";
+export type VariantType = "outline" | "soft" | "subtle" | "ghost" | "solid" | "none";
+
+export type SizeType = "xs" | "sm" | "md" | "lg" | "xl";
 
 export type StatsCard = {
   id: number | string;
@@ -861,3 +864,43 @@ export interface TransactionCustom extends Transaction {
 
 export type PaymentTransactions = { data: PaymentsWithData };
 export type PaymentTransaction = PaymentType;
+
+export interface SavedReportTemplate {
+  id: number;
+  companyId: number;
+  userId: number;
+  hostelId: number | null;
+  title: string;
+  description: string | null;
+  module: ReportModule;
+  config: ReportConfigSchema;
+  isPrebuilt: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: number;
+    name: string;
+    email: string;
+  } | null;
+}
+
+export interface ReportState {
+  type: "custom" | "prebuilt";
+  selectedTemplate: PrebuiltTemplate | SavedReportTemplate | null;
+  module: ReportModule;
+  fields: string[];
+  statusFilter: string[];
+  filters: Record<string, string | null>;
+  dateRange: { start: DateModel; end: DateModel };
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+}
+
+export type ReportTemplateType = typeof reportTemplate.$inferSelect;
+
+export interface ReportTemplate extends Omit<ReportTemplateType, "id" | "createdAt" | "updatedAt" | "config" | "description" | "isPrebuilt"> {
+  id?: number;
+  config: ReportConfigSchema;
+  description?: string;
+  isPrebuilt?: boolean;
+};

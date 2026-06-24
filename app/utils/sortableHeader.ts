@@ -1,13 +1,13 @@
 import type { Column } from "@tanstack/table-core";
 
-export function createSortableHeader<T>(label: Capitalize<string>, UButton: ComponentType) {
+export function createSortableHeader<T>(label: string, UButton: ComponentType) {
   return ({ column }: { column: Column<T> }) => {
     const isSorted = column.getIsSorted();
 
     return h(UButton, {
       color: "neutral",
       variant: "ghost",
-      label,
+      label: capitalizeWords(label),
       icon: isSorted
         ? isSorted === "asc"
           ? "i-lucide-arrow-up-narrow-wide"

@@ -336,6 +336,7 @@ export default defineNuxtConfig({
           "https://*.paystack.com",
           "https://*.paystack.co",
           "https://api.iconify.design/",
+          "https://images.kayanest.app",
           "blob:",
           "data:",
         ],

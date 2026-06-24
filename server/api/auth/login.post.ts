@@ -190,6 +190,7 @@ export default defineEventHandler(async (event): Promise<AuthLoginResponse> => {
       selectedHostelId: null,
       selectedHostelSlug: null,
       portal: surface,
+      sessionDurationMs,
     });
 
     await updateUserLastLogin(currentUser.id);

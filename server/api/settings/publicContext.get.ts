@@ -1,4 +1,4 @@
-import { companyQueries, userQueries } from "~~/server/db/queries";
+import { companyQueries, roomQueries, userQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
   const session = await requirePortalUserSession(event);
@@ -27,17 +27,39 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    const { getPublicTenantContext } = await companyQueries(event);
+    const { getPublicTenantContext, getCompanyById } = await companyQueries(event);
+    const { getHostelById } = await roomQueries(event);
 
     const { cSettings, hSettings } = await getPublicTenantContext(companyId, hostelId);
 
+    const company = await getCompanyById(companyId);
+
+    let hostelName: string | undefined;
+    let hostelAddress: string | undefined;
+    let hostelLogoUrl: string | undefined | null;
+    let hostelPrimaryColor: string | undefined | null;
+    let hostelSupportEmail: string | undefined | null;
+    let hostelSupportPhone: string | undefined | null;
+
+    if (hostelId) {
+      const hostel = await getHostelById(hostelId);
+      hostelName = hostel?.name;
+      hostelAddress = hostel?.address;
+      hostelLogoUrl = hostel?.logoUrl;
+      hostelPrimaryColor = hostel?.primaryColor;
+      hostelSupportEmail = hostel?.supportEmail;
+      hostelSupportPhone = hostel?.supportPhone;
+    }
+
     const payload = {
       branding: {
-        logoUrl: hSettings?.logoUrl || cSettings?.logoUrl,
-        primaryColor: hSettings?.primaryColor || cSettings?.primaryColor,
+        name: hostelName || company?.name,
+        address: hostelAddress || undefined, // Company doesn't have an address column by default
+        logoUrl: hSettings?.logoUrl || cSettings?.logoUrl || hostelLogoUrl,
+        primaryColor: hSettings?.primaryColor || cSettings?.primaryColor || hostelPrimaryColor,
         accentColor: hSettings?.accentColor || cSettings?.accentColor,
-        supportEmail: hSettings?.supportEmail || cSettings?.supportEmail,
-        supportPhone: hSettings?.supportPhone || cSettings?.supportPhone,
+        supportEmail: hSettings?.supportEmail || cSettings?.supportEmail || hostelSupportEmail,
+        supportPhone: hSettings?.supportPhone || cSettings?.supportPhone || hostelSupportPhone,
       },
       portal: {
         allowStudentSelfCheckout: cSettings?.allowStudentSelfCheckout ?? true,

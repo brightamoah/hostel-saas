@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { en_gb } from "@nuxt/ui/locale";
-import { breakpointsTailwind, useBreakpoints, useIdle } from "@vueuse/core";
+import { breakpointsTailwind, useBreakpoints, useIdle, useIntervalFn } from "@vueuse/core";
 
 const runtimeConfig = useRuntimeConfig();
+const { $apiFetch } = useNuxtApp();
 
 const { userProfile } = useUser();
 
@@ -24,21 +25,16 @@ useHead({
 });
 
 const { loggedIn } = usePortalUserSession();
-const { idle } = useIdle(15 * 60 * 1000);
+const { idle } = useIdle(5 * 60 * 1000); // 5 minutes
 
-watch(idle, async (isIdle) => {
-  if (isIdle && loggedIn.value) {
-    const toast = useToast();
-    toast.add({
-      title: "Session Expired",
-      description: "You have been logged out due to 15 minutes of inactivity.",
-      color: "warning",
-      duration: 8000,
-    });
-
-    await navigateTo({ name: "auth-logout" });
+// Automatically refresh the session every 5 minutes if the user is active
+useIntervalFn(async () => {
+  if (loggedIn.value && !idle.value) {
+    await $apiFetch("/api/auth/refreshSession", {
+      method: "POST",
+    }).catch(() => {});
   }
-});
+}, 5 * 60 * 1000);
 </script>
 
 <template>

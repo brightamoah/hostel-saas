@@ -158,3 +158,11 @@ export function maskAccountNumberPartial(accountNumber?: string | null): string 
   if (!accountNumber) return null;
   return maskAccountNumber(accountNumber, { showFirst: 2, showLast: 4, maskChar: "*" });
 }
+
+export function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+export function dateSlug() {
+  return new Date().toISOString().split("T")[0]!;
+}
