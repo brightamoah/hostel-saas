@@ -9,6 +9,8 @@ export interface FieldDescriptor {
   sortable?: boolean;
   /** If true, can be used as a date range anchor */
   dateAnchor?: boolean;
+  /** If true, the PDF generator will count occurrences of this field in the summary block */
+  aggregate?: boolean;
 }
 
 export const MODULE_STATUSES: Record<ReportModule, string[]> = {
@@ -44,7 +46,7 @@ export const MODULE_FIELDS: Record<ReportModule, FieldDescriptor[]> = {
   rooms: [
     { key: "roomNumber", label: "Room No.", type: "string", sortable: true },
     { key: "floor", label: "Floor", type: "number", sortable: true },
-    { key: "roomType", label: "Type", type: "string", sortable: true },
+    { key: "roomType", label: "Type", type: "string", sortable: true, aggregate: true },
     { key: "capacity", label: "Capacity", type: "number", sortable: true },
     { key: "currentOccupancy", label: "Occupancy", type: "number", sortable: true },
     { key: "amountPerYear", label: "Amount/Year", type: "currency", sortable: true },
@@ -63,7 +65,7 @@ export const MODULE_FIELDS: Record<ReportModule, FieldDescriptor[]> = {
     { key: "name", label: "Name", type: "string", sortable: true },
     { key: "email", label: "Email", type: "string" },
     { key: "phoneNumber", label: "Phone", type: "string" },
-    { key: "gender", label: "Gender", type: "string" },
+    { key: "gender", label: "Gender", type: "string", aggregate: true },
     { key: "roomNumber", label: "Room", type: "string", sortable: true },
     { key: "academicPeriod", label: "Academic Period", type: "string" },
     { key: "createdAt", label: "Enrolled At", type: "date", sortable: true, dateAnchor: true },
@@ -82,7 +84,7 @@ export const MODULE_FIELDS: Record<ReportModule, FieldDescriptor[]> = {
       "checked-in": "#6366f1",
       "checked-out": "#64748b",
       "cancelled": "#9ca3af",
-    }, sortable: true },
+    }, sortable: true, aggregate: true },
     { key: "studentName", label: "Visited Student", type: "string" },
     { key: "createdAt", label: "Registered At", type: "datetime", sortable: true },
   ],
@@ -93,14 +95,14 @@ export const MODULE_FIELDS: Record<ReportModule, FieldDescriptor[]> = {
       medium: "#d97706",
       high: "#ea580c",
       emergency: "#dc2626",
-    }, sortable: true },
+    }, sortable: true, aggregate: true },
     { key: "status", label: "Status", type: "badge", badgeMap: {
       "pending": "#d97706",
       "assigned": "#6366f1",
       "in-progress": "#0ea5e9",
       "completed": "#16a34a",
       "rejected": "#dc2626",
-    }, sortable: true },
+    }, sortable: true, aggregate: true },
     { key: "studentName", label: "Reported By", type: "string" },
     { key: "roomNumber", label: "Room", type: "string" },
     { key: "description", label: "Description", type: "string" },
@@ -113,13 +115,13 @@ export const MODULE_FIELDS: Record<ReportModule, FieldDescriptor[]> = {
       medium: "#d97706",
       high: "#ea580c",
       emergency: "#dc2626",
-    }, sortable: true },
+    }, sortable: true, aggregate: true },
     { key: "status", label: "Status", type: "badge", badgeMap: {
       "pending": "#d97706",
       "in-progress": "#0ea5e9",
       "resolved": "#16a34a",
       "rejected": "#dc2626",
-    }, sortable: true },
+    }, sortable: true, aggregate: true },
     { key: "studentName", label: "Reported By", type: "string" },
     { key: "description", label: "Description", type: "string" },
     { key: "createdAt", label: "Reported At", type: "datetime", sortable: true, dateAnchor: true },
@@ -128,7 +130,7 @@ export const MODULE_FIELDS: Record<ReportModule, FieldDescriptor[]> = {
     { key: "name", label: "Name", type: "string", sortable: true },
     { key: "email", label: "Email", type: "string" },
     { key: "phoneNumber", label: "Phone", type: "string" },
-    { key: "role", label: "Role", type: "string" },
+    { key: "role", label: "Role", type: "string", aggregate: true },
     { key: "createdAt", label: "Created At", type: "datetime", sortable: true, dateAnchor: true },
   ],
 };

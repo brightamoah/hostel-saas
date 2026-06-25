@@ -4,7 +4,10 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const url = query.url as string;
   if (!url) {
-    throw createError({ statusCode: 400, statusMessage: "Missing url" });
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Missing url",
+    });
   }
 
   try {
@@ -19,6 +22,9 @@ export default defineEventHandler(async (event) => {
   }
   catch (error) {
     console.error("Image proxy error:", error);
-    throw createError({ statusCode: 500, statusMessage: "Failed to fetch image" });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to fetch image",
+    });
   }
 });

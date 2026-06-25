@@ -1,15 +1,12 @@
 export function useAnnouncementData() {
   const { user } = usePortalUserSession();
 
-  const announcementKey = computed(() => `announcement-data-${user.value?.id}`,
-  );
-
   const url = computed(() => user.value?.role === "admin"
     ? "/api/announcement/getAnnouncementData"
     : "/api/announcement/student/getAnnouncements");
 
   const { data, status, error, refresh } = useFetch<AnnouncementResponse>(url, {
-    key: announcementKey,
+    key: "announcement-data",
     lazy: true,
     default: () => ({
       announcements: [],
