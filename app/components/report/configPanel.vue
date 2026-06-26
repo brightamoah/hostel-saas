@@ -30,6 +30,8 @@ const {
 
 const MODULE_LABELS: Record<ReportModule, string> = {
   billing: "Billing / Invoices",
+  allocation: "Occupancy",
+  payment: "Payment Transactions",
   rooms: "Rooms",
   student: "Students",
   visitor: "Visitors",

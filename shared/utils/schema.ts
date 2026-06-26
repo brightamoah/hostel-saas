@@ -586,7 +586,9 @@ export type RegisterVisitorSchema = z.output<typeof registerVisitorSchema>;
 
 export const REPORT_MODULES = [
   "billing",
+  "payment",
   "rooms",
+  "allocation",
   "student",
   "visitor",
   "maintenanceRequest",

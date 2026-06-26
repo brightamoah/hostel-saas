@@ -38,6 +38,13 @@ export async function generateDynamicReportPDF({
     const orientation = config.fields.length > 5 ? "landscape" : "portrait";
     const doc = new JSPDF({ orientation, unit: "mm", format: "a4" });
 
+    doc.setProperties({
+      title: title || "Generated Report",
+      subject: `${capitalizeWords(config.module)} Report`,
+      author: businessName,
+      creator: "Kayanest Hostel Management",
+    });
+
     const PW = doc.internal.pageSize.width;
     const PH = doc.internal.pageSize.height;
     const MARGIN = 14;

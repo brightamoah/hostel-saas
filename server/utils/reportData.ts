@@ -4,6 +4,8 @@ import { reportQueries } from "../db/queries";
 export async function fetchReportData(config: ReportConfigSchema, scope: AdminScope, event: H3Event) {
   const {
     getBillingReportData,
+    getPaymentReportData,
+    getAllocationReportData,
     getComplaintReportData,
     getMaintenanceReportData,
     getRoomReportData,
@@ -14,7 +16,9 @@ export async function fetchReportData(config: ReportConfigSchema, scope: AdminSc
 
   switch (config.module) {
     case "billing": return getBillingReportData(config, scope);
+    case "payment": return getPaymentReportData(config, scope);
     case "rooms": return getRoomReportData(config, scope);
+    case "allocation": return getAllocationReportData(config, scope);
     case "student": return getStudentReportData(config, scope);
     case "visitor": return getVisitorReportData(config, scope);
     case "maintenanceRequest": return getMaintenanceReportData(config, scope);

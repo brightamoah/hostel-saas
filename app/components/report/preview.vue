@@ -1,4 +1,7 @@
 <script lang="ts" setup>
+import type { Table } from "@tanstack/table-core";
+import { getPaginationRowModel } from "@tanstack/table-core";
+
 const emit = defineEmits<{ close: [boolean] }>();
 
 const reportStore = useReportStore();
@@ -23,7 +26,34 @@ const isSaveModalOpen = ref(false);
 const isSaving = ref(false);
 const saveForm = ref({ title: "", description: "" });
 
-const LONG_TEXT_FIELDS = new Set(["description", "purpose", "notes", "features"]);
+const LONG_TEXT_FIELDS = new Set(["description", "purpose", "notes", "features", "transactionReference"]);
+
+const tableRef = useTemplateRef<{
+  tableApi: Table<Record<string, unknown>>;
+}>("tableRef");
+
+const pagination = ref({ pageIndex: 0, pageSize: 15 });
+
+function updatePage(page: number) {
+  if (tableRef.value?.tableApi) {
+    tableRef.value.tableApi.setPageIndex(page - 1);
+  }
+}
+
+const totalItems = computed(() => previewData.value.length);
+const currentItemsShowing = computed(() => {
+  const api = tableRef.value?.tableApi;
+  if (!api) return 0;
+  const { pageIndex, pageSize } = api.getState().pagination;
+  return totalItems.value === 0 ? 0 : pageIndex * pageSize + 1;
+});
+
+const lastItemShowing = computed(() => {
+  const api = tableRef.value?.tableApi;
+  if (!api) return 0;
+  const { pageIndex, pageSize } = api.getState().pagination;
+  return Math.min((pageIndex + 1) * pageSize, totalItems.value);
+});
 
 const tableColumns = computed(() => {
   return reportConfig.value.fields.map((fieldKey) => {
@@ -66,7 +96,7 @@ const tableColumns = computed(() => {
 const exportTitle = computed(() => {
   const template = state.value.selectedTemplate;
   if (template && "title" in template) return template.title;
-  const moduleLabel: Record<string, string> = {
+  const moduleLabel: Record<ReportModule, string> = {
     billing: "Billing Report",
     rooms: "Rooms Report",
     student: "Student Report",
@@ -74,6 +104,8 @@ const exportTitle = computed(() => {
     maintenanceRequest: "Maintenance Report",
     complaint: "Complaints Report",
     user: "User Report",
+    allocation: "Allocations Report",
+    payment: "Payment Transactions Report",
   };
   return moduleLabel[state.value.module] ?? "Custom Report";
 });
@@ -165,34 +197,57 @@ async function handleSaveTemplate() {
 
       <div
         v-else-if="hasPreview"
-        class="flex-1 min-w-0 min-h-0 overflow-auto"
+        class="flex flex-col flex-1 min-w-0 min-h-0"
       >
-        <UTable
-          :columns="tableColumns"
-          :data="previewData"
-          :ui="{
-            base: 'w-max min-w-full border-separate border-spacing-0 text-sm',
-            thead: 'sticky top-0 z-10 [&>tr]:bg-elevated/50 [&>tr]:before:content-none [&>tr]:after:content-none',
-            tbody: '[&>tr:last-child>td]:border-b-0 [&>tr]:hover:bg-elevated/40 [&>tr]:transition-colors',
-            th: 'py-2.5 px-4 first:pl-6 last:pr-6 border-y border-default first:border-l last:border-r bg-elevated/80 backdrop-blur-sm whitespace-nowrap font-semibold text-xs text-muted uppercase tracking-wide first:rounded-tl-none last:rounded-tr-none first:rounded-l-lg last:rounded-r-lg',
-            td: 'py-2.5 px-4 first:pl-6 last:pr-6 border-b border-default align-middle',
-          }"
-        >
-          <template
-            v-for="col in tableColumns.filter(c => c.meta?.isLongText)"
-            :key="col.accessorKey"
-            #[`${col.accessorKey}-cell`]="{ row }"
+        <div class="flex-1 min-w-0 min-h-0 overflow-auto">
+          <UTable
+            ref="tableRef"
+            v-model:pagination="pagination"
+            sticky
+            class="flex-1"
+            :columns="tableColumns"
+            :data="previewData"
+            :pagination-options="{
+              getPaginationRowModel: getPaginationRowModel(),
+            }"
+            :ui="{
+              base: 'w-max min-w-full border-separate border-spacing-0 text-sm',
+              thead: 'sticky top-0 z-10 [&>tr]:bg-elevated/50 [&>tr]:before:content-none [&>tr]:after:content-none',
+              tbody: '[&>tr:last-child>td]:border-b-0 [&>tr]:hover:bg-elevated/40 [&>tr]:transition-colors',
+              th: 'py-2.5 px-4 first:pl-6 last:pr-6 border-y border-default first:border-l last:border-r bg-elevated/80 backdrop-blur-sm whitespace-nowrap font-semibold text-xs text-muted uppercase tracking-wide first:rounded-tl-none last:rounded-tr-none first:rounded-l-lg last:rounded-r-lg',
+              td: 'py-2.5 px-4 first:pl-6 last:pr-6 border-b border-default align-middle',
+            }"
           >
-            <UTooltip
-              :text="String(row.getValue(col.accessorKey) ?? '')"
-              :delay-duration="300"
+            <template
+              v-for="col in tableColumns.filter(c => c.meta?.isLongText)"
+              :key="col.accessorKey"
+              #[`${col.accessorKey}-cell`]="{ row }"
             >
-              <span class="block max-w-50 text-sm truncate">
-                {{ row.getValue(col.accessorKey) ?? '-' }}
-              </span>
-            </UTooltip>
-          </template>
-        </UTable>
+              <UTooltip
+                :text="String(row.getValue(col.accessorKey) ?? '')"
+                :delay-duration="300"
+              >
+                <span class="block max-w-50 text-sm truncate">
+                  {{ row.getValue(col.accessorKey) ?? '-' }}
+                </span>
+              </UTooltip>
+            </template>
+          </UTable>
+        </div>
+
+        <DashboardPagination
+          v-if="tableRef && tableRef?.tableApi"
+          :items="previewData"
+          :total-items="totalItems"
+          :selected-items-length="0"
+          :current-items-showing="currentItemsShowing"
+          :last-item-showing="lastItemShowing"
+          :table="tableRef!.tableApi"
+          :default-page="pagination.pageIndex + 1"
+          :items-per-page="pagination.pageSize"
+          :update-page="updatePage"
+          class="bottom-0 sticky p-4"
+        />
       </div>
 
       <ReportEmpty v-else />

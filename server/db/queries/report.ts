@@ -344,7 +344,7 @@ export async function reportQueries(event?: H3Event) {
       },
       with: {
         user: true,
-      }
+      },
     });
 
     const admins = await db.query.admin.findMany({
@@ -353,7 +353,7 @@ export async function reportQueries(event?: H3Event) {
       },
       with: {
         user: true,
-      }
+      },
     });
 
     const usersMap = new Map();
@@ -378,14 +378,97 @@ export async function reportQueries(event?: H3Event) {
 
     const uniqueUsers = Array.from(usersMap.values());
 
-    const filtered = uniqueUsers.filter(u => {
+    const filtered = uniqueUsers.filter((u) => {
       let pass = true;
       if (config.dateRange?.start) pass = pass && new Date(u.createdAt) >= new Date(config.dateRange.start);
       if (config.dateRange?.end) pass = pass && new Date(u.createdAt) <= new Date(config.dateRange.end);
       return pass;
     });
-
     const picked = filtered.map(r => pickFields(r, config.fields));
+    return sortReportData(picked, config.sortBy, config.sortDir);
+  };
+
+  const getPaymentReportData = async (config: ReportConfigSchema, scope: AdminScope) => {
+    const query = await db.query.payment.findMany({
+      where: {
+        ...applyScope(scope),
+        status: config.statusFilter?.length ? { in: config.statusFilter as Payment["status"][] } : undefined,
+        paymentMethod: config.filters?.paymentMethod as Payment["paymentMethod"],
+        paymentDate: {
+          gte: config.dateRange?.start ? new Date(config.dateRange.start) : undefined,
+          lte: config.dateRange?.end ? new Date(config.dateRange.end) : undefined,
+        },
+      },
+      with: {
+        student: {
+          columns: {
+            enrollmentDate: true,
+            gender: true,
+            address: true,
+            phoneNumber: true,
+            residencyStatus: true,
+          },
+          with: {
+            user: {
+              columns: { name: true, email: true },
+            },
+          },
+        },
+        billing: {
+          columns: {
+            id: true,
+            dueDate: true,
+            dateIssued: true,
+            amount: true,
+            status: true,
+            description: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    const flattened = query.map(item => ({
+      ...item,
+      studentName: item?.student?.user?.name ?? null,
+      invoiceNumber: item?.billing ? `INV-${String(item.billing.id).padStart(6, "0")}` : null,
+    }));
+
+    const picked = flattened.map(r => pickFields(r, config.fields));
+    return sortReportData(picked, config.sortBy, config.sortDir);
+  };
+
+  const getAllocationReportData = async (config: ReportConfigSchema, scope: AdminScope) => {
+    const query = await db.query.allocation.findMany({
+      where: {
+        ...applyScope(scope),
+        status: config.statusFilter?.length ? { in: config.statusFilter as Allocation["status"][] } : undefined,
+        academicYear: config.filters?.academicYear as string,
+        academicPeriod: config.filters?.academicPeriod as Allocation["academicPeriod"],
+        allocationDate: {
+          gte: config.dateRange?.start ? new Date(config.dateRange.start).toISOString() : undefined,
+          lte: config.dateRange?.end ? new Date(config.dateRange.end).toISOString() : undefined,
+        },
+      },
+      with: {
+        student: {
+          with: {
+            user: { columns: { name: true } },
+          },
+        },
+        room: {
+          columns: { roomNumber: true },
+        },
+      },
+    });
+
+    const flattened = query.map(item => ({
+      ...item,
+      studentName: item?.student?.user?.name ?? null,
+      roomNumber: item?.room?.roomNumber ?? null,
+    }));
+
+    const picked = flattened.map(r => pickFields(r, config.fields));
     return sortReportData(picked, config.sortBy, config.sortDir);
   };
 
@@ -444,6 +527,8 @@ export async function reportQueries(event?: H3Event) {
 
   return {
     getBillingReportData,
+    getPaymentReportData,
+    getAllocationReportData,
     getRoomReportData,
     getStudentReportData,
     getVisitorReportData,
