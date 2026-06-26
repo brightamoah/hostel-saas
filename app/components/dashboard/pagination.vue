@@ -1,7 +1,13 @@
 <script setup lang="ts" generic="T extends object">
 import type { Table } from "@tanstack/table-core";
 
-const { table, totalItems, defaultPage = 1, itemsPerPage = 10 } = defineProps<{
+const {
+  table,
+  totalItems,
+  defaultPage = 1,
+  itemsPerPage = 10,
+  updatePage,
+} = defineProps<{
   items: T[];
   table?: Table<T>;
   totalItems: number;
@@ -16,6 +22,17 @@ const { table, totalItems, defaultPage = 1, itemsPerPage = 10 } = defineProps<{
 const displayTotal = computed<number>(() => totalItems);
 
 const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
+
+const currentPage = ref(defaultPage);
+
+watch(() => defaultPage, (val) => {
+  currentPage.value = val;
+});
+
+function handlePageUpdate(page: number) {
+  currentPage.value = page;
+  updatePage(page);
+}
 </script>
 
 <template>
@@ -42,16 +59,16 @@ const isMobile = inject(isMobileKey) as ComputedRef<boolean>;
 
     <div class="flex items-center gap-1.5">
       <UPagination
+        v-model:page="currentPage"
         show-edges
         :sibling-count="1"
         :items-per-page
         :size="isMobile ? 'xs' : 'md'"
-        :page="defaultPage"
         :total="displayTotal"
         :ui="{
           item: 'cursor-pointer',
         }"
-        @update:page="updatePage"
+        @update:page="handlePageUpdate"
       />
     </div>
   </div>

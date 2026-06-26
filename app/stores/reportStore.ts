@@ -178,23 +178,23 @@ export const useReportStore = defineStore("ReportStore", () => {
     }
   };
 
-  const exportPDF = async (
+  const getPDFBlob = async (
     reportTitle: string,
     hostelName?: string,
     hostelAddress?: string,
-  ) => {
+  ): Promise<Blob | null> => {
     if (!hasPreview.value) {
       toast.add({
         title: "No preview data",
-        description: "Generate a preview before exporting",
+        description: "Generate a preview before generating PDF",
         color: "warning",
       });
-      return;
+      return null;
     }
     isExporting.value = true;
 
     try {
-      const blob = await generateDynamicReportPDF({
+      return await generateDynamicReportPDF({
         title: reportTitle,
         config: reportConfig.value,
         data: previewData.value,
@@ -202,31 +202,41 @@ export const useReportStore = defineStore("ReportStore", () => {
         hostelAddress,
         branding: tenantContext.value?.branding as BrandingContext,
       });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${slugify(reportTitle)}-${dateSlug()}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-
-      toast.add({
-        title: "Report downloaded",
-        description: "Your report has been downloaded successfully",
-        color: "success",
-      });
     }
     catch (error) {
       console.error(error);
       toast.add({
-        title: "Failed to download report",
+        title: "Failed to generate report PDF",
         description: (error as Error).message,
         color: "error",
       });
+      return null;
     }
     finally {
       isExporting.value = false;
     }
+  };
+
+  const exportPDF = async (
+    reportTitle: string,
+    hostelName?: string,
+    hostelAddress?: string,
+  ) => {
+    const blob = await getPDFBlob(reportTitle, hostelName, hostelAddress);
+    if (!blob) return;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${slugify(reportTitle)}-${dateSlug()}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    toast.add({
+      title: "Report downloaded",
+      description: "Your report has been downloaded successfully",
+      color: "success",
+    });
   };
 
   const savedTemplates = ref<SavedReportTemplate[]>([]);
@@ -311,6 +321,7 @@ export const useReportStore = defineStore("ReportStore", () => {
     setStatusFilter,
     fetchPreview,
     exportPDF,
+    getPDFBlob,
     fetchTemplates,
     saveTemplate,
     deleteTemplate,

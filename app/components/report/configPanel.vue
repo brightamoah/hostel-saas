@@ -359,6 +359,7 @@ onUnmounted(() => {
             :model-value="reportState.fields.includes(field.key)"
             :label="field.label"
             :disabled="reportState.fields.length === 1 && reportState.fields.includes(field.key)"
+            class="cursor-pointer"
             @update:model-value="toggleField(field.key)"
           />
 
