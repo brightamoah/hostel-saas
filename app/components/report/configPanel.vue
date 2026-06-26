@@ -51,10 +51,10 @@ const sortFieldOptions = computed(() => {
   return options;
 });
 
-const tabsItems: TabsItem[] = [
+const tabsItems = [
   { label: "Prebuilt", value: "prebuilt", icon: "i-lucide-package", slot: "prebuilt" as const },
   { label: "Custom", value: "custom", icon: "i-lucide-settings-2", slot: "custom" as const },
-];
+] satisfies TabsItem[];
 
 const templateItems = computed(() => {
   const items = [...templates.value, ...savedTemplates.value];
@@ -113,13 +113,44 @@ function triggerHighlight(key: string) {
   }, 600);
 }
 
+const isAllSelected = computed(() => {
+  return reportState.value.fields.length === availableFields.value.length;
+});
+
+const isAnimating = ref(false);
+
+async function toggleSelectAll() {
+  if (isAnimating.value) return;
+
+  if (isAllSelected.value) {
+    isAnimating.value = true;
+    const fields = [...reportState.value.fields];
+    for (const key of fields) {
+      reportState.value.fields = reportState.value.fields.filter(field => field !== key);
+      await new Promise(r => setTimeout(r, 40));
+    }
+    isAnimating.value = false;
+  }
+  else {
+    isAnimating.value = true;
+    const allKeys = availableFields.value.map(field => field.key);
+    for (const key of allKeys) {
+      if (!reportState.value.fields.includes(key)) {
+        reportState.value.fields = [...reportState.value.fields, key];
+        await new Promise(r => setTimeout(r, 40));
+      }
+    }
+    isAnimating.value = false;
+  }
+}
+
 onUnmounted(() => {
   if (moveTimer) clearTimeout(moveTimer);
 });
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 pb-5">
+  <div class="flex flex-col gap-5 p-3">
     <UTabs
       v-model="reportState.type"
       :items="tabsItems"
@@ -191,21 +222,23 @@ onUnmounted(() => {
     </UTabs>
 
     <div v-if="hasStatusFilter">
-      <div class="flex justify-between items-center mb-2">
+      <div
+        v-auto-animate
+        class="flex justify-between items-center mb-2"
+      >
         <p class="font-semibold text-muted text-xs uppercase tracking-wide">
           Status
         </p>
 
         <UButton
           v-if="reportState.statusFilter.length"
-          variant="link"
+          variant="ghost"
           color="neutral"
           size="xs"
           class="cursor-pointer"
+          label="Clear"
           @click="clearStatusFilter()"
-        >
-          Clear
-        </UButton>
+        />
       </div>
 
       <div class="flex flex-wrap gap-1.5">
@@ -227,7 +260,7 @@ onUnmounted(() => {
         Date Range
       </p>
 
-      <div class="flex flex-col gap-2">
+      <div class="gap-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <UFormField label="From">
           <AppDatePicker
             v-model:date="dateStart"
@@ -251,24 +284,24 @@ onUnmounted(() => {
         Sort
       </p>
 
-      <div class="flex flex-col gap-2">
+      <div class="gap-2 grid grid-cols-5 w-full">
         <USelectMenu
           v-model="reportState.sortBy"
           :items="sortFieldOptions"
           value-key="value"
           size="md"
-          class="cursor-pointer"
+          class="col-span-3 cursor-pointer"
           placeholder="Select sort column..."
           clear
           :ui="{ item: 'cursor-pointer' }"
         />
 
-        <div class="gap-2 grid grid-cols-2 w-full">
+        <div class="gap-2 grid grid-cols-2 col-span-2 w-full">
           <UButton
             size="xs"
             :variant="reportState.sortOrder === 'asc' ? 'solid' : 'subtle'"
             icon="i-lucide-arrow-up-narrow-wide"
-            label="Ascending"
+            label="Asc"
             class="flex justify-center items-center w-full cursor-pointer"
             @click="reportState.sortOrder = 'asc'"
           />
@@ -277,7 +310,7 @@ onUnmounted(() => {
             size="xs"
             :variant="reportState.sortOrder === 'desc' ? 'solid' : 'subtle'"
             icon="i-lucide-arrow-down-wide-narrow"
-            label="Descending"
+            label="Desc"
             class="flex justify-center items-center w-full cursor-pointer"
             @click="reportState.sortOrder = 'desc'"
           />
@@ -294,12 +327,13 @@ onUnmounted(() => {
         <UButton
           variant="link"
           color="neutral"
-          size="xs"
+          size="sm"
           :padded="false"
-          @click="reportState.fields = availableFields.map(field => field.key)"
-        >
-          All
-        </UButton>
+          :disabled="isAnimating"
+          :label="isAllSelected ? 'Deselect All' : 'Select All'"
+          class="cursor-pointer"
+          @click="toggleSelectAll"
+        />
       </div>
 
       <div
@@ -362,17 +396,16 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="bottom-0 sticky bg-default pt-3 pb-1 border-default border-t">
+    <div class="bottom-0 sticky bg-default pt-3 pb-1 border-default border-t-2">
       <UButton
         block
         color="primary"
         icon="i-lucide-play"
         :loading="isLoading"
         class="cursor-pointer"
+        label="Generate Preview"
         @click="fetchPreview()"
-      >
-        Generate Preview
-      </UButton>
+      />
     </div>
   </div>
 </template>

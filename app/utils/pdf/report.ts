@@ -205,9 +205,23 @@ export async function generateDynamicReportPDF({
       });
     }
 
-    const itemsPerLine = orientation === "landscape" ? 4 : 3;
-    const lines = Math.ceil(summaryItems.length / itemsPerLine) || 1;
-    const boxHeight = 6 + (lines * 4);
+    const allSummaryItems = [`Total Records: ${data.length}`, ...summaryItems];
+
+    doc.setFont(DEFAULT_FONT, "bold");
+    doc.setFontSize(8);
+
+    // Dynamically calculate items per line to prevent overlapping
+    let itemsPerLine = orientation === "landscape" ? 5 : 4;
+    const maxItemWidth = Math.max(...allSummaryItems.map(item => doc.getTextWidth(item)));
+    const usableWidth = PW - MARGIN * 2 - 8;
+
+    while (itemsPerLine > 1 && (usableWidth / itemsPerLine) < (maxItemWidth + 6)) {
+      itemsPerLine--;
+    }
+
+    const colWidth = usableWidth / itemsPerLine;
+    const lines = Math.ceil(allSummaryItems.length / itemsPerLine) || 1;
+    const boxHeight = 5 + (lines * 6);
 
     if (finalY < PH - boxHeight - 8) {
       // Summary box
@@ -215,20 +229,16 @@ export async function generateDynamicReportPDF({
       doc.setDrawColor(...fmt(BORDER_COLOR));
       doc.rect(MARGIN, finalY, PW - MARGIN * 2, boxHeight, "FD");
 
-      doc.setFont(DEFAULT_FONT, "bold");
-      doc.setFontSize(8);
       doc.setTextColor(TEXT_COLOR);
-      doc.text(`Total records: ${data.length}`, MARGIN + 4, finalY + 6.5);
 
-      let xOffset = 60;
-      let lineIdx = 0;
-      summaryItems.forEach((item, i) => {
-        if (i > 0 && i % itemsPerLine === 0) {
-          xOffset = 60;
-          lineIdx++;
-        }
-        doc.text(item, MARGIN + xOffset, finalY + 6.5 + (lineIdx * 4));
-        xOffset += 45;
+      allSummaryItems.forEach((item, i) => {
+        const colIdx = i % itemsPerLine;
+        const rowIdx = Math.floor(i / itemsPerLine);
+
+        const x = MARGIN + 4 + (colIdx * colWidth);
+        const y = finalY + 7.5 + (rowIdx * 6);
+
+        doc.text(item, x, y);
       });
     }
 
