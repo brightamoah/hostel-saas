@@ -19,8 +19,8 @@ const {
 
 const isMobile = inject("isMobile", computed(() => false)) as ComputedRef<boolean>;
 
-const computedSize = computed(() => size ?? (isMobile.value ? 'lg' : 'xl'));
-const computedButtonSize = computed(() => buttonSize ?? (isMobile.value ? 'sm' : 'md'));
+const computedSize = computed(() => size ?? (isMobile.value ? "lg" : "xl"));
+const computedButtonSize = computed(() => buttonSize ?? (isMobile.value ? "sm" : "md"));
 
 const modelValue = defineModel<DateModel>("date");
 </script>

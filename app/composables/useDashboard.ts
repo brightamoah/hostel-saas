@@ -22,7 +22,10 @@ function _useDashboard() {
       const visitors = roleBasedRoutes.value?.visitors;
       if (visitors) void router.push(visitors);
     },
-    "g-s": () => void router.push("/settings"),
+    "g-s": () => {
+      const settings = roleBasedRoutes.value?.settings;
+      if (settings) void router.push(settings);
+    },
     "n": () => isNotificationsSlideoverOpen.value = !isNotificationsSlideoverOpen.value,
   });
 
