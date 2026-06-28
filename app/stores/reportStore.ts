@@ -5,6 +5,7 @@ export const useReportStore = defineStore("ReportStore", () => {
   const { $apiFetch } = useNuxtApp();
   const toast = useToast();
   const { tenantContext } = useTenantContext();
+  const filterStore = useCompanyHostelFilterStore();
 
   const state = ref<ReportState>({
     type: "prebuilt",
@@ -144,9 +145,21 @@ export const useReportStore = defineStore("ReportStore", () => {
         title: "No Fields Selected",
         description: "Please select at least one field to preview",
         color: "warning",
+        icon: "i-lucide-triangle-alert",
       });
       return;
     }
+
+    if (filterStore.showCompanyFilter && !filterStore.companyId) {
+      toast.add({
+        title: "Company Required",
+        description: "Please select a company to generate the report.",
+        color: "warning",
+        icon: "i-lucide-triangle-alert",
+      });
+      return;
+    }
+
     isLoading.value = true;
     previewData.value = [];
 
@@ -154,6 +167,10 @@ export const useReportStore = defineStore("ReportStore", () => {
       const response = await $apiFetch("/api/reports/data", {
         method: "POST",
         body: reportConfig.value,
+        query: {
+          companyId: filterStore.companyId,
+          hostelId: filterStore.hostelId,
+        },
       });
 
       previewData.value = response.data;
@@ -163,14 +180,16 @@ export const useReportStore = defineStore("ReportStore", () => {
           title: "No records found",
           description: "No records found matching your filters, adjust your filters and try again",
           color: "warning",
+          icon: "i-lucide-triangle-alert",
         });
       }
     }
-    catch (error) {
+    catch (error: any) {
       toast.add({
         title: "Failed to generate report",
-        description: (error as Error).message,
+        description: error.data?.message || error.message || error.statusMessage || "An error occurred while generating the report.",
         color: "error",
+        icon: "i-lucide-badge-alert",
       });
     }
     finally {
@@ -242,8 +261,15 @@ export const useReportStore = defineStore("ReportStore", () => {
   const savedTemplates = ref<SavedReportTemplate[]>([]);
 
   const fetchTemplates = async () => {
+    if (filterStore.showCompanyFilter && !filterStore.companyId) return;
+
     try {
-      const response = await $apiFetch("/api/reports");
+      const response = await $apiFetch("/api/reports", {
+        query: {
+          companyId: filterStore.companyId,
+          hostelId: filterStore.hostelId,
+        },
+      });
       savedTemplates.value = response.data || [];
     }
     catch (error) {
@@ -252,6 +278,15 @@ export const useReportStore = defineStore("ReportStore", () => {
   };
 
   const saveTemplate = async (title: string, description?: string) => {
+    if (filterStore.showCompanyFilter && !filterStore.companyId) {
+      toast.add({
+        title: "Company Required",
+        description: "Please select a company to save the template.",
+        color: "warning",
+      });
+      return;
+    }
+
     try {
       const response = await $apiFetch("/api/reports", {
         method: "POST",
@@ -260,6 +295,10 @@ export const useReportStore = defineStore("ReportStore", () => {
           description,
           module: state.value.module,
           config: reportConfig.value,
+        },
+        query: {
+          companyId: filterStore.companyId,
+          hostelId: filterStore.hostelId,
         },
       });
 
@@ -272,10 +311,10 @@ export const useReportStore = defineStore("ReportStore", () => {
       await fetchTemplates();
       return response.data;
     }
-    catch (error) {
+    catch (error: any) {
       toast.add({
         title: "Failed to save template",
-        description: (error as Error).message,
+        description: error.data?.message || error.message || "An error occurred while saving the template.",
         color: "error",
       });
       throw error;
@@ -284,13 +323,21 @@ export const useReportStore = defineStore("ReportStore", () => {
 
   const deleteTemplate = async (id?: number | string) => {
     if (!id) return;
+    if (filterStore.showCompanyFilter && !filterStore.companyId) return;
+
     try {
-      await $apiFetch(`/api/reports/${id}`, { method: "DELETE" });
+      await $apiFetch(`/api/reports/${id}`, {
+        method: "DELETE",
+        query: {
+          companyId: filterStore.companyId,
+          hostelId: filterStore.hostelId,
+        },
+      });
       toast.add({ title: "Template deleted", color: "success" });
       await fetchTemplates();
     }
-    catch (error) {
-      toast.add({ title: "Failed to delete template", description: (error as Error).message, color: "error" });
+    catch (error: any) {
+      toast.add({ title: "Failed to delete template", description: error.data?.message || error.message || "An error occurred while deleting the template.", color: "error" });
     }
   };
 

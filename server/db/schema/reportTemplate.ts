@@ -12,6 +12,8 @@ export const reportModuleEnum = pgEnum("report_module", [
   "maintenanceRequest",
   "complaint",
   "user",
+  "payment",
+  "allocation",
 ]);
 
 export const reportTemplate = pgTable("report_template", t => ({

@@ -8,19 +8,18 @@ export async function reportQueries(event?: H3Event) {
   const { db } = useDB(event);
 
   const applyScope = (scope: AdminScope) => {
+    if (scope.hostelId) return { hostelId: scope.hostelId };
+    if (scope.companyId) return { companyId: scope.companyId };
     const mode = getScopeMode(scope);
-
     if (mode === "platform") return {};
-    if (mode === "company" && scope.companyId) return { companyId: scope.companyId };
-    if (mode === "hostel" && scope.hostelId) return { hostelId: scope.hostelId };
     return { RAW: () => sql`FALSE` };
   };
 
   function applyScopeSql(scope: AdminScope) {
+    if (scope.hostelId) return [eq(reportTemplate.hostelId, scope.hostelId)];
+    if (scope.companyId) return [eq(reportTemplate.companyId, scope.companyId)];
     const mode = getScopeMode(scope);
     if (mode === "platform") return [];
-    if (mode === "company" && scope.companyId) return [eq(reportTemplate.companyId, scope.companyId)];
-    if (mode === "hostel" && scope.hostelId) return [eq(reportTemplate.hostelId, scope.hostelId)];
     return [sql`FALSE`];
   }
 
@@ -389,9 +388,25 @@ export async function reportQueries(event?: H3Event) {
   };
 
   const getPaymentReportData = async (config: ReportConfigSchema, scope: AdminScope) => {
+    const scopeObj: any = applyScope(scope);
+
+    if (scopeObj.hostelId !== undefined) {
+      const hostelId = scopeObj.hostelId;
+      delete scopeObj.hostelId;
+
+      const students = await db.query.student.findMany({
+        where: { hostelId },
+        columns: { id: true },
+      });
+      const studentIds = students.map(s => s.id);
+
+      if (studentIds.length === 0) return [];
+      scopeObj.studentId = { in: studentIds };
+    }
+
     const query = await db.query.payment.findMany({
       where: {
-        ...applyScope(scope),
+        ...scopeObj,
         status: config.statusFilter?.length ? { in: config.statusFilter as Payment["status"][] } : undefined,
         paymentMethod: config.filters?.paymentMethod as Payment["paymentMethod"],
         paymentDate: {

@@ -23,9 +23,11 @@ import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, auditLog, billing, companySettings, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, hostelSettings, loginAttempts, maintenanceRequest, maintenanceStatusEnum, payment, reportTemplate, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { useDB } from "~~/server/utils/db";
-import type { User } from "#auth-utils";
+import type { requirePortalUserSession } from "~~/server/utils/portalSession";
 
+import type { User } from "#auth-utils";
 import type { PrebuiltTemplate } from "../utils/reportConfig";
+
 import type { ComplaintStatusResponseSchema, CreateMaintenanceSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
 
 export type DeepNonNullable<T> = {
@@ -290,6 +292,7 @@ export type AdminScope = {
   userId: number;
   isActiveAdmin: boolean;
   companyMemberStatus?: "active" | "invited" | "disabled";
+  session: Awaited<ReturnType<typeof requirePortalUserSession>>;
 };
 
 export type ScopeMode = "platform" | "company" | "hostel" | "none";

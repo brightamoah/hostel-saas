@@ -2,7 +2,7 @@ import type { H3Event } from "h3";
 
 import { companyQueries } from "../db/queries";
 
-export async function adminSessionCheck(event: H3Event): Promise<AdminScope & { session: Awaited<ReturnType<typeof requirePortalUserSession>> }> {
+export async function adminSessionCheck(event: H3Event): Promise<AdminScope> {
   const session = await requirePortalUserSession(event, {
     message: "You must be logged in as an admin to access this resource.",
   });

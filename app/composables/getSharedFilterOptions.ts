@@ -39,6 +39,7 @@ export function useGetSharedFilterOptions() {
 
   const hostelFilter = ref("");
   const isHostelLoading = ref(false);
+
   const hostelFilterOptions = ref<FilterOption[]>([]);
   if (user.value?.role === "admin") {
     const { hostels, status } = useFetchRoomData();

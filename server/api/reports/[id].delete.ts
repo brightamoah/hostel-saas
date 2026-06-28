@@ -2,7 +2,8 @@ import { reportQueries } from "~~/server/db/queries";
 
 export default defineEventHandler(async (event) => {
   try {
-    const scope = await adminSessionCheck(event);
+    let scope = await adminSessionCheck(event);
+    scope = resolveReportScope(event, scope);
 
     const { companyId, companyRole } = scope;
 
@@ -46,6 +47,8 @@ export default defineEventHandler(async (event) => {
     };
   }
   catch (error) {
+    if (error && typeof error === "object" && "statusCode" in error) throw error;
+
     handleError(error, "Delete Report Template", event);
   }
 });

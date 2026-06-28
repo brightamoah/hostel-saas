@@ -153,6 +153,8 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col gap-5 p-3">
+    <AppCompanyHostelFilter />
+
     <UTabs
       v-model="reportState.type"
       :items="tabsItems"

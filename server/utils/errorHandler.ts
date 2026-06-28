@@ -137,7 +137,7 @@ export function handleError(
   const rawMessage = String(err?.data?.message ?? err?.message ?? "").trim();
   const lower = rawMessage.toLowerCase();
 
-  const serverPatterns = [
+  const dbPatterns = [
     "failed query",
     "syntax error",
     "duplicate key",
@@ -145,6 +145,9 @@ export function handleError(
     "internal server error",
     "null value in column",
     "permission denied",
+  ];
+
+  const networkPatterns = [
     "getaddrinfo enotfound",
     "enotfound",
     "neon.tech",
@@ -153,14 +156,21 @@ export function handleError(
     "etimedout",
   ];
 
-  if (serverPatterns.some(p => lower.includes(p))) {
-    // keep original error in server console for debugging
+  if (networkPatterns.some(p => lower.includes(p))) {
     console.error(`Error (${context}):`, err);
-
     throw createError({
       statusCode: 500,
-      message: "Server error. Please check your network and try again later.",
-      statusMessage: "Server Network Unavailable",
+      message: "Unable to connect to the database. Please check your network or try again later.",
+      statusMessage: "Database Connection Error",
+    });
+  }
+
+  if (dbPatterns.some(p => lower.includes(p))) {
+    console.error(`Error (${context}):`, err);
+    throw createError({
+      statusCode: 500,
+      message: "An internal server error occurred while processing your request.",
+      statusMessage: "Internal Server Error",
     });
   }
 
