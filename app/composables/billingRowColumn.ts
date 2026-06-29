@@ -7,19 +7,20 @@ import { useDateFormat } from "@vueuse/core";
 
 const BillingDetails = defineAsyncComponent(() => import("~/components/billing/details.vue"));
 const PaymentModal = defineAsyncComponent(() => import("~/components/billing/pay.vue"));
+const RecordPaymentModal = defineAsyncComponent(() => import("~/components/billing/recordPayment.vue"));
 
 export function useBillingRowColumn(
   UAvatar: ComponentType,
   UButton: ComponentType,
   UBadge: ComponentType,
-  // UDropdownMenu: ComponentType,
+  UDropdownMenu: ComponentType,
   UTooltip: ComponentType,
 ) {
   const { user } = usePortalUserSession();
   const overlay = useOverlay();
 
   const billingStore = useBillingStore();
-  const { isPaymentModalOpen } = storeToRefs(billingStore);
+  const { isPaymentModalOpen, isRecordPaymentModalOpen } = storeToRefs(billingStore);
 
   const isAdmin = computed(() => user.value?.role === "admin");
 
@@ -42,6 +43,16 @@ export function useBillingRowColumn(
     });
   };
 
+  const openRecordPaymentModal = (billing: Billing) => {
+    isRecordPaymentModalOpen.value = true;
+
+    const modal = overlay.create(RecordPaymentModal);
+
+    void modal.open({
+      billing,
+    });
+  };
+
   const getRowItems = (row: Row<Billing>) => {
     const billing = row.original;
 
@@ -57,7 +68,8 @@ export function useBillingRowColumn(
       },
     ];
 
-    if (user.value?.role === "admin") {
+    if (user.value?.role === "admin" && ["unpaid", "partially paid", "overdue"]
+      .some(status => billing.status.toLowerCase().includes(status))) {
       actions.push(
         {
           label: "Send Reminder",
@@ -67,7 +79,7 @@ export function useBillingRowColumn(
         {
           label: "Record Payment",
           icon: "lucide-banknote-arrow-up",
-          onSelect: () => { },
+          onSelect: () => openRecordPaymentModal(billing),
         },
       );
     }
@@ -200,8 +212,34 @@ export function useBillingRowColumn(
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) =>
-          h(
+        cell: ({ row }) => {
+          if (user.value?.role === "admin") {
+            return h(
+              "div",
+              { class: "text-center" },
+              [
+                h(UDropdownMenu, {
+                  arrow: true,
+                  content: {
+                    align: "center",
+                  },
+                  items: getRowItems(row),
+                  ui: {
+                    item: "cursor-pointer rounded",
+                  },
+                }, () =>
+                  h(UButton, {
+                    icon: "i-lucide-ellipsis-vertical",
+                    color: "neutral",
+                    variant: "ghost",
+                    class: "ml-auto cursor-pointer",
+                  })),
+              ],
+            );
+          }
+
+          // For students, display inline buttons
+          return h(
             "div",
             { class: "flex gap-2" },
             [
@@ -223,18 +261,18 @@ export function useBillingRowColumn(
                   ],
                 },
               ),
-              ((user.value?.role === "admin" || (user.value?.role === "student")) && ["unpaid", "partially paid", "overdue"]
-                .some(status => row.original.status.toLowerCase().includes(status)))
+              (["unpaid", "partially paid", "overdue"].some(status => row.original.status.toLowerCase().includes(status)))
               && h(UButton, {
-                label: user.value?.role === "admin" ? "Record Payment" : "Make Payment",
-                color: user.value?.role === "admin" ? undefined : "primary",
-                variant: user.value?.role === "admin" ? "outline" : undefined,
-                icon: user.value?.role === "admin" ? "lucide-banknote-arrow-up" : "lucide-credit-card",
+                label: "Make Payment",
+                color: "primary",
+                variant: "solid",
+                icon: "lucide-credit-card",
                 class: "cursor-pointer",
                 onClick: () => openPaymentModal(row.original),
               }),
             ],
-          ),
+          );
+        },
       },
 
     );

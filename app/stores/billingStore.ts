@@ -156,11 +156,11 @@ export const useBillingStore = defineStore("billingStore", () => {
         duration: 5000,
       });
     }
-    catch (error) {
-      const message = (error as any)?.data?.message;
+    catch (error: unknown) {
+      const message = (error as { data?: { message?: string } })?.data?.message;
       toast.add({
         title: "Failed to Send Invoice Email",
-        description: message,
+        description: message || (error as Error).message,
         color: "error",
         icon: "i-lucide-circle-alert",
         duration: 8000,
@@ -172,6 +172,7 @@ export const useBillingStore = defineStore("billingStore", () => {
   };
 
   const isPaymentModalOpen = ref(false);
+  const isRecordPaymentModalOpen = ref(false);
 
   const paymentState = ref<Partial<PaymentSchema>>({
     amount: undefined,
@@ -209,8 +210,8 @@ export const useBillingStore = defineStore("billingStore", () => {
       isSuccess = true;
       window.location.href = response?.data?.authorizationUrl || "";
     }
-    catch (error) {
-      const message = (error as any)?.data?.message;
+    catch (error: unknown) {
+      const message = (error as { data?: { message?: string } })?.data?.message;
       toast.add({
         title: "Payment Initialization Failed",
         description: message || (error as Error).message,
@@ -232,6 +233,44 @@ export const useBillingStore = defineStore("billingStore", () => {
     };
   }
 
+  async function recordManualPayment(payload: RecordManualPaymentSchema) {
+    if (isLoading.value) return;
+
+    isLoading.value = true;
+
+    try {
+      const response = await $apiFetch("/api/billing/admin/recordPayment", {
+        method: "POST",
+        body: payload,
+      });
+
+      if (!response.success) {
+        throw new Error(response.message || "Failed to record manual payment");
+      }
+
+      toast.add({
+        title: "Payment Recorded",
+        description: "The payment has been successfully recorded.",
+        color: "success",
+        icon: "lucide-check-circle",
+      });
+
+      await refreshNuxtData();
+    }
+    catch (error: unknown) {
+      const message = (error as { data?: { message?: string } })?.data?.message;
+      toast.add({
+        title: "Payment Recording Failed",
+        description: message || (error as Error).message,
+        color: "error",
+        icon: "lucide-circle-alert",
+      });
+    }
+    finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     createBillingState,
     isLoading,
@@ -244,6 +283,8 @@ export const useBillingStore = defineStore("billingStore", () => {
     emailInvoice,
     clearPaymentState,
     initiatePayment,
+    isRecordPaymentModalOpen,
+    recordManualPayment,
   };
 });
 

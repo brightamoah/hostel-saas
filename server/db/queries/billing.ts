@@ -1,5 +1,6 @@
 import type { H3Event } from "h3";
 import type { AdminScope, AuditContext, BillingInsert, Period } from "~~/shared/types";
+import type { RecordManualPaymentSchema } from "~~/shared/utils/schema";
 
 import type { paymentMethod } from "../schema";
 import { and, eq, exists, gt, ne, sql } from "drizzle-orm";
@@ -430,23 +431,25 @@ export async function billingQueries(event?: H3Event) {
   };
 
   const createPaymentIntent = async (
-    billingId: number,
-    studentId: number,
-    companyId: number,
-    amount: number,
-    reference: string,
-    subaccountCode: string | null,
-    splitType: "company" | "hostel" | "platform",
+    payload: {
+      billingId: number;
+      studentId: number;
+      companyId: number;
+      amount: number;
+      reference: string;
+      subaccountCode: string | null;
+      splitType: "company" | "hostel" | "platform";
+    },
     ctx: AuditContext,
   ) => {
     const [intent] = await db.insert(payment).values({
-      billingId,
-      studentId,
-      companyId,
-      amount: amount.toString(),
-      transactionReference: reference,
-      paystackSubaccountCode: subaccountCode,
-      splitType,
+      billingId: payload.billingId,
+      studentId: payload.studentId,
+      companyId: payload.companyId,
+      amount: payload.amount.toString(),
+      transactionReference: payload.reference,
+      paystackSubaccountCode: payload.subaccountCode,
+      splitType: payload.splitType,
       paymentMethod: "card",
       status: "pending",
       paymentDate: new Date(),
@@ -546,6 +549,37 @@ export async function billingQueries(event?: H3Event) {
     }
   };
 
+  const recordManualPayment = async (
+    payload: RecordManualPaymentSchema & { studentId: number; companyId: number },
+    ctx: AuditContext,
+  ) => {
+    const [newPayment] = await db.insert(payment).values({
+      billingId: payload.billingId,
+      studentId: payload.studentId,
+      companyId: payload.companyId,
+      amount: payload.amount.toString(),
+      transactionReference: payload.transactionReference,
+      paymentMethod: payload.paymentMethod,
+      status: "completed",
+      paymentDate: new Date(payload.paymentDate),
+      splitType: "company", // Manual payments don't go through Paystack split
+    }).returning();
+
+    if (newPayment) {
+      await logAudit(db, ctx, {
+        entityId: newPayment.billingId,
+        entityType: "payment",
+        actionType: "CREATE",
+        action: "billing.manual_payment_recorded",
+        description: `Recorded manual payment of amount ${payload.amount} via ${payload.paymentMethod} with reference ${payload.transactionReference}`,
+        before: null,
+        after: newPayment,
+      });
+    }
+
+    return newPayment;
+  };
+
   return {
     getBillingById,
     getScopedBillingsAdmin,
@@ -558,6 +592,7 @@ export async function billingQueries(event?: H3Event) {
     createPaymentIntent,
     markPaymentAsFailed,
     processSuccessfulPayment,
+    recordManualPayment,
     getBillingByIdStudent,
   };
 }

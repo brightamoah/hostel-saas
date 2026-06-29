@@ -17,7 +17,7 @@ const { user } = usePortalUserSession();
 const UButton = resolveComponent("UButton");
 const UAvatar = resolveComponent("UAvatar");
 const UBadge = resolveComponent("UBadge");
-// const UDropdownMenu = resolveComponent("UDropdownMenu");
+const UDropdownMenu = resolveComponent("UDropdownMenu");
 const UTooltip = resolveComponent("UTooltip");
 
 const {
@@ -88,6 +88,7 @@ const { columns } = useBillingRowColumn(
   UAvatar,
   UButton,
   UBadge,
+  UDropdownMenu,
   UTooltip,
 );
 

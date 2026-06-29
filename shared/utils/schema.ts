@@ -995,6 +995,38 @@ const paymentSchema = z.object({
 
 export type PaymentSchema = z.output<typeof paymentSchema>;
 
+const recordManualPaymentSchema = z.object({
+  billingId: createIdSchema("Billing"),
+  amount: z.number("Amount is required").min(1, "Amount must be at least 1"),
+  totalAmount: z.number("Total Amount is required").positive(),
+  paymentMethod: paymentMethodSchema,
+  transactionReference: z.string().trim().min(1, "Reference is required"),
+  paymentDate: z.string().refine(date => new Date(date) <= new Date(), "Payment date cannot be in the future"),
+}).superRefine((data, ctx) => {
+  const { amount, totalAmount } = data;
+
+  if (amount > totalAmount) {
+    ctx.addIssue({
+      code: "custom",
+      message: `Amount cannot exceed the total amount (GH₵${totalAmount})`,
+      path: ["amount"],
+    });
+    return;
+  }
+
+  const balance = totalAmount - amount;
+
+  if (balance > 0 && balance < 1) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Remaining balance cannot be less than 1. Please pay the full amount or reduce the payment.",
+      path: ["amount"],
+    });
+  }
+});
+
+export type RecordManualPaymentSchema = z.output<typeof recordManualPaymentSchema>;
+
 const referenceSchema = z.string()
   .nonempty("Reference is required")
   .regex(
@@ -1173,6 +1205,7 @@ export {
   phoneNumberSchema,
   promoteDemoteSchema,
   readStatusSchema,
+  recordManualPaymentSchema,
   registerCompanySchema,
   registerVisitorSchema,
   rememberMeSchema,
