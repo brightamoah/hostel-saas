@@ -74,7 +74,9 @@ export function useCompanySettings() {
       notifyOnOverdue: setting.notifyOnOverdue,
       notifyOnAllocation: setting.notifyOnAllocation,
       notifyOnMaintenance: setting.notifyOnMaintenance,
+      notifyOnUpcoming: setting.notifyOnUpcoming,
       overdueReminderDays: setting.overdueReminderDays ?? [3, 7, 14],
+      upcomingReminderDays: setting.upcomingReminderDays ?? [7, 3, 1, 0],
     };
 
     portalState.value = {

@@ -7,7 +7,7 @@ import { computeAuditDiff, redact } from "~~/server/utils/auditLogUtils";
 
 import { auditLog } from "../schema";
 
-export async function auditLogQueries(event?: H3Event) {
+export async function auditLogQueries(event?: H3Event | CloudflareContext) {
   const actorFields = (ctx: AuditContext): Pick<AuditInsert, "actorUserId" | "actorAdminId" | "actorType"> => {
     const a = ctx.actor;
 

@@ -9,9 +9,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { isPlatformAdmin } = await adminSessionCheck(event);
+  const { isPlatformAdmin, companyRole } = await adminSessionCheck(event);
 
-  if (!isPlatformAdmin) {
+  if (!isPlatformAdmin && companyRole !== "owner") {
     throw createError({
       statusCode: 403,
       statusMessage: "Forbidden",

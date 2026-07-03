@@ -14,7 +14,7 @@ import type { ComputedOptions, ConcreteComponent, MethodOptions, Ref, ShallowRef
 import type { RouteLocationRaw, RouteQueryAndHash } from "vue-router";
 import type z from "zod";
 import type { AnnouncementType } from "~~/server/db/queries/announcement";
-import type { AdminBillingStats, BillingType, PaymentsWithData, PaymentType, StudentBillingStats } from "~~/server/db/queries/billing";
+import type { AdminBillingStats, BillingType, OverdueAndUpcomingBillingsType, PaymentsWithData, PaymentType, StudentBillingStats } from "~~/server/db/queries/billing";
 import type { CompaniesList } from "~~/server/db/queries/company";
 import type { ComplaintData, ComplaintType } from "~~/server/db/queries/complaint";
 import type { Maintenance, MaintenanceStats, StudentMaintenanceData } from "~~/server/db/queries/maintenance";
@@ -907,3 +907,5 @@ export interface ReportTemplate extends Omit<ReportTemplateType, "id" | "created
   description?: string;
   isPrebuilt?: boolean;
 };
+
+export type OverdueAndUpcomingBillings = OverdueAndUpcomingBillingsType;

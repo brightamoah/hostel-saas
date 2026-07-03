@@ -2,7 +2,7 @@
 // Escapes &, <, >, ", and '
 import type { User } from "#auth-utils";
 
-function escapeHtml(str: string): string {
+export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -24,7 +24,7 @@ function escapeHtml(str: string): string {
 
 // ─── Shared layout shell ────────────────────────────────────────────────────
 
-function shell(content: string, previewText: string, hostelName: string): string {
+export function shell(content: string, previewText: string, hostelName: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -81,21 +81,21 @@ function shell(content: string, previewText: string, hostelName: string): string
 
 // ─── Shared components ───────────────────────────────────────────────────────
 
-function heading(text: string): string {
+export function heading(text: string): string {
   return `<h1 style="margin:0 0 3px;font-size:20px;font-weight:600;color:#265757;letter-spacing:-0.01em;line-height:1.3;">${text}</h1>`;
 }
 
-function subtext(text: string): string {
+export function subtext(text: string): string {
   return `<p style="margin:0 0 20px;font-size:15px;color:#4b5563;line-height:1.7;">${text}</p>`;
 }
 
-function divider(): string {
+export function divider(): string {
   return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:15px 0;">
     <tr><td style="height:1px;background-color:#e9f4f3;"></td></tr>
   </table>`;
 }
 
-function primaryButton(label: string, url: string): string {
+export function primaryButton(label: string, url: string): string {
   // Only allow http(s) URLs, fallback to '#'
   let safeUrl = "#";
   try {
@@ -117,11 +117,11 @@ function primaryButton(label: string, url: string): string {
   </table>`;
 }
 
-function codeBlock(text: string): string {
+export function codeBlock(text: string): string {
   return `<p style="margin:16px 0;background-color:#e9f4f3;border-radius:4px;padding:12px 14px;font-family:'Courier New',Courier,monospace;font-size:13px;color:#265757;word-break:break-all;line-height:1.6;">${text}</p>`;
 }
 
-function infoRow(label: string, value: string, mono = false): string {
+export function infoRow(label: string, value: string, mono = false): string {
   const valueStyle = mono
     ? `font-family:'Courier New',Courier,monospace;font-size:14px;color:#265757;font-weight:600;`
     : `font-size:14px;color:#1f2937;`;
@@ -131,13 +131,13 @@ function infoRow(label: string, value: string, mono = false): string {
   </tr>`;
 }
 
-function infoTable(rows: string): string {
+export function infoTable(rows: string): string {
   return `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:20px 0 28px;">
     ${rows}
   </table>`;
 }
 
-function smallNote(text: string): string {
+export function smallNote(text: string): string {
   return `<p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">${text}</p>`;
 }
 

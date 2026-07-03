@@ -41,9 +41,40 @@ const billingWithRelations = {
   },
 } as const;
 
+const overdueAndUpcomingBilling = {
+  with: {
+    student: {
+      columns: {
+        id: true,
+        address: true,
+        residencyStatus: true,
+      },
+      with: {
+        user: {
+          columns: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    },
+    hostel: {
+      columns: {
+        name: true,
+        address: true,
+        contactNumber: true,
+        email: true,
+        supportEmail: true,
+        supportPhone: true,
+      },
+    },
+  },
+} as const;
+
 type PaymentMethodType = typeof paymentMethod.enumValues[number];
 
-export async function billingQueries(event?: H3Event) {
+export async function billingQueries(event?: H3Event | CloudflareContext) {
   const { db } = useDB(event);
 
   const { logAudit } = await auditLogQueries(event);
@@ -580,6 +611,53 @@ export async function billingQueries(event?: H3Event) {
     return newPayment;
   };
 
+  const getUpcomingBillingsBatch = async (companyIds: number[]) => {
+    if (companyIds.length === 0) return [];
+
+    return await db.query.billing.findMany({
+      where: {
+        companyId: { in: companyIds },
+        status: { in: ["unpaid", "partially paid"] },
+        dueDate: { gte: new Date().toISOString() },
+      },
+      extras: {
+        invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
+      },
+      ...overdueAndUpcomingBilling,
+    });
+  };
+
+  const getOverdueBillingsBatch = async (companyIds: number[]) => {
+    if (companyIds.length === 0) return [];
+
+    return await db.query.billing.findMany({
+      where: {
+        companyId: { in: companyIds },
+        status: "overdue",
+        dueDate: { lte: new Date().toISOString() },
+      },
+      extras: {
+        invoiceNumber: (billing, { sql }) => sql<string>`'INV-' || lpad(${billing.id}::text, 6, '0')`,
+      },
+      ...overdueAndUpcomingBilling,
+    });
+  };
+
+  const getExistingRemindersBatch = async (billingIds: number[]) => {
+    if (billingIds.length === 0) return [];
+
+    return await db.query.billingRemindersLog.findMany({
+      where: {
+        billingId: { in: billingIds },
+      },
+      columns: {
+        billingId: true,
+        reminderType: true,
+        daysOffset: true,
+      },
+    });
+  };
+
   return {
     getBillingById,
     getScopedBillingsAdmin,
@@ -594,6 +672,9 @@ export async function billingQueries(event?: H3Event) {
     processSuccessfulPayment,
     recordManualPayment,
     getBillingByIdStudent,
+    getUpcomingBillingsBatch,
+    getOverdueBillingsBatch,
+    getExistingRemindersBatch,
   };
 }
 
@@ -606,3 +687,5 @@ export type StudentBillingStats = Awaited<ReturnType<Awaited<ReturnType<typeof b
 
 export type PaymentType = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getScopedPaymentsAdmin"]>>[number];
 export type PaymentsWithData = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getScopedPaymentsAdmin"]>>;
+
+export type OverdueAndUpcomingBillingsType = Awaited<ReturnType<Awaited<ReturnType<typeof billingQueries>>["getUpcomingBillingsBatch"]>>;

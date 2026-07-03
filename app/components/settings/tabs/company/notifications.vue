@@ -29,6 +29,12 @@ const toggles = [
     icon: "i-lucide-clock-alert",
   },
   {
+    key: "notifyOnUpcoming" as const,
+    label: "Upcoming Bills",
+    description: "Send reminders before bills reach their due date.",
+    icon: "i-lucide-calendar-clock",
+  },
+  {
     key: "notifyOnAllocation" as const,
     label: "Room Allocation Changes",
     description: "Notify on new allocations, transfers, and cancellations.",
@@ -42,9 +48,19 @@ const toggles = [
   },
 ];
 
-const reminderInput = ref(
-  (state.value.overdueReminderDays ?? [3, 7, 14]).join(", "),
-);
+const reminderInput = ref("");
+watch(() => state.value.overdueReminderDays, (newVal) => {
+  const parsed = reminderInput.value
+    .split(",")
+    .map(s => Number.parseInt(s.trim(), 10))
+    .filter(n => !Number.isNaN(n) && n > 0 && n <= 365);
+  const currentSorted = [...new Set(parsed)].sort((a, b) => a - b);
+  const newSorted = [...new Set(newVal ?? [])].sort((a, b) => a - b);
+
+  if (JSON.stringify(currentSorted) !== JSON.stringify(newSorted)) {
+    reminderInput.value = (newVal ?? [3, 7, 14]).join(", ");
+  }
+}, { immediate: true, deep: true });
 
 watch(reminderInput, (val) => {
   const parsed = val
@@ -52,6 +68,28 @@ watch(reminderInput, (val) => {
     .map(s => Number.parseInt(s.trim(), 10))
     .filter(n => !Number.isNaN(n) && n > 0 && n <= 365);
   state.value.overdueReminderDays = [...new Set(parsed)].sort((a, b) => a - b);
+});
+
+const upcomingReminderInput = ref("");
+watch(() => state.value.upcomingReminderDays, (newVal) => {
+  const parsed = upcomingReminderInput.value
+    .split(",")
+    .map(s => Number.parseInt(s.trim(), 10))
+    .filter(n => !Number.isNaN(n) && n >= 0 && n <= 365);
+  const currentSorted = [...new Set(parsed)].sort((a, b) => b - a);
+  const newSorted = [...new Set(newVal ?? [])].sort((a, b) => b - a);
+
+  if (JSON.stringify(currentSorted) !== JSON.stringify(newSorted)) {
+    upcomingReminderInput.value = (newVal ?? [7, 3, 1, 0]).join(", ");
+  }
+}, { immediate: true, deep: true });
+
+watch(upcomingReminderInput, (val) => {
+  const parsed = val
+    .split(",")
+    .map(s => Number.parseInt(s.trim(), 10))
+    .filter(n => !Number.isNaN(n) && n >= 0 && n <= 365);
+  state.value.upcomingReminderDays = [...new Set(parsed)].sort((a, b) => b - a);
 });
 
 function onSubmit(_e: FormSubmitEvent<CompanyNotificationSettingsSchema>) {
@@ -166,6 +204,95 @@ defineExpose({
                 :key="day"
                 :label="`Day ${day}`"
                 color="warning"
+                variant="subtle"
+                size="md"
+              >
+                <template #leading>
+                  <UIcon
+                    name="i-lucide-bell-dot"
+                    class="size-3"
+                  />
+                </template>
+              </UBadge>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="flex items-center gap-2 text-muted text-xs"
+          >
+            <UIcon
+              name="i-lucide-info"
+              class="size-3.5 shrink-0"
+            />
+
+            <span>No valid reminder days entered yet.</span>
+          </div>
+        </div>
+      </UCard>
+    </Transition>
+
+    <Transition
+      enter-active-class="transition-all duration-200 ease-out"
+      enter-from-class="opacity-0 -translate-y-1"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition-all duration-150 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 -translate-y-1"
+    >
+      <UCard
+        v-if="state.notifyOnUpcoming"
+        :ui="{ root: 'ring-default shadow-none', header: 'pb-4', body: 'pt-0' }"
+      >
+        <template #header>
+          <div class="flex items-center gap-3">
+            <div class="flex justify-center items-center bg-info/10 p-2 rounded-lg">
+              <UIcon
+                name="i-lucide-calendar-clock"
+                class="size-5 text-info"
+              />
+            </div>
+
+            <div>
+              <p class="font-semibold text-highlighted text-sm">
+                Upcoming Reminder Schedule
+              </p>
+
+              <p class="mt-0.5 text-muted text-xs">
+                Days before the due date to send automated reminder emails (0 means on the due date)
+              </p>
+            </div>
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <UFormField
+            name="upcomingReminderDays"
+            size="lg"
+            hint="Enter comma-separated numbers between 0–365 (e.g. 7, 3, 1, 0)"
+          >
+            <UInput
+              v-model="upcomingReminderInput"
+              placeholder="7, 3, 1, 0"
+              icon="i-lucide-timer"
+              class="w-full max-w-sm"
+            />
+          </UFormField>
+
+          <div
+            v-if="state.upcomingReminderDays?.length"
+            class="space-y-2"
+          >
+            <p class="font-medium text-muted text-xs">
+              Scheduled reminders
+            </p>
+
+            <div class="flex flex-wrap gap-2">
+              <UBadge
+                v-for="day in state.upcomingReminderDays"
+                :key="day"
+                :label="day === 0 ? 'On Due Date' : `${day} Day${day > 1 ? 's' : ''} Before`"
+                color="info"
                 variant="subtle"
                 size="md"
               >

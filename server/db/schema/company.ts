@@ -103,12 +103,18 @@ export const companySettings = pgTable("company_settings", t => ({
 
   notifyOnPayment: t.boolean().default(true).notNull(),
   notifyOnOverdue: t.boolean().default(true).notNull(),
+  notifyOnUpcoming: t.boolean().default(true).notNull(),
   notifyOnAllocation: t.boolean().default(true).notNull(),
   notifyOnMaintenance: t.boolean().default(true).notNull(),
   overdueReminderDays: t
     .integer()
     .array()
     .default(sql`ARRAY[3,7,14]::integer[]`)
+    .notNull(),
+  upcomingReminderDays: t
+    .integer()
+    .array()
+    .default(sql`ARRAY[7,5,3,1,0]::integer[]`)
     .notNull(),
 
   allowStudentSelfCheckout: t.boolean().default(true).notNull(),

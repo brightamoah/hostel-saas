@@ -43,8 +43,12 @@ export const companyNotificationSettingsSchema = z.object({
   notifyOnOverdue: z.boolean(),
   notifyOnAllocation: z.boolean(),
   notifyOnMaintenance: z.boolean(),
+  notifyOnUpcoming: z.boolean(),
   overdueReminderDays: z
     .array(z.number().int().min(1).max(365))
+    .max(10, "Maximum 10 reminder intervals"),
+  upcomingReminderDays: z
+    .array(z.number().int().min(0).max(365))
     .max(10, "Maximum 10 reminder intervals"),
 });
 

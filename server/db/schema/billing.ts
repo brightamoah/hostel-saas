@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { check, pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { allocation, hostel } from "./room";
@@ -50,6 +50,11 @@ export const paymentSplitTypeEnum = pgEnum("payment_split_type", [
   "platform",
 ]);
 
+export const reminderType = pgEnum("reminder_type", [
+  "upcoming",
+  "overdue",
+]);
+
 export const billing = pgTable("billing", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
@@ -92,3 +97,13 @@ export const payment = pgTable("payment", t => ({
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 }));
+
+export const billingRemindersLog = pgTable("billing_reminders_log", t => ({
+  id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+  billingId: t.integer().notNull().references(() => billing.id, { onDelete: "cascade" }),
+  reminderType: reminderType().notNull(), // 'upcoming' or 'overdue'
+  daysOffset: t.integer().notNull(), // E.g., 3, 7, 14, 0
+  sentAt: t.timestamp().defaultNow().notNull(),
+}), table => [
+  uniqueIndex("billing_reminder_unique").on(table.billingId, table.reminderType, table.daysOffset),
+]);

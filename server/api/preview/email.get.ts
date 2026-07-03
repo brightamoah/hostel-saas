@@ -1,5 +1,6 @@
 import { roomQueries } from "~~/server/db/queries";
 import { getBillingTemplate, getEmailTemplate, getResetPasswordTemplate, getWelcomeAdminTemplate } from "~~/shared/utils/emailTemplate";
+import { getReminderEmailTemplate } from "~~/shared/utils/reminderEmailTemplate";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
@@ -59,6 +60,38 @@ export default defineEventHandler(async (event) => {
       invoiceNumber: `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
       supportEmail: "support@kayanest.app",
     }).html,
+
+    "reminder-upcoming": () =>
+      getReminderEmailTemplate(
+        "Bright Amoah",
+        `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
+        "September 1, 2024",
+        "September 30, 2024",
+        "GHS 1,200.00",
+        "GHS 400.00",
+        "GHS 800.00",
+        hostel.name!,
+        "support@kayanest.app",
+        "+233 54 968 4848",
+        "University Campus, Accra, Ghana",
+        false,
+      ).htmlTemplate,
+
+    "reminder-overdue": () =>
+      getReminderEmailTemplate(
+        "Bright Amoah",
+        `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
+        "September 1, 2024",
+        "September 30, 2024",
+        "GHS 1,200.00",
+        "GHS 0.00",
+        "GHS 1,200.00",
+        hostel.name!,
+        "support@kayanest.app",
+        "+233 54 968 4848",
+        "University Campus, Accra, Ghana",
+        true,
+      ).htmlTemplate,
   };
 
   type TemplateKey = keyof typeof templates;

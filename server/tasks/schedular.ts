@@ -17,6 +17,7 @@ export default defineTask({
       await runTask("clearExpiredCache", { context });
       await runTask("checkOverdueBillings", { context });
       await runTask("cancelUnpaidAllocations", { context });
+      await runTask("processBillingReminders", { context });
 
       // Weekly task
       const now = new Date();

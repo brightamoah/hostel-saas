@@ -17,6 +17,7 @@ export function useBillingRowColumn(
   UTooltip: ComponentType,
 ) {
   const { user } = usePortalUserSession();
+  const { $apiFetch } = useNuxtApp();
   const overlay = useOverlay();
 
   const billingStore = useBillingStore();
@@ -68,20 +69,53 @@ export function useBillingRowColumn(
       },
     ];
 
-    if (user.value?.role === "admin" && ["unpaid", "partially paid", "overdue"]
-      .some(status => billing.status.toLowerCase().includes(status))) {
-      actions.push(
-        {
-          label: "Send Reminder",
-          icon: "i-lucide-mail",
-          onSelect: () => { },
-        },
-        {
-          label: "Record Payment",
-          icon: "lucide-banknote-arrow-up",
-          onSelect: () => openRecordPaymentModal(billing),
-        },
-      );
+    if (user.value?.role === "admin") {
+      if (["unpaid", "partially paid", "overdue"].some(status => billing.status.toLowerCase().includes(status))) {
+        actions.push(
+          {
+            label: "Send Reminder",
+            icon: "i-lucide-mail",
+            onSelect: async () => {
+              const toast = useToast();
+              try {
+                toast.add({
+                  id: `send_reminder_${billing.id}`,
+                  title: "Sending reminder...",
+                  icon: "i-lucide-loader-2",
+                  color: "info",
+                });
+
+                const res = await $apiFetch("/api/billing/admin/sendReminder", {
+                  method: "POST",
+                  body: { billingId: billing.id },
+                });
+
+                toast.add({
+                  id: `send_reminder_${billing.id}`,
+                  title: "Reminder Sent",
+                  description: res.message,
+                  icon: "i-lucide-check-circle",
+                  color: "success",
+                });
+              }
+              catch (e: any) {
+                toast.add({
+                  id: `send_reminder_${billing.id}`,
+                  title: "Failed to send reminder",
+                  description: e.data?.message || e.message,
+                  icon: "i-lucide-x-circle",
+                  color: "error",
+                });
+              }
+            },
+          },
+          {
+            label: "Record Payment",
+            icon: "lucide-banknote-arrow-up",
+            onSelect: () => openRecordPaymentModal(billing),
+          },
+        );
+      }
     }
 
     if (user.value?.role === "student" && ["unpaid", "partially paid", "overdue"]
