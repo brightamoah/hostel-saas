@@ -17,6 +17,7 @@ const { user } = usePortalUserSession();
 const { userProfile } = useUser();
 
 const refreshContext = inject(refreshKey);
+const isMobile = inject(isMobileKey);
 
 const {
   canResend,
@@ -24,6 +25,22 @@ const {
   refreshIsLoading,
   handleRefresh,
 } = refreshContext ?? {};
+
+const dayNightImageUrlLight = computed(() => {
+  const greeting = getGreeting();
+
+  if (greeting === "Good Morning") return "svgs/light/sunnyCloud.svg";
+  else if (greeting === "Good Afternoon") return "svgs/light/sunny.svg";
+  else return "svgs/light/moon.svg";
+});
+
+const dayNightImageUrlDark = computed(() => {
+  const greeting = getGreeting();
+
+  if (greeting === "Good Morning") return "svgs/dark/sunnyCloud.svg";
+  else if (greeting === "Good Afternoon") return "svgs/dark/sunny.svg";
+  else return "svgs/dark/moon.svg";
+});
 </script>
 
 <template>
@@ -46,7 +63,7 @@ const {
 
       <div class="flex gap-2 mt-3">
         <UButton
-          label="View Profile"
+          :label="isMobile ? 'Profile' : 'View Profile'"
           variant="subtle"
           color="neutral"
           icon="i-lucide-user"
@@ -59,7 +76,7 @@ const {
           :handle-refresh="handleRefresh!"
           :can-resend="canResend!"
           :refresh-is-loading="refreshIsLoading!"
-          label="Refresh Data"
+          :label="isMobile ? 'Refresh' : 'Refresh Data'"
           variant="solid"
           color="primary"
         />
@@ -67,22 +84,13 @@ const {
     </template>
 
     <template #actions>
-      <UIcon
-        v-if="getGreeting() === 'Good Morning'"
-        name="i-lucide-cloud-sun"
-        class="bg-yellow-400 size-20"
-      />
-
-      <UIcon
-        v-else-if="getGreeting() === 'Good Afternoon'"
-        name="i-lucide-sun"
-        class="bg-warning size-20"
-      />
-
-      <UIcon
-        v-else
-        name="i-lucide-moon-star"
-        class="bg-secondary size-20"
+      <UColorModeImage
+        :light="dayNightImageUrlLight"
+        :dark="dayNightImageUrlDark"
+        width="100"
+        height="100"
+        alt="Weather"
+        class="rounded-lg"
       />
     </template>
   </UAlert>
