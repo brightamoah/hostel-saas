@@ -16,7 +16,6 @@ export default defineNuxtConfig({
     "@formkit/auto-animate",
     "nuxt-tiptap-editor",
     "evlog/nuxt",
-    "nuxt-email-renderer",
   ],
 
   $development: {
@@ -496,9 +495,5 @@ export default defineNuxtConfig({
 
   csurf: {
     addCsrfTokenToEventCtx: true,
-  },
-
-  nuxtEmailRenderer: {
-    devtools: true,
   },
 });

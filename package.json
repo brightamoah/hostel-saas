@@ -31,7 +31,6 @@
     "jspdf-autotable": "^5.0.7",
     "nuxt": "^4.5.1",
     "nuxt-auth-utils": "^0.5.26",
-    "nuxt-email-renderer": "2.8.0",
     "nuxt-security": "2.6.0",
     "nuxt-tiptap-editor": "^3.2.0",
     "paystack-sdk": "^3.8.0",
