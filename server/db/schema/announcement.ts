@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
+import { pgEnum, snakeCase, unique } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel, room } from "./room";
@@ -20,7 +20,7 @@ export const targetAudienceEnum = pgEnum("target_audience", [
   "user",
 ]);
 
-export const announcement = pgTable("announcement", t => ({
+export const announcement = snakeCase.table("announcement", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   postedBy: t.integer().notNull().references(() => admin.id, { onDelete: "cascade" }),
   title: t.varchar({ length: 150 }).notNull(),
@@ -38,7 +38,7 @@ export const announcement = pgTable("announcement", t => ({
     .notNull(),
 }));
 
-export const announcementReads = pgTable("announcement_reads", t => ({
+export const announcementReads = snakeCase.table("announcement_reads", t => ({
   readId: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   announcementId: t.integer().notNull().references(() => announcement.id, { onDelete: "cascade" }),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),

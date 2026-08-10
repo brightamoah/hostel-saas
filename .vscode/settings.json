@@ -141,6 +141,7 @@
   "vue.inlayHints.vBindShorthand": true,
   "vue.inlayHints.inlineHandlerLeading": true,
   "workbench.sideBar.location": "right",
+  "css.validate": false,
   "oxc.enable": true,
   "tailwindCSS.experimental.configFile": "app/assets/css/main.css",
   "typescript.tsdk.path": "node_modules\\typescript\\lib",

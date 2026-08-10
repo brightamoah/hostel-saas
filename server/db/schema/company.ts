@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgEnum, snakeCase, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { academicPeriodEnum } from "./room";
 import { user } from "./user";
@@ -31,7 +31,7 @@ export const paystackAccountTypeEnum = pgEnum("paystack_account_type", [
   "mobile_money",
 ]);
 
-export const company = pgTable("company", t => ({
+export const company = snakeCase.table("company", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   name: t.text().notNull(),
   slug: t.varchar({ length: 80 }).notNull(),
@@ -46,7 +46,7 @@ export const company = pgTable("company", t => ({
   uniqueIndex("company_name_unique").on(table.name),
 ]);
 
-export const companyMember = pgTable("company_member", t => ({
+export const companyMember = snakeCase.table("company_member", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "cascade" }),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -61,7 +61,7 @@ export const companyMember = pgTable("company_member", t => ({
   uniqueIndex("company_member_company_user_unique").on(table.companyId, table.userId),
 ]);
 
-export const companySettings = pgTable("company_settings", t => ({
+export const companySettings = snakeCase.table("company_settings", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "cascade" }),
 

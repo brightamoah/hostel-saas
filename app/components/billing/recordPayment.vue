@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { DateValue } from "@internationalized/date";
 
-import { CalendarDate, getLocalTimeZone, now, parseAbsoluteToLocal, Time } from "@internationalized/date";
+import { CalendarDate, getLocalTimeZone, parseAbsoluteToLocal } from "@internationalized/date";
 
 const { billing } = defineProps<{
   billing: Billing;

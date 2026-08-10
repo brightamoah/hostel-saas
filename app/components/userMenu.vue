@@ -47,7 +47,7 @@ const neutrals = [
   "olive",
 ];
 
-const user = ref({
+const user = computed(() => ({
   name: currentUser.value?.name,
   avatar: {
     src: currentUser.value?.image ?? undefined,
@@ -56,7 +56,7 @@ const user = ref({
     ui: { fallback: "text-white" },
     style: `background-color: ${avatarBgColor.value}`,
   },
-});
+}));
 
 const themeItems = computed<DropdownMenuItem[]>(() => [
   {

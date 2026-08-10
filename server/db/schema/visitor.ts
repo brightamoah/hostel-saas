@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { check, pgEnum, snakeCase } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel } from "./room";
@@ -19,7 +19,7 @@ export const visitorLogActionEnum = pgEnum("visitor_log_action", [
   "check_out",
 ]);
 
-export const visitor = pgTable("visitor", t => ({
+export const visitor = snakeCase.table("visitor", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
@@ -41,7 +41,7 @@ export const visitor = pgTable("visitor", t => ({
   check("chk_visit_date", sql`"visit_date" >= CURRENT_DATE`),
 ]);
 
-export const visitorLogs = pgTable("visitor_logs", t => ({
+export const visitorLogs = snakeCase.table("visitor_logs", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   visitorId: t.integer().notNull().references(() => visitor.id, { onDelete: "cascade" }),
   adminId: t.integer().references(() => admin.id, { onDelete: "set null" }),

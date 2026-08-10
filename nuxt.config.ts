@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     "@formkit/auto-animate",
     "nuxt-tiptap-editor",
     "evlog/nuxt",
+    "nuxt-email-renderer",
   ],
 
   $development: {
@@ -29,6 +30,39 @@ export default defineNuxtConfig({
 
     nitro: {
       preset: "nitro-dev",
+    },
+
+    vite: {
+      optimizeDeps: {
+        include: [
+          "@tiptap/extension-bubble-menu",
+          "@tiptap/extension-character-count",
+          "@tiptap/extension-code-block-lowlight",
+          "@tiptap/extension-floating-menu",
+          "@tiptap/extension-font-family",
+          "@tiptap/extension-history",
+          "@tiptap/extension-highlight",
+          "@tiptap/extension-placeholder",
+          "@tiptap/extension-task-item",
+          "@tiptap/extension-task-list",
+          "@tiptap/extension-text-align",
+          "@tiptap/extension-text-style",
+          "@tiptap/extension-underline",
+          "chart.js",
+          "prosemirror-commands",
+          "prosemirror-dropcursor",
+          "prosemirror-gapcursor",
+          "prosemirror-history",
+          "prosemirror-inputrules",
+          "prosemirror-keymap",
+          "prosemirror-model",
+          "prosemirror-schema-list",
+          "prosemirror-state",
+          "prosemirror-transform",
+          "prosemirror-view",
+          "vue-chartjs",
+        ],
+      },
     },
 
     nodemailer: {
@@ -81,6 +115,12 @@ export default defineNuxtConfig({
           },
         },
       },
+      "/api/emails/**": {
+        security: {
+          csrf: false,
+          rateLimiter: false,
+        },
+      },
     },
 
     site: {
@@ -94,7 +134,31 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: [
+        "@tiptap/extension-bubble-menu",
+        "@tiptap/extension-character-count",
+        "@tiptap/extension-code-block-lowlight",
+        "@tiptap/extension-floating-menu",
+        "@tiptap/extension-font-family",
+        "@tiptap/extension-history",
+        "@tiptap/extension-highlight",
+        "@tiptap/extension-placeholder",
+        "@tiptap/extension-task-item",
+        "@tiptap/extension-task-list",
+        "@tiptap/extension-text-align",
+        "@tiptap/extension-text-style",
+        "@tiptap/extension-underline",
         "chart.js",
+        "prosemirror-commands",
+        "prosemirror-dropcursor",
+        "prosemirror-gapcursor",
+        "prosemirror-history",
+        "prosemirror-inputrules",
+        "prosemirror-keymap",
+        "prosemirror-model",
+        "prosemirror-schema-list",
+        "prosemirror-state",
+        "prosemirror-transform",
+        "prosemirror-view",
         "vue-chartjs",
       ],
     },
@@ -432,5 +496,9 @@ export default defineNuxtConfig({
 
   csurf: {
     addCsrfTokenToEventCtx: true,
+  },
+
+  nuxtEmailRenderer: {
+    devtools: true,
   },
 });

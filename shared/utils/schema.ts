@@ -130,7 +130,7 @@ const mediaFileSchema = z
     }
   });
 
-const imageFileSchema = z
+export const imageFileSchema = z
   .instanceof(File, {
     error: "Please select an image file.",
   })
@@ -143,6 +143,9 @@ const imageFileSchema = z
   .refine(
     file =>
       new Promise((resolve) => {
+        if (typeof window === "undefined" || typeof FileReader === "undefined") {
+          return resolve(true);
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
           const img = new Image();
@@ -154,14 +157,19 @@ const imageFileSchema = z
                 && img.height <= MAX_DIMENSIONS.height;
             resolve(meetsDimensions);
           };
+          img.onerror = () => resolve(false);
           img.src = e.target?.result as string;
         };
+        reader.onerror = () => resolve(false);
         reader.readAsDataURL(file);
       }),
     {
       message: `The image dimensions are invalid. Please upload an image between ${MIN_DIMENSIONS.width}x${MIN_DIMENSIONS.height} and ${MAX_DIMENSIONS.width}x${MAX_DIMENSIONS.height} pixels.`,
     },
   );
+
+export const profilePictureSchema = imageFileSchema;
+export type ProfilePictureSchema = z.output<typeof profilePictureSchema>;
 
 const linkSchema = z.object({
   link: z.url("Invalid URL").nonempty("Link is required"),
@@ -1188,7 +1196,6 @@ export {
   emailSchema,
   emailVerificationSchema,
   hostelDetailsSchema,
-  imageFileSchema,
   joinCodeSchema,
   linkSchema,
   logActionSchema,

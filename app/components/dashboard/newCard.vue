@@ -113,17 +113,11 @@ const periodDisplay = computed(() => props.card.period ? `vs last ${periodMappin
           name="icon"
           :card
         >
-          <UBadge
-            :color="card.color"
-            variant="subtle"
-            class="p-2 rounded-lg shrink-0"
-            :ui="{ base: 'gap-0' }"
-          >
-            <UIcon
-              :name="card.icon"
-              class="size-5"
-            />
-          </UBadge>
+          <UIcon
+            :name="card.icon"
+            class="size-6 shrink-0"
+            :class="`text-${card.color}`"
+          />
         </slot>
       </div>
 

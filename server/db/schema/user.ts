@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   pgEnum,
-  pgTable,
+  snakeCase,
 } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
@@ -37,7 +37,7 @@ export const adminStatusEnum = pgEnum("admin_status", [
   "inactive",
 ]);
 
-export const user = pgTable("user", t => ({
+export const user = snakeCase.table("user", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   name: t.varchar({ length: 255 }).notNull(),
   email: t.varchar({ length: 255 }).notNull().unique(),
@@ -57,7 +57,7 @@ export const user = pgTable("user", t => ({
   lastLogin: t.timestamp(),
 }));
 
-export const student = pgTable("student", t => ({
+export const student = snakeCase.table("student", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
   gender: genderEnum().notNull(),
@@ -79,7 +79,7 @@ export const student = pgTable("student", t => ({
     .notNull(),
 }));
 
-export const admin = pgTable("admin", t => ({
+export const admin = snakeCase.table("admin", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
   phoneNumber: t.varchar({ length: 20 }).notNull(),
@@ -109,7 +109,7 @@ export const admin = pgTable("admin", t => ({
   `),
 ]);
 
-export const loginAttempts = pgTable("login_attempts", t => ({
+export const loginAttempts = snakeCase.table("login_attempts", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: t.integer().references(() => user.id, { onDelete: "cascade" }),
   ip: t.text().notNull(),

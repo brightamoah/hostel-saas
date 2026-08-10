@@ -1,8 +1,6 @@
 import type { H3Event } from "h3";
 import type { OmitWithIndexSignature } from "~~/shared/types";
 import type { UserSession, UserSessionRequired } from "#auth-utils";
-
-import { defu } from "defu";
 import { useSession } from "h3";
 
 async function _portalSession(event: H3Event) {
@@ -84,10 +82,16 @@ export async function clearPortalUserSession(event: H3Event): Promise<boolean> {
  * @param data User session data, please only store public information since it can be decoded with API calls
  * @see https://github.com/atinux/nuxt-auth-utils
  */
-export async function setPortalUserSession(event: H3Event, data: OmitWithIndexSignature<UserSession, "id">): Promise<UserSession> {
+export async function setPortalUserSession(event: H3Event, data: Partial<OmitWithIndexSignature<UserSession, "id">>): Promise<UserSession> {
   const session = await _portalSession(event);
 
-  await session.update(defu(data, session.data));
+  const updatedData = {
+    ...session.data,
+    ...data,
+    ...(data.user ? { user: { ...session.data?.user, ...data.user } } : {}),
+  };
+
+  await session.update(updatedData as UserSession);
 
   return session.data;
 }

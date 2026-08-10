@@ -59,7 +59,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!student.allocation || !student.allocation.room || !student.allocation.room.hostel) {
+    if (
+      !student.allocation
+      || !student.allocation.room
+      || !student.allocation.room.hostel
+    ) {
       throw createError({
         statusCode: 403,
         message: "Access denied: You must have an active room allocation to create a maintenance request.",

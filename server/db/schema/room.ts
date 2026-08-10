@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, pgEnum, pgTable, unique } from "drizzle-orm/pg-core";
+import { check, index, pgEnum, snakeCase, unique } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { student } from "./user";
@@ -58,7 +58,7 @@ export const hostelGenderEnum = pgEnum("hostel_gender", [
   "unassigned",
 ]);
 
-export const hostel = pgTable("hostel", t => ({
+export const hostel = snakeCase.table("hostel", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   name: t.text().notNull().unique(),
   address: t.text().notNull(),
@@ -81,7 +81,7 @@ export const hostel = pgTable("hostel", t => ({
   unique("unique_hostel_slug").on(table.slug),
 ]);
 
-export const room = pgTable("room", t => ({
+export const room = snakeCase.table("room", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   roomNumber: t.varchar({ length: 10 }).notNull().unique(),
   hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
@@ -113,7 +113,7 @@ export const room = pgTable("room", t => ({
   `),
 ]);
 
-export const allocation = pgTable("allocation", t => ({
+export const allocation = snakeCase.table("allocation", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   roomId: t.integer().notNull().references(() => room.id, { onDelete: "cascade" }),
@@ -134,7 +134,7 @@ export const allocation = pgTable("allocation", t => ({
   index("idx_allocation_student_status").on(table.studentId, table.status),
 ]);
 
-export const hostelSettings = pgTable("hostel_settings", t => ({
+export const hostelSettings = snakeCase.table("hostel_settings", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "cascade" }),

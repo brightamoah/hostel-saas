@@ -69,7 +69,7 @@ html {
 
 @layer components {
   .linebreak {
-    @apply relative w-full h-0.5 mx-auto;
+    @apply relative mx-auto w-full h-0.5;
     background-image: linear-gradient(
       96.18deg,
       rgba(0, 0, 0, 0) 10%,
@@ -122,36 +122,36 @@ html {
 
   /* custom style for inline code and code block */
   code {
-    @apply text-toned px-1 py-0.5 rounded-md bg-accented font-code whitespace-nowrap text-sm;
+    @apply bg-accented px-1 py-0.5 rounded-md font-code text-toned text-sm whitespace-nowrap;
   }
 
   pre {
-    @apply bg-accented text-toned font-code shadow-sm rounded-md overflow-x-auto text-sm;
+    @apply bg-accented shadow-sm rounded-md overflow-x-auto font-code text-toned text-sm;
   }
 
   pre code {
-    @apply bg-transparent! text-toned font-code p-1 block whitespace-pre! leading-6!;
+    @apply block bg-transparent! p-1 font-code text-toned leading-6! whitespace-pre!;
   }
 
   hr {
-    @apply my-6 border-t border-accented;
+    @apply my-6 border-accented border-t;
   }
 
   /* Task list styling */
   ul[data-type="taskList"] {
-    @apply list-none pl-0 mr-[0.2rem] select-none;
+    @apply mr-[0.2rem] pl-0 select-none list-none;
   }
 
   ul[data-type="taskList"] li {
-    @apply mb-2 flex items-center gap-2;
+    @apply flex items-center gap-2 mb-2;
   }
 
   ul[data-type="taskList"] li label {
-    @apply m-0 flex cursor-pointer items-center;
+    @apply flex items-center m-0 cursor-pointer;
   }
 
   ul[data-type="taskList"] li label input[type="checkbox"] {
-    @apply m-0 size-4 shrink-0 rounded-full accent-primary cursor-pointer checked:before:scale-10;
+    @apply m-0 rounded-full size-4 checked:before:scale-10 accent-primary cursor-pointer shrink-0;
   }
 
   ul[data-type="taskList"] li label span {
@@ -159,7 +159,7 @@ html {
   }
 
   ul[data-type="taskList"] li div {
-    @apply m-0 flex-1;
+    @apply flex-1 m-0;
   }
 
   ul[data-type="taskList"] li div p {
@@ -167,12 +167,12 @@ html {
   }
 
   ul[data-type="taskList"] li[data-checked="true"] div p {
-    @apply line-through text-muted decoration-2;
+    @apply text-muted decoration-2 line-through;
   }
 
   /* custom bullet list style */
   ul {
-    @apply list-disc pl-5 py-0 my-0 marker:text-muted  marker:font-bold marker:text-xl;
+    @apply my-0 py-0 pl-5 marker:font-bold marker:text-muted marker:text-xl list-disc;
   }
 
   ul li {
@@ -185,7 +185,7 @@ html {
 
   /* custom numbered list */
   ol {
-    @apply list-decimal pl-5 py-0 my-0 marker:text-muted marker:font-bold;
+    @apply my-0 py-0 pl-5 marker:font-bold marker:text-muted list-decimal;
   }
 
   ol li {
@@ -198,11 +198,11 @@ html {
 
   /* Custom Youtube Video CSS */
   iframe {
-    @apply border-8 border-solid border-[#ffd00027] rounded min-w-50 min-h-50 block outline-0 outline-transparent;
+    @apply block border-[#ffd00027] border-8 border-solid rounded outline-0 outline-transparent min-w-50 min-h-50;
   }
 
   div[data-youtube-video] iframe {
-    @apply cursor-move aspect-video w-full;
+    @apply w-full aspect-video cursor-move;
   }
 
   /* CSS for bold coloring and highlighting issue*/
@@ -216,7 +216,7 @@ html {
 
   /* styling for links and <a/> tags */
   a {
-    @apply text-primary cursor-pointer underline underline-offset-2 transition-colors duration-150;
+    @apply text-primary underline underline-offset-2 transition-colors duration-150 cursor-pointer;
   }
 
   a:hover {

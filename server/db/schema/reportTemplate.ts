@@ -1,4 +1,4 @@
-import { pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { pgEnum, snakeCase } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel } from "./room";
@@ -16,7 +16,7 @@ export const reportModuleEnum = pgEnum("report_module", [
   "allocation",
 ]);
 
-export const reportTemplate = pgTable("report_template", t => ({
+export const reportTemplate = snakeCase.table("report_template", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "cascade" }),
   userId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),

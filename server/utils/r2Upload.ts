@@ -177,3 +177,41 @@ export async function deleteMediaByUrls(attachments: MediaAttachment | MediaAtta
     }),
   );
 }
+
+export async function deleteMediaFile(event: H3Event, url?: string | null) {
+  if (!url) return;
+
+  try {
+    const config = useRuntimeConfig(event);
+    const r2BaseUrl = config.r2Url.endsWith("/") ? config.r2Url : `${config.r2Url}/`;
+    let key = "";
+
+    if (url.startsWith(r2BaseUrl)) {
+      key = url.replace(r2BaseUrl, "");
+    }
+    else {
+      const parsedUrl = new URL(url);
+      key = parsedUrl.pathname.substring(1);
+    }
+
+    if (!key) return;
+
+    if (import.meta.dev) {
+      const storage = useStorage("images");
+      await storage.removeItem(key);
+    }
+    else {
+      const r2Bucket = event.context.cloudflare?.env?.BUCKET;
+      if (r2Bucket) {
+        await r2Bucket.delete(key);
+      }
+      else {
+        const storage = useStorage("images");
+        await storage.removeItem(key);
+      }
+    }
+  }
+  catch (error) {
+    console.error(`Failed to delete media file ${url}:`, error);
+  }
+}

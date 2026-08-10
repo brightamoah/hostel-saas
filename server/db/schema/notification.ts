@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgEnum, snakeCase, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel } from "./room";
@@ -17,7 +17,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "generic",
 ]);
 
-export const notification = pgTable("notification", t => ({
+export const notification = snakeCase.table("notification", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   type: notificationTypeEnum().default("generic").notNull(),
   title: t.varchar({ length: 180 }).notNull(),
@@ -38,7 +38,7 @@ export const notification = pgTable("notification", t => ({
   uniqueIndex("notification_company_created_at_idx").on(table.companyId, table.createdAt),
 ]);
 
-export const notificationRead = pgTable("notification_read", t => ({
+export const notificationRead = snakeCase.table("notification_read", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   notificationId: t.integer().notNull().references(() => notification.id, { onDelete: "cascade" }),
   adminId: t.integer().notNull().references(() => admin.id, { onDelete: "cascade" }),

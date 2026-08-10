@@ -9,5 +9,4 @@ export default defineConfig({
   dbCredentials: {
     url: env.NUXT_DATABASE_URL,
   },
-  casing: "snake_case",
 });

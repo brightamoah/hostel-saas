@@ -1,4 +1,4 @@
-import { pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { pgEnum, snakeCase } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel, room } from "./room";
@@ -25,7 +25,7 @@ export const complaintPriorityEnum = pgEnum("complaint_priority", ["low", "mediu
 
 export const complaintActionTakenEnum = pgEnum("complaint_action_taken", ["assigned", "updated", "resolved", "rejected"]);
 
-export const complaint = pgTable("complaint", t => ({
+export const complaint = snakeCase.table("complaint", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   roomId: t.integer().references(() => room.id, { onDelete: "cascade" }),
@@ -44,7 +44,7 @@ export const complaint = pgTable("complaint", t => ({
     .notNull(),
 }));
 
-export const complaintResponse = pgTable("complaint_response", t => ({
+export const complaintResponse = snakeCase.table("complaint_response", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   complaintId: t.integer().notNull().references(() => complaint.id, { onDelete: "cascade" }),
   responderId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),

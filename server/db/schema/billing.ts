@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, pgEnum, pgTable, uniqueIndex } from "drizzle-orm/pg-core";
+import { check, pgEnum, snakeCase, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { allocation, hostel } from "./room";
@@ -55,7 +55,7 @@ export const reminderType = pgEnum("reminder_type", [
   "overdue",
 ]);
 
-export const billing = pgTable("billing", t => ({
+export const billing = snakeCase.table("billing", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   allocationId: t.integer().notNull().references(() => allocation.id, { onDelete: "restrict" }),
@@ -79,7 +79,7 @@ export const billing = pgTable("billing", t => ({
   check("chk_paid_amount", sql`paid_amount >= 0 AND paid_amount <= amount`),
 ]);
 
-export const payment = pgTable("payment", t => ({
+export const payment = snakeCase.table("payment", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   billingId: t.integer().notNull().references(() => billing.id, { onDelete: "cascade" }),
@@ -98,7 +98,7 @@ export const payment = pgTable("payment", t => ({
     .notNull(),
 }));
 
-export const billingRemindersLog = pgTable("billing_reminders_log", t => ({
+export const billingRemindersLog = snakeCase.table("billing_reminders_log", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   billingId: t.integer().notNull().references(() => billing.id, { onDelete: "cascade" }),
   reminderType: reminderType().notNull(), // 'upcoming' or 'overdue'

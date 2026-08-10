@@ -30,7 +30,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const { billingId, amount, email, phoneNumber, totalAmount } = body.data;
+    const {
+      billingId,
+      amount,
+      email,
+      phoneNumber,
+      totalAmount,
+    } = body.data;
 
     const { getBillingByIdStudent, createPaymentIntent } = await billingQueries(event);
     const billing = await getBillingByIdStudent(billingId);
@@ -163,13 +169,15 @@ export default defineEventHandler(async (event) => {
     });
 
     await createPaymentIntent(
-      billingId,
-      billing.studentId,
-      companyId,
-      amount,
-      reference,
-      subaccountCode,
-      splitType,
+      {
+        billingId,
+        studentId: billing.studentId,
+        companyId,
+        amount,
+        reference,
+        subaccountCode,
+        splitType,
+      },
       auditContext,
     );
 

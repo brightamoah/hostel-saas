@@ -124,6 +124,7 @@ export const paymentMethodIconMap: Record<Payment["paymentMethod"], string> = {
   "bank transfer": "i-heroicons-building-library",
   "cash": "i-heroicons-banknotes",
   "mobile money": "i-lucide-smartphone",
+  "other": "i-lucide-ellipsis",
 };
 
 export const transactionStatusIconMap: Record<PaymentTransaction["status"], string> = {

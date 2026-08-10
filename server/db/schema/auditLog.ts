@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { index, pgEnum, snakeCase } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel } from "./room";
@@ -58,7 +58,7 @@ export const actorTypeEnum = pgEnum("audit_actor_type", [
   "system",
 ]);
 
-export const auditLog = pgTable("audit_log", t => ({
+export const auditLog = snakeCase.table("audit_log", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   companyId: t.integer().references(() => company.id, { onDelete: "restrict" }),
   hostelId: t.integer().references(() => hostel.id, { onDelete: "set null" }),

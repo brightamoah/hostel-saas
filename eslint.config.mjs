@@ -8,8 +8,8 @@ export default withNuxt(
     type: "app",
     vue: true,
     typescript: {
-      tsconfigRootDir: import.meta.dirname,
       parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
         projectService: {
           allowDefaultProject: [
             "drizzle.config.ts",
@@ -111,6 +111,7 @@ export default withNuxt(
         ignore: ["README.md", "pnpm-workspace.yaml"],
       }],
       "nonblock-statement-body-position": ["error", "beside"],
+      "pnpm/yaml-enforce-settings": "off",
     },
   }),
   {

@@ -40,7 +40,6 @@ export function useDB(eventOrContext?: H3Event | CloudflareContext) {
   const db = drizzle({
     connection: databaseUrl,
     relations,
-    casing: "snake_case",
     logger: false,
   });
 

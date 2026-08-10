@@ -9,7 +9,7 @@ const {
   maxFiles?: number;
 }>();
 
-const modelValue = defineModel<File[] | File | null | undefined>({ required: true, default: () => null });
+const modelValue = defineModel<File[] | File | null | undefined>();
 
 const objectUrls = new WeakMap<File, string>();
 
@@ -78,10 +78,15 @@ onUnmounted(() => {
   });
 });
 
-const fileUploadRef = useTemplateRef("fileUploadRef");
+const fileUploadRef = useTemplateRef<{ inputRef?: HTMLInputElement; open?: (opts?: any) => void }>("fileUploadRef");
 
-function openSlotProp() {
-  fileUploadRef.value?.inputRef?.click();
+function openSlotProp(opts?: { multiple?: boolean }) {
+  if (fileUploadRef.value && typeof fileUploadRef.value.open === "function") {
+    fileUploadRef.value.open(opts);
+  }
+  else if (fileUploadRef.value?.inputRef) {
+    fileUploadRef.value.inputRef.click();
+  }
 }
 
 defineExpose({
@@ -150,11 +155,12 @@ defineExpose({
           preload="metadata"
         />
 
-        <NuxtImg
+        <img
           v-else-if="file.type?.startsWith('image/')"
           :src="getObjectUrl(file)"
           class="w-full h-full object-cover"
-        />
+          :alt="file.name"
+        >
 
         <div
           v-else

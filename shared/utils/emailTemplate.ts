@@ -24,7 +24,8 @@ export function escapeHtml(str: string): string {
 
 // ─── Shared layout shell ────────────────────────────────────────────────────
 
-export function shell(content: string, previewText: string, hostelName: string): string {
+export function shell(content: string, previewText: string, hostelName: string = "Hostel"): string {
+  const safeHostelName = hostelName || "Hostel";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -46,7 +47,7 @@ export function shell(content: string, previewText: string, hostelName: string):
           <tr>
             <td style="background:#265757;padding:14px 20px;">
               <p style="margin:0;font-size:13px;font-weight:600;color:#d1e8e6;letter-spacing:0.05em;">
-                ${hostelName.toUpperCase()}
+                ${safeHostelName.toUpperCase()}
               </p>
             </td>
           </tr>
@@ -65,7 +66,7 @@ export function shell(content: string, previewText: string, hostelName: string):
                 If you didn’t request this, you can ignore this email.
               </p>
               <p style="margin:6px 0 0;font-size:10px;color:#9ca3af;">
-                © ${new Date().getFullYear()} ${hostelName}
+                © ${new Date().getFullYear()} ${safeHostelName}
               </p>
             </td>
           </tr>

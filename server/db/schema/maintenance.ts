@@ -1,7 +1,7 @@
 import type { MediaAttachment } from "~~/shared/types";
 
 import { sql } from "drizzle-orm";
-import { check, pgEnum, pgTable } from "drizzle-orm/pg-core";
+import { check, pgEnum, snakeCase } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
 import { hostel, room } from "./room";
@@ -34,7 +34,7 @@ export const maintenanceStatusEnum = pgEnum("maintenance_status", [
   "rejected",
 ]);
 
-export const maintenanceRequest = pgTable("maintenance_request", t => ({
+export const maintenanceRequest = snakeCase.table("maintenance_request", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
   roomId: t.integer().notNull().references(() => room.id, { onDelete: "cascade" }),
@@ -55,7 +55,7 @@ export const maintenanceRequest = pgTable("maintenance_request", t => ({
     .notNull(),
 }));
 
-export const maintenanceResponse = pgTable("maintenance_response", t => ({
+export const maintenanceResponse = snakeCase.table("maintenance_response", t => ({
   id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
   maintenanceRequestId: t.integer().notNull().references(() => maintenanceRequest.id, { onDelete: "cascade" }),
   responderId: t.integer().notNull().references(() => user.id, { onDelete: "cascade" }),
