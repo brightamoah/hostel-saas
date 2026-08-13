@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, pgEnum, snakeCase, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
-import { allocation, hostel } from "./room";
+import { academicPeriodEnum, allocation, hostel } from "./room";
 import { student } from "./user";
 
 export const billingStatus = pgEnum("billing_status", [
@@ -37,12 +37,7 @@ export const paymentStatus = pgEnum("payment_status", [
   "refunded",
 ]);
 
-const academicPeriodEnum = pgEnum("academic_period", [
-  "first semester",
-  "second semester",
-  "entire year",
-  "vacation period",
-]);
+
 
 export const paymentSplitTypeEnum = pgEnum("payment_split_type", [
   "company",

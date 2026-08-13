@@ -474,4 +474,10 @@ export const relations = defineRelations(schema, r => ({
       alias: "reportTemplate_userId_user_id",
     }),
   },
+  residencyResetBatch: {
+    user: r.one.user({
+      from: r.residencyResetBatch.triggeredBy,
+      to: r.user.id,
+    }),
+  },
 }));

@@ -234,7 +234,8 @@ export default defineNuxtConfig({
       openAPI: true,
     },
     scheduledTasks: {
-      "0 0 * * *": ["schedular"],
+      "0 0 * * *": ["schedular", "residencyResetExpired"],
+      "*/2 * * * *": ["dispatchEmailOutbox"],
     },
     devStorage: {
       kv: {
@@ -274,6 +275,7 @@ export default defineNuxtConfig({
       adminBaseUrl: env.NUXT_PUBLIC_ADMIN_BASE_URL,
       siteBaseUrl: env.NUXT_PUBLIC_SITE_BASE_URL,
       emailFromName: env.NUXT_EMAIL_FROM_NAME,
+      appName: env.NUXT_PUBLIC_APP_NAME,
     },
     session: {
       password: env.NUXT_SESSION_PASSWORD,
@@ -283,6 +285,8 @@ export default defineNuxtConfig({
       },
     },
     supportEmail: env.NUXT_SUPPORT_EMAIL,
+    emailNoReplyEmail: env.NUXT_EMAIL_NO_REPLY_EMAIL,
+    residencyResetEnabled: true,
     sessionName: env.NUXT_SESSION_NAME,
     sessionPassword: env.NUXT_SESSION_PASSWORD,
     adminSessionName: env.NUXT_ADMIN_SESSION_NAME,

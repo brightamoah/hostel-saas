@@ -10,7 +10,7 @@ import { getResetPasswordTemplate } from "~~/shared/utils/emailTemplate";
 export default defineEventHandler(async (event) => {
   try {
     const { db } = useDB(event);
-    const runtimeConfig = useRuntimeConfig(event);
+    // const runtimeConfig = useRuntimeConfig(event);
 
     const body = await readValidatedBody(event, body => verifyEmailSchema.safeParse(body));
 
@@ -30,7 +30,15 @@ export default defineEventHandler(async (event) => {
 
     const existingUser = await getUserByEmail(normalizedEmail);
 
-    if (!existingUser || !existingUser.emailVerified) return { success: true, message: "If an account exists, a reset email has been sent." };
+    if (
+      !existingUser
+      || !existingUser.emailVerified
+    ) {
+      return {
+        success: true,
+        message: "If an account exists, a reset email has been sent.",
+      };
+    }
 
     const resetToken = randomUUID();
     const hashedToken = bytesToHex(sha256(utf8ToBytes(resetToken)));
@@ -48,29 +56,14 @@ export default defineEventHandler(async (event) => {
     const appName = "KayaNest";
     const { html, text } = getResetPasswordTemplate(resetUrl, existingUser.name, appName);
 
-    if (import.meta.dev) {
-      const { sendMail } = useNodeMailer();
-
-      await sendMail({
-        to: normalizedEmail,
-        subject: `Reset Your Password - ${appName}`,
-        html,
-        text,
-      });
-    }
-    else {
-      const mailer = await useWorkerMailer();
-
-      await mailer.send({
-        from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-        to: { name: existingUser.name, email: normalizedEmail },
-        subject: `Reset Your Password - ${appName}`,
-        html,
-        text,
-      });
-
-      await mailer.close();
-    }
+    await enqueueApplicationEmail(event, {
+      to: { name: existingUser.name, email: normalizedEmail },
+      subject: `Reset Your Password`,
+      html,
+      text,
+      recipientUserId: existingUser.id,
+      isTransactional: true,
+    });
 
     return {
       success: true,

@@ -42,7 +42,14 @@ const description = ref(
   `Welcome, ${user.value.name}! Let's set up your student account.`,
 );
 
-const genderItems = ref(["male", "female"]);
+const genderItems = computed(() => {
+  const genders = ["male", "female"] as const;
+  return genders
+    .map(gender => ({
+      label: capitalizeWords(gender),
+      value: gender,
+    }));
+});
 
 const state = ref<Partial<PersonalDetailsSchema>>({
   gender: undefined,
@@ -171,9 +178,10 @@ onMounted(() => {
             <USelectMenu
               v-model="state.gender"
               :items="genderItems"
+              :size="isMobile ? 'lg' : 'xl'"
+              value-key="value"
               class="w-full cursor-pointer"
               placeholder="Select your gender"
-              :size="isMobile ? 'lg' : 'xl'"
               clear
             />
           </UFormField>

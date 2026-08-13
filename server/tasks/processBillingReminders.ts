@@ -328,30 +328,14 @@ async function sendReminderEmail(
         isOverdue,
       );
 
-      const runtimeConfig = useRuntimeConfig();
-
-      if (import.meta.dev) {
-        const { sendMail } = useNodeMailer();
-        await sendMail({
-          to: user?.email,
-          subject: emailSubject,
-          html: htmlTemplate,
-          text: textTemplate,
-        });
-      }
-      else {
-        const mailer = await useWorkerMailer();
-        await mailer.send({
-          from: {
-            name: runtimeConfig.emailFromName || "Kayanest Hostel Management",
-            email: runtimeConfig.supportEmail ?? runtimeConfig.emailFromEmail,
-          },
-          to: { name: user!.name, email: user!.email },
-          subject: emailSubject,
-          html: htmlTemplate,
-          text: textTemplate,
-        });
-      }
+      await enqueueApplicationEmail(undefined, {
+        to: { name: user.name, email: user.email },
+        subject: emailSubject,
+        html: htmlTemplate,
+        text: textTemplate,
+        recipientUserId: user.id,
+        isTransactional: true,
+      });
 
       await db
         .insert(billingRemindersLog)

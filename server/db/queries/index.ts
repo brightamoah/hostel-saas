@@ -6,6 +6,7 @@ export * from "./company";
 export * from "./complaint";
 export * from "./maintenance";
 export * from "./notification";
+export * from "./outbox";
 export * from "./report";
 export * from "./room";
 export * from "./user";

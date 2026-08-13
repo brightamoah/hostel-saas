@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, pgEnum, snakeCase, unique } from "drizzle-orm/pg-core";
 
 import { company } from "./company";
-import { student } from "./user";
+import { student, user } from "./user";
 
 export const roomTypeEnum = pgEnum("room_type", [
   "single",
@@ -93,6 +93,7 @@ export const room = snakeCase.table("room", t => ({
   amountPerYear: t.numeric({ precision: 10, scale: 2, mode: "number" }).notNull(),
   status: roomStatusEnum().default("vacant").notNull(),
   allowedGender: roomGenderEnum().default("unassigned").notNull(),
+  version: t.integer().default(0).notNull(),
   companyId: t.integer().notNull().references(() => company.id, { onDelete: "restrict" }),
   createdAt: t.timestamp().defaultNow().notNull(),
   updatedAt: t.timestamp()
@@ -182,4 +183,44 @@ export const hostelSettings = snakeCase.table("hostel_settings", t => ({
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+}));
+
+export const residencyResetTriggerSourceEnum = pgEnum("residency_reset_trigger_source", [
+  "manual",
+  "cron",
+  "checkout",
+]);
+
+export const residencyResetBatchStatusEnum = pgEnum("residency_reset_batch_status", [
+  "committed",
+  "rolled_back",
+]);
+
+export const residencyResetBatch = snakeCase.table("residency_reset_batch", t => ({
+  id: t.uuid().primaryKey().defaultRandom(),
+  hostelId: t.integer().notNull().references(() => hostel.id, { onDelete: "cascade" }),
+  triggerSource: residencyResetTriggerSourceEnum().notNull(),
+  triggeredBy: t.integer().references(() => user.id, { onDelete: "set null" }),
+  academicYear: t.varchar({ length: 20 }),
+  academicPeriod: academicPeriodEnum().default("first semester").notNull(),
+  idempotencyKey: t.varchar({ length: 100 }).notNull().unique(),
+  status: residencyResetBatchStatusEnum().default("committed").notNull(),
+  reason: t.text(),
+  rollbackDeadline: t.timestamp().notNull(),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  rolledBackAt: t.timestamp(),
+}));
+
+export const residencyResetLog = snakeCase.table("residency_reset_log", t => ({
+  id: t.uuid().primaryKey().defaultRandom(),
+  batchId: t.uuid().notNull().references(() => residencyResetBatch.id, { onDelete: "cascade" }),
+  allocationId: t.integer().notNull().references(() => allocation.id, { onDelete: "cascade" }),
+  roomId: t.integer().notNull().references(() => room.id, { onDelete: "cascade" }),
+  studentId: t.integer().notNull().references(() => student.id, { onDelete: "cascade" }),
+  previousAllocationStatus: allocationStatusEnum().notNull(),
+  previousRoomOccupancy: t.integer().notNull(),
+  previousRoomStatus: roomStatusEnum().notNull(),
+  previousAllowedGender: roomGenderEnum().notNull(),
+  roomVersionAfterReset: t.integer().notNull(),
+  createdAt: t.timestamp().defaultNow().notNull(),
 }));

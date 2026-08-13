@@ -909,3 +909,11 @@ export interface ReportTemplate extends Omit<ReportTemplateType, "id" | "created
 };
 
 export type OverdueAndUpcomingBillings = OverdueAndUpcomingBillingsType;
+
+export type EmailType
+  = | "transactional"
+    | "support"
+    | "notification"
+    | "others";
+
+export type AcademicPeriod = z.output<typeof academicPeriodSchema>;

@@ -98,11 +98,18 @@ export function useRoomFilters(table: TableType<Room>, data: DataType<RoomDataRe
     }
   }, { immediate: true });
 
+  const selectedHostelId = computed(() => {
+    if (!hostelFilter.value || hostelFilter.value === "all") return undefined;
+    return data.value?.hostels?.find(h => h.name === hostelFilter.value)?.id;
+  });
+
   return {
     statusFilter,
     statusFilterOptions,
     hostelFilter,
     hostelFilterOptions,
+    selectedHostelId,
+    getHostelId: selectedHostelId,
     floorFilter,
     floorFilterOptions,
     selectedRoomsLength,

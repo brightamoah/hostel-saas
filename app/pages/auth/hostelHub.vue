@@ -204,7 +204,7 @@ async function confirmSelection() {
 <template>
   <UContainer
     v-auto-animate="{ duration: 400 }"
-    class="py-10"
+    class="flex flex-col py-10 min-h-[calc(100vh-120px)]"
   >
     <div class="mb-4">
       <div class="flex items-center gap-2 mb-2">
@@ -259,7 +259,7 @@ async function confirmSelection() {
 
       <UFieldGroup
         size="lg"
-        class="w-100"
+        class="w-full sm:w-100"
       >
         <UInput
           v-model="joinCode"
@@ -276,6 +276,7 @@ async function confirmSelection() {
           class="rounded-xl cursor-pointer"
           :label="isJoiningByCode ? 'Joining...' : 'Join'"
           icon="i-lucide-arrow-right"
+          :size="isMobile ? 'md' : 'xl'"
           :loading="isJoiningByCode"
           :disabled="isJoiningByCode || !joinCode.trim()"
           @click="joinByCode"
@@ -363,13 +364,12 @@ async function confirmSelection() {
     <div v-else-if="totalHostels > 0 && !selectedHostel">
       <div
         v-auto-animate="{ duration: 400 }"
-        class="gap-3 grid grid-cols-1 sm:grid-cols-2"
+        class="gap-4 grid grid-cols-1 sm:grid-cols-2"
       >
         <UCard
           v-for="hostel in paginatedHostels"
-
           :key="hostel.id"
-          class="overflow-hidden"
+          class="bg-muted/50 overflow-hidden"
           :ui="{ body: 'p-0 flex items-stretch gap-0' }"
         >
           <img
@@ -463,17 +463,19 @@ async function confirmSelection() {
         </UCard>
       </div>
 
-      <AppPagination
-        items-name="hostels"
-        :items="paginatedHostels"
-        :total-items="totalHostels"
-        :selected-items-length="0"
-        :current-items-showing="currentItemsShowing"
-        :last-item-showing="lastItemShowing"
-        :default-page="currentPage"
-        :items-per-page="itemsPerPage"
-        :update-page="updatePage"
-      />
+      <div class="bg-muted/60 shadow-sm mt-5 px-3 pb-3 rounded-xl">
+        <AppPagination
+          items-name="hostels"
+          :items="paginatedHostels"
+          :total-items="totalHostels"
+          :selected-items-length="0"
+          :current-items-showing="currentItemsShowing"
+          :last-item-showing="lastItemShowing"
+          :default-page="currentPage"
+          :items-per-page="itemsPerPage"
+          :update-page="updatePage"
+        />
+      </div>
     </div>
   </UContainer>
 </template>

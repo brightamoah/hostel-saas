@@ -32,7 +32,7 @@ useIntervalFn(async () => {
   if (loggedIn.value && !idle.value) {
     await $apiFetch("/api/auth/refreshSession", {
       method: "POST",
-    }).catch(() => {});
+    }).catch(() => {})
   }
 }, 5 * 60 * 1000);
 </script>

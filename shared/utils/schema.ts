@@ -1169,6 +1169,36 @@ export const onboardingDetailKeySchema = z.templateLiteral([
   z.number(),
 ]);
 
+export const residencyResetPreview = z.object({
+  hostelId: hostelIdSchema.nonoptional(),
+  academicPeriod: academicPeriodSchema.optional().nullable(),
+  academicYear: academicYearSchema.optional().nullable(),
+});
+
+const residencyResetSchema = z.object({
+  hostelId: hostelIdSchema.nonoptional(),
+  academicPeriod: academicPeriodSchema.optional().nullable(),
+  academicYear: academicYearSchema.optional().nullable(),
+  idempotencyKey: z.string().min(1, "Idempotency key is required"),
+});
+
+export type ResidencyResetSchema = z.output<typeof residencyResetSchema>;
+
+const residencyResetRollback = z.object({
+  batchId: z.uuidv4("Invalid batch id"),
+});
+
+export type ResidencyResetRollbackSchema = z.output<typeof residencyResetRollback>;
+
+export const checkoutStudent = z.object({
+  hostelId: hostelIdSchema.nonoptional(),
+  studentId: createIdSchema("Student"),
+  idempotencyKey: z.string().min(1, "Idempotency key is required"),
+  reason: z.string().optional(),
+});
+
+export type CheckoutStudentSchema = z.output<typeof checkoutStudent>;
+
 export {
   academicPeriodSchema,
   academicYearSchema,
@@ -1217,6 +1247,8 @@ export {
   registerVisitorSchema,
   rememberMeSchema,
   resetPasswordSchema,
+  residencyResetRollback,
+  residencyResetSchema,
   roleSchema,
   roomFeatureSchema,
   roomNumberSchema,

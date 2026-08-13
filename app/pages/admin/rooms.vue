@@ -100,6 +100,7 @@ const {
   statusFilterOptions,
   hostelFilter,
   hostelFilterOptions,
+  selectedHostelId,
   floorFilter,
   floorFilterOptions,
   currentRoomsShowing,
@@ -133,6 +134,8 @@ const { deleteModalOpen, isLoading } = storeToRefs(roomStore);
 //     console.error("Error deleting selected rooms:", error);
 //   }
 // }
+
+const residencyModalOpen = ref(false);
 
 const pagination = ref({
   pageIndex: 0,
@@ -246,6 +249,13 @@ useSeoMeta({
                   </p>
                 </template>
               </DashboardConfirmationModal>
+
+              <AdminRoomResidencyResetModal
+                v-if="selectedHostelId"
+                v-model:open="residencyModalOpen"
+                :hostel-id="selectedHostelId"
+                @success="handleRefresh"
+              />
 
               <DashboardItemsToDisplay :items-to-display />
             </template>

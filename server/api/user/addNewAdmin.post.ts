@@ -202,46 +202,30 @@ export default defineEventHandler(async (event) => {
       runtimeConfig.public.adminBaseUrl,
     );
 
-    const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, userForEmail, hostel.name!);
+    const {
+      htmlTemplate,
+      textTemplate,
+    } = getEmailTemplate(
+      verificationUrl,
+      userForEmail,
+      hostel.name!,
+    );
 
-    if (import.meta.dev) {
-      const { sendMail } = useNodeMailer();
+    await enqueueApplicationEmail(event, {
+      to: { name, email },
+      subject: `Your ${hostel.name || "Hostel Management"} Admin Account Details`,
+      html,
+      text,
+      recipientUserId: newAdminUser.userId,
+    });
 
-      await sendMail({
-        to: email,
-        subject: "Your Kings Hostel Management Admin Account Details",
-        html,
-        text,
-      });
-
-      await sendMail({
-        to: email,
-        subject: "Verify your email address - Kings Hostel Management",
-        html: htmlTemplate,
-        text: textTemplate,
-      });
-    }
-    else {
-      const mailer = await useWorkerMailer();
-
-      await mailer.send({
-        from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-        to: { name, email },
-        subject: "Your Kings Hostel Management Admin Account Details",
-        html,
-        text,
-      });
-
-      await mailer.send({
-        from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-        to: { name, email },
-        subject: "Verify your email address - Kings Hostel Management",
-        html: htmlTemplate,
-        text: textTemplate,
-      });
-
-      await mailer.close();
-    }
+    await enqueueApplicationEmail(event, {
+      to: { name, email },
+      subject: `Verify your email address - ${hostel.name || "Hostel Management"}`,
+      html: htmlTemplate,
+      text: textTemplate,
+      recipientUserId: newAdminUser.userId,
+    });
 
     return {
       success: true,

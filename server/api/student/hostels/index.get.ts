@@ -78,6 +78,11 @@ export default defineEventHandler(async (event) => {
 
     const hostelsWithLogos = hostels.map((hostel) => {
       const roomTypes = [...new Set(hostel?.rooms.map(room => room.roomType) ?? [])];
+      const allowedGenders = [...new Set(hostel?.rooms.map(room => room.allowedGender) ?? [])];
+      const allowedGender = allowedGenders.length > 0
+        ? (allowedGenders.length === 1 ? allowedGenders[0] : "mixed")
+        : "unassigned";
+
       const availableRooms = hostel.rooms?.filter(
         r => r.status === "vacant" || (r.status === "partially occupied" && r.currentOccupancy < r.capacity),
       ).length || 0;
@@ -91,8 +96,6 @@ export default defineEventHandler(async (event) => {
       if (logoUrl && typeof logoUrl === "string") {
         logoUrl = getImageFullUrl(logoUrl, event);
       }
-
-      const _allowedGender = hostel.rooms?.[0]?.allowedGender ?? null;
 
       return {
         id: hostel.id,
@@ -109,6 +112,8 @@ export default defineEventHandler(async (event) => {
         totalCapacity,
         currentOccupancy,
         roomTypes,
+        allowedGender,
+        allowedGenders,
       };
     });
 

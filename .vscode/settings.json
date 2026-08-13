@@ -184,5 +184,8 @@
   "SQL-Formatter-VSCode.dialect": "postgresql",
   "editor.inlayHints.enabled": "on",
   "editor.wordWrap": "on",
-  "typescript.tsdk": "node_modules\\typescript\\lib"
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "cSpell.words": [
+    "nonoptional"
+  ]
 }

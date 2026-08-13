@@ -80,32 +80,17 @@ export default defineEventHandler(async (event) => {
     const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newUser, BRAND);
 
     try {
-      if (import.meta.dev) {
-        const { sendMail } = useNodeMailer();
-
-        await sendMail({
-          to: email,
-          subject: `Verify your email address - ${BRAND}`,
-          html: htmlTemplate,
-          text: textTemplate,
-        });
-      }
-      else {
-        const mailer = await useWorkerMailer();
-
-        await mailer.send({
-          from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-          to: { name: newUser.name, email },
-          subject: `Verify your email address - ${BRAND}`,
-          html: htmlTemplate,
-          text: textTemplate,
-        });
-
-        if (typeof mailer.close === "function") await mailer.close();
-      }
+      await enqueueApplicationEmail(event, {
+        to: { name: newUser.name, email },
+        subject: `Verify your email address - ${BRAND}`,
+        html: htmlTemplate,
+        text: textTemplate,
+        recipientUserId: newUser.id,
+        isTransactional: true,
+      });
     }
     catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
+      console.error("Failed to enqueue verification email:", emailError);
     }
 
     return {
