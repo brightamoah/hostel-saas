@@ -1,16 +1,16 @@
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { billingQueries, roomQueries } from "~~/server/db/queries";
+import { enqueueApplicationEmail } from "~~/server/utils/emailSender";
 
 export default defineEventHandler(async (event) => {
   const scope = await adminSessionCheck(event);
+
   const {
     companyId,
     hostelId,
     isPlatformAdmin,
-    userId,
-    adminData,
-    companyRole,
   } = scope;
+
   const runtimeConfig = useRuntimeConfig(event);
 
   try {
@@ -93,18 +93,7 @@ export default defineEventHandler(async (event) => {
     const auditContext = getAuditContext({
       kind: "admin",
       event,
-      scope: {
-        isPlatformAdmin,
-        companyId,
-        hostelId,
-        userId,
-        adminData,
-        companyRole: adminData?.accessLevel === "super"
-          ? null
-          : companyRole,
-        isActiveAdmin: true,
-        companyMemberStatus: "active",
-      },
+      scope,
       target: {
         companyId: companyId ?? null,
         hostelId: hostelId ?? null,
@@ -149,30 +138,16 @@ export default defineEventHandler(async (event) => {
       });
 
       try {
-        if (import.meta.dev) {
-          const { sendMail } = useNodeMailer();
-
-          await sendMail({
-            to: studentEmail,
-            subject: `New Billing Created - ${hostelName}`,
-            html: billingTemplate.html,
-            text: billingTemplate.text,
-          });
-        }
-        else {
-          const mailer = await useWorkerMailer();
-
-          await mailer.send({
-            from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-            to: { name: studentName!, email: studentEmail! },
-            subject: "New Billing Created - Kings Hostel Management",
-            html: billingTemplate.html,
-            text: billingTemplate.text,
-          });
-        }
+        await enqueueApplicationEmail(event, {
+          to: { name: studentName ?? "Student", email: studentEmail! },
+          subject: `New Billing Created - ${hostelName ?? "Hostel Management"}`,
+          html: billingTemplate.html,
+          text: billingTemplate.text,
+          recipientUserId: studentAllocation?.student?.user?.id,
+        });
       }
       catch (emailError) {
-        console.error("Failed to send verification email:", emailError);
+        console.error("Failed to enqueue verification email:", emailError);
       }
     }
 

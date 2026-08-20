@@ -27,6 +27,11 @@ export const emailOutbox = snakeCase.table("email_outbox", t => ({
   status: outboxEmailStatusEnum().default("pending").notNull(),
   retryCount: t.integer().default(0).notNull(),
   lastError: t.text(),
+  attachments: t.jsonb().$type<Array<{
+    filename: string;
+    key: string;
+    mimeType: string;
+  }>>(),
   createdAt: t.timestamp().defaultNow().notNull(),
   sentAt: t.timestamp(),
 }));

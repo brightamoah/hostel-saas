@@ -6,54 +6,58 @@ defineProps<{
   coolDownTime: number;
   handleRefresh: () => Promise<boolean>;
 }>();
+
+const {
+  dayNightImageUrlDark,
+  dayNightImageUrlLight,
+} = useGreetings();
 </script>
 
 <template>
-  <div>
-    <UCard
-      variant="subtle"
-      class="bg-accented max-h-64"
-      :ui="{
-        body: 'flex flex-col justify-between md:flex-row md:items-center sm:p-2 h-full',
-      }"
-    >
-      <div class="sm:p-6">
-        <h1 class="font-semibold text-xl">
-          Welcome back, {{ userName }}
-        </h1>
+  <UAlert
+    variant="subtle"
+    color="neutral"
+    orientation="horizontal"
+    class="w-full shrink-0"
+  >
+    <template #title>
+      <h1 class="font-semibold text-xl">
+        Welcome back, {{ userName }}
+      </h1>
+    </template>
 
-        <p class="mt-1 text-muted text-base">
-          Manage your hostel stay efficiently from here!
-        </p>
+    <template #description>
+      <p class="mt-1 text-muted text-base">
+        Manage your hostel stay efficiently from here!
+      </p>
 
-        <div class="flex md:flex-row md:items-center gap-4 mt-4">
-          <UButton
-            label="View Profile"
-            icon="i-lucide-circle-user-round"
-            size="lg"
-            class="justify-center items-center cursor-pointer"
-            :to="{ name: 'student-profile' }"
-          />
+      <div class="flex gap-2 mt-3">
+        <UButton
+          label="View Profile"
+          icon="i-lucide-circle-user-round"
+          size="lg"
+          class="justify-center items-center cursor-pointer"
+          :to="{ name: 'student-profile' }"
+        />
 
-          <DashboardRefreshButton
-            variant="solid"
-            color="neutral"
-            :can-resend
-            :cool-down-time
-            :refresh-is-loading
-            :handle-refresh
-          />
-        </div>
+        <DashboardRefreshButton
+          variant="solid"
+          color="neutral"
+          :can-resend
+          :cool-down-time
+          :refresh-is-loading
+          :handle-refresh
+        />
       </div>
+    </template>
 
-      <NuxtImg
-        src="/new.png"
-        width="400"
-        height="250"
-        class="hidden md:block max-w-100 max-h-64 object-cover"
+    <template #actions>
+      <DashboardSunMoon
+        :day-night-image-url-dark
+        :day-night-image-url-light
       />
-    </UCard>
-  </div>
+    </template>
+  </UAlert>
 </template>
 
 <style scoped>

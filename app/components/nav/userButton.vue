@@ -12,7 +12,11 @@ const portalSurface = usePortalSurface();
 
 const { isPlatformAdminOrOwner } = usePortalUserSession();
 
-const { userInitials, userBadgeColor, avatarBgColor } = useUseUserItems();
+const {
+  userInitials,
+  userBadgeColor,
+  avatarBgColor,
+} = useUseUserItems();
 
 const dashboardIcon = computed(() =>
   user?.role === "admin" ? "i-lucide-monitor" : "i-lucide-graduation-cap",

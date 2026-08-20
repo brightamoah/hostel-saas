@@ -2,6 +2,7 @@ import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomUUID } from "uncrypto";
 import { companyQueries } from "~~/server/db/queries/company";
+import { enqueueApplicationEmail } from "~~/server/utils/emailSender";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -99,29 +100,14 @@ export default defineEventHandler(async (event) => {
     const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, newCompanyOwner.user, hostelName ?? companyName);
 
     try {
-      if (import.meta.dev) {
-        const { sendMail } = useNodeMailer();
-
-        await sendMail({
-          to: email,
-          subject: "Verify your email address - Kings Hostel Management",
-          html: htmlTemplate,
-          text: textTemplate,
-        });
-      }
-      else {
-        const mailer = await useWorkerMailer();
-
-        await mailer.send({
-          from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-          to: { name: newCompanyOwner.user.name, email },
-          subject: "Verify your email address - Kings Hostel Management",
-          html: htmlTemplate,
-          text: textTemplate,
-        });
-
-        if (typeof mailer.close === "function") await mailer.close();
-      }
+      await enqueueApplicationEmail(event, {
+        to: { name: newCompanyOwner.user.name, email },
+        subject: "Verify your email address - Kings Hostel Management",
+        html: htmlTemplate,
+        text: textTemplate,
+        recipientUserId: newCompanyOwner.user.id,
+        isTransactional: true,
+      });
     }
     catch (emailError) {
       console.error("Failed to send verification email:", emailError);

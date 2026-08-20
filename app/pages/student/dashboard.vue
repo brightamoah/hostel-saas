@@ -9,7 +9,7 @@ definePageMeta({
 const title = ref("Student Dashboard");
 
 const { user } = usePortalUserSession();
-const userName = computed(() => user.value?.name ?? "Student");
+const userName = computed(() => user.value?.name.split(" ").at(0) ?? "Student");
 
 const {
   data,

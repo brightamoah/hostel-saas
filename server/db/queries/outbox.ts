@@ -15,6 +15,11 @@ export interface EnqueueEmailInput {
   html: string;
   text?: string | null;
   emailType?: EmailType;
+  attachments?: Array<{
+    filename: string;
+    key: string;
+    mimeType: string;
+  }>;
 }
 
 export async function outboxQueries(event?: H3Event) {
@@ -39,6 +44,7 @@ export async function outboxQueries(event?: H3Event) {
         text: input.text ?? null,
         emailType: input.emailType ?? "transactional",
         status: "pending",
+        attachments: input.attachments ?? null,
       })
       .returning();
 

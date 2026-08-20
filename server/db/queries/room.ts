@@ -640,6 +640,7 @@ export async function roomQueries(event?: H3Event) {
           with: {
             user: {
               columns: {
+                id: true,
                 name: true,
                 email: true,
               },
@@ -1436,6 +1437,75 @@ export async function roomQueries(event?: H3Event) {
             continue;
           }
 
+          // Check if student has a new active or pending allocation
+          // const [existingActiveAllocation] = await txn
+          //   .select({ id: allocation.id })
+          //   .from(allocation)
+          //   .where(
+          //      and(
+          //        eq(allocation.studentId, logItem.studentId),
+          //        inArray(allocation.status, ["active", "pending"]),
+          //        ne(allocation.id, logItem.allocationId)
+          //      )
+          //   )
+          //   .limit(1);
+
+          const existingActiveAllocation = await txn
+            .query
+            .allocation
+            .findFirst({
+              where: {
+                studentId: logItem.studentId,
+                status: { in: ["active", "pending"] },
+                id: { ne: logItem.allocationId },
+              },
+              columns: {
+                id: true,
+              },
+            });
+
+          if (existingActiveAllocation) {
+            conflictCount++;
+            conflicts.push({
+              roomId: logItem.roomId,
+              reason: `Student ${logItem.userName} has already booked a new room.`,
+            });
+            continue;
+          }
+
+          // Check if the old room still has capacity for them
+          // Since the room version hasn't changed, currentRoomOccupancy is equal to what it was right after the reset.
+          // Wait, if the version hasn't changed, capacity check is technically covered, but just in case:
+          const roomData = await txn
+            .query
+            .room
+            .findFirst({
+              where: {
+                id: logItem.roomId,
+              },
+              columns: {
+                capacity: true,
+              },
+            });
+
+          if (!roomData) {
+            conflictCount++;
+            conflicts.push({
+              roomId: logItem.roomId,
+              reason: `Room not found for ${logItem.userName}.`,
+            });
+            continue;
+          }
+
+          if (logItem.currentRoomOccupancy + 1 > roomData.capacity) {
+            conflictCount++;
+            conflicts.push({
+              roomId: logItem.roomId,
+              reason: `Room no longer has capacity for ${logItem.userName}.`,
+            });
+            continue;
+          }
+
           await txn
             .update(allocation)
             .set({ status: logItem.previousAllocationStatus })
@@ -1528,6 +1598,26 @@ export async function roomQueries(event?: H3Event) {
       });
   };
 
+  const getResidencyResetBatchDetails = async (batchId: string) => {
+    return await db
+      .select({
+        logId: residencyResetLog.id,
+        allocationId: residencyResetLog.allocationId,
+        roomId: residencyResetLog.roomId,
+        roomNumber: room.roomNumber,
+        studentId: residencyResetLog.studentId,
+        userName: user.name,
+        userEmail: user.email,
+        previousAllocationStatus: residencyResetLog.previousAllocationStatus,
+        previousRoomOccupancy: residencyResetLog.previousRoomOccupancy,
+      })
+      .from(residencyResetLog)
+      .innerJoin(room, eq(residencyResetLog.roomId, room.id))
+      .innerJoin(student, eq(residencyResetLog.studentId, student.id))
+      .innerJoin(user, eq(student.userId, user.id))
+      .where(eq(residencyResetLog.batchId, batchId));
+  };
+
   return {
     getAllRooms,
     getRoomByIdScoped,
@@ -1538,6 +1628,7 @@ export async function roomQueries(event?: H3Event) {
     resetHostelResidency,
     rollbackResidencyReset,
     getRecentResidencyResetBatches,
+    getResidencyResetBatchDetails,
     getAvailableRoomsForStudent,
     deleteRoomsByIds,
     editRoomById,

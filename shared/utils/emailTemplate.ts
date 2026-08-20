@@ -274,7 +274,7 @@ export function getBillingTemplate(params: {
     dueDate,
     dashboardUrl,
     invoiceNumber = `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
-    supportEmail = "support@kayanest.app",
+    supportEmail = "support@mails.kayanest.app",
   } = params;
 
   // Standalone detail table — full background, clear label/value contrast

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { auditLogQueries, billingQueries } from "~~/server/db/queries";
+import { enqueueApplicationEmail } from "~~/server/utils/emailSender";
 import { formatDate, formatMoney } from "~~/server/utils/formatters";
 import { adminSessionCheck } from "~~/server/utils/sessionChecks";
 
@@ -50,7 +51,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const runtimeConfig = useRuntimeConfig();
+    // const runtimeConfig = useRuntimeConfig();
     const amountTotal = Number(billingRecord.amount);
     const amountPaid = Number(billingRecord.paidAmount);
     const amountDue = amountTotal - amountPaid;
@@ -71,28 +72,14 @@ export default defineEventHandler(async (event) => {
       isOverdue,
     );
 
-    if (import.meta.dev) {
-      const { sendMail } = useNodeMailer();
-      await sendMail({
-        to: studentUser.email,
-        subject: emailSubject,
-        html: htmlTemplate,
-        text: textTemplate,
-      });
-    }
-    else {
-      const mailer = await useWorkerMailer();
-      await mailer.send({
-        from: {
-          name: runtimeConfig.emailFromName,
-          email: runtimeConfig.supportEmail ?? runtimeConfig.emailFromEmail,
-        },
-        to: { name: studentUser.name, email: studentUser.email },
-        subject: emailSubject,
-        html: htmlTemplate,
-        text: textTemplate,
-      });
-    }
+    await enqueueApplicationEmail(event, {
+      to: { name: studentUser.name, email: studentUser.email },
+      subject: emailSubject,
+      html: htmlTemplate,
+      text: textTemplate,
+      recipientUserId: studentUser.id,
+      hostelName: billingRecord.hostel?.name ?? undefined,
+    });
 
     const { useDB } = await import("~~/server/utils/db");
     const { db } = useDB(event);

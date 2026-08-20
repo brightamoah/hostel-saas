@@ -1,17 +1,9 @@
 <script lang="ts" setup>
-function getGreeting() {
-  const currentHour = new Date().getHours();
-
-  if (currentHour < 12) {
-    return "Good Morning";
-  }
-  else if (currentHour < 18) {
-    return "Good Afternoon";
-  }
-  else {
-    return "Good Evening";
-  }
-}
+const {
+  greeting,
+  dayNightImageUrlDark,
+  dayNightImageUrlLight,
+} = useGreetings();
 
 const { user } = usePortalUserSession();
 const { userProfile } = useUser();
@@ -25,22 +17,6 @@ const {
   refreshIsLoading,
   handleRefresh,
 } = refreshContext ?? {};
-
-const dayNightImageUrlLight = computed(() => {
-  const greeting = getGreeting();
-
-  if (greeting === "Good Morning") return "svgs/light/sunnyCloud.svg";
-  else if (greeting === "Good Afternoon") return "svgs/light/sunny.svg";
-  else return "svgs/light/moon.svg";
-});
-
-const dayNightImageUrlDark = computed(() => {
-  const greeting = getGreeting();
-
-  if (greeting === "Good Morning") return "svgs/dark/sunnyCloud.svg";
-  else if (greeting === "Good Afternoon") return "svgs/dark/sunny.svg";
-  else return "svgs/dark/moon.svg";
-});
 </script>
 
 <template>
@@ -52,7 +28,7 @@ const dayNightImageUrlDark = computed(() => {
   >
     <template #title>
       <h1 class="font-semibold text-xl">
-        {{ getGreeting() }} {{ user?.name || "Admin" }}
+        {{ greeting }} {{ user?.name || "Admin" }}
       </h1>
     </template>
 
@@ -84,13 +60,9 @@ const dayNightImageUrlDark = computed(() => {
     </template>
 
     <template #actions>
-      <UColorModeImage
-        :light="dayNightImageUrlLight"
-        :dark="dayNightImageUrlDark"
-        width="100"
-        height="100"
-        alt="Weather"
-        class="rounded-lg"
+      <DashboardSunMoon
+        :day-night-image-url-dark
+        :day-night-image-url-light
       />
     </template>
   </UAlert>

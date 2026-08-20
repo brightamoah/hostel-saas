@@ -1,4 +1,5 @@
 import { userQueries } from "~~/server/db/queries";
+import { enqueueApplicationEmail } from "~~/server/utils/emailSender";
 import { formatDate, formatMoney } from "~~/server/utils/formatters";
 import { getInvoiceEmailTemplate } from "~~/server/utils/invoiceEmailTemplate";
 import { emailInvoiceSchema } from "~~/shared/utils/schema";
@@ -82,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
     const studentsActiveAllocation = student.allocations.find(a => a.status === "active" || a.status === "pending");
 
-    const runtimeConfig = useRuntimeConfig();
+    // const runtimeConfig = useRuntimeConfig();
 
     const { htmlTemplate, textTemplate } = getInvoiceEmailTemplate(
       studentName,
@@ -98,43 +99,38 @@ export default defineEventHandler(async (event) => {
       studentsActiveAllocation?.room?.hostel?.address ?? undefined,
     );
 
-    const emailSubject = `Invoice #${invoiceNumber} from Kings Hostel`;
+    const hostelName = studentsActiveAllocation?.room?.hostel?.name ?? "Hostel";
+    const emailSubject = `Invoice #${invoiceNumber} from ${hostelName}`;
 
     try {
-      if (import.meta.dev) {
-        const { sendMail } = useNodeMailer();
-        await sendMail({
-          to: studentEmail,
-          subject: emailSubject,
-          html: htmlTemplate,
-          text: textTemplate,
-          attachments: [{ filename: filePart.filename, content: filePart.data }],
-        });
-      }
-      else {
-        const mailer = await useWorkerMailer();
+      const storage = useStorage("images");
+      const attachmentKey = `attachments/user-${studentUserId}/${Date.now()}-invoice-${invoiceNumber}.pdf`;
+      const filename = `invoice-${invoiceNumber}.pdf`;
 
-        await mailer.send({
-          from: {
-            name: runtimeConfig.emailFromName,
-            email: runtimeConfig.supportEmail ?? runtimeConfig.emailFromEmail,
+      await storage.setItemRaw(attachmentKey, filePart.data, {
+        httpMetadata: {
+          contentType: "application/pdf",
+        },
+      });
+
+      await enqueueApplicationEmail(event, {
+        to: { name: studentName, email: studentEmail },
+        subject: emailSubject,
+        html: htmlTemplate,
+        text: textTemplate,
+        recipientUserId: studentUserId,
+        hostelName: studentsActiveAllocation?.room?.hostel?.name ?? undefined,
+        attachments: [
+          {
+            filename,
+            key: attachmentKey,
+            mimeType: "application/pdf",
           },
-          to: { name: studentName, email: studentEmail },
-          subject: emailSubject,
-          html: htmlTemplate,
-          text: textTemplate,
-          attachments: [
-            {
-              filename: `invoice-${invoiceNumber}.pdf`,
-              content: filePart.data.toString("base64"),
-              mimeType: "application/pdf",
-            },
-          ],
-        });
-      }
+        ],
+      });
     }
     catch (emailError) {
-      console.error("Failed to send email:", emailError);
+      console.error("Failed to enqueue invoice email:", emailError);
     }
 
     const { logAudit } = await (await import("~~/server/db/queries/auditLog")).auditLogQueries(event);

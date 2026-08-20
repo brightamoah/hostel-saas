@@ -34,7 +34,7 @@ export function getReminderEmailTemplate(
   amountPaid: string,
   amountDue: string,
   hostelName: string,
-  hostelEmail: string = "support@kayanest.app",
+  hostelEmail: string = "support@mails.kayanest.app",
   hostelPhone: string = "+233 54 968 4848",
   hostelAddress: string = "University Campus, Accra, Ghana",
   isOverdue: boolean = false,

@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
       hostelName: hostel.name!,
       dashboardUrl: config.public.siteBaseUrl,
       invoiceNumber: `INV-${Math.floor(Math.random() * 900000 + 100000)}`,
-      supportEmail: "support@kayanest.app",
+      supportEmail: "support@mails.kayanest.app",
     }).html,
 
     "reminder-upcoming": () =>
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
         "GHS 400.00",
         "GHS 800.00",
         hostel.name!,
-        "support@kayanest.app",
+        "support@mails.kayanest.app",
         "+233 54 968 4848",
         "University Campus, Accra, Ghana",
         false,
@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
         "GHS 0.00",
         "GHS 1,200.00",
         hostel.name!,
-        "support@kayanest.app",
+        "support@mails.kayanest.app",
         "+233 54 968 4848",
         "University Campus, Accra, Ghana",
         true,

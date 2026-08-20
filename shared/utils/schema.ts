@@ -1171,14 +1171,14 @@ export const onboardingDetailKeySchema = z.templateLiteral([
 
 export const residencyResetPreview = z.object({
   hostelId: hostelIdSchema.nonoptional(),
-  academicPeriod: academicPeriodSchema.optional().nullable(),
-  academicYear: academicYearSchema.optional().nullable(),
+  academicPeriod: academicPeriodSchema.optional(),
+  academicYear: academicYearSchema.optional(),
 });
 
 const residencyResetSchema = z.object({
   hostelId: hostelIdSchema.nonoptional(),
-  academicPeriod: academicPeriodSchema.optional().nullable(),
-  academicYear: academicYearSchema.optional().nullable(),
+  academicPeriod: academicPeriodSchema,
+  academicYear: academicYearSchema,
   idempotencyKey: z.string().min(1, "Idempotency key is required"),
 });
 

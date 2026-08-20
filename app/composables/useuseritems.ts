@@ -20,5 +20,12 @@ export function useUseUserItems() {
     return user.value?.role === "admin" ? "success" : "primary";
   });
 
-  return { userInitials, avatarBgColor, userBadgeColor };
+  const userFirstName = computed(() => user.value?.name.split(" ").at(0));
+
+  return {
+    userInitials,
+    avatarBgColor,
+    userBadgeColor,
+    userFirstName,
+  };
 }

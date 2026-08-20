@@ -234,8 +234,7 @@ export default defineNuxtConfig({
       openAPI: true,
     },
     scheduledTasks: {
-      "0 0 * * *": ["schedular", "residencyResetExpired"],
-      "*/2 * * * *": ["dispatchEmailOutbox"],
+      "0 0 * * *": ["schedular"],
     },
     devStorage: {
       kv: {
@@ -303,8 +302,6 @@ export default defineNuxtConfig({
     paystackSecretKey: env.NUXT_PAYSTACK_SECRET_KEY,
     r2Url: env.NUXT_R2_URL,
     // platformSeedSecret: env.NUXT_PLATFORM_SEED_SECRET,
-    axiomApiKey: env.NUXT_AXIOM_API_KEY,
-    axiomDataset: env.NUXT_AXIOM_DATASET,
   },
 
   experimental: {
@@ -480,12 +477,13 @@ export default defineNuxtConfig({
     evlog: {
       console: false,
       silent: false,
-      axiom: {
-        dataset: env.NUXT_AXIOM_DATASET,
-        apiKey: env.NUXT_AXIOM_API_KEY,
-      },
       sampling: {
-        rates: { info: 10, warn: 30, debug: 10, error: 100 },
+        rates: {
+          info: 5,
+          warn: 10,
+          debug: 5,
+          error: 100,
+        },
         keep: [{ status: 400 }, { status: 500 }],
       },
     },

@@ -8,7 +8,7 @@ export async function useWorkerMailer() {
       username: runtimeConfig.nodemailerAuthUser,
       password: runtimeConfig.nodemailerAuthPass,
     },
-    authType: "plain",
+    authType: ["plain", "login"],
     host: runtimeConfig.nodemailerHost,
     port: Number(runtimeConfig.nodemailerPort),
     secure: true,

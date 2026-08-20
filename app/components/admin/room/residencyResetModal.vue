@@ -60,19 +60,51 @@ interface RecentBatch {
 
 const recentBatches = ref<RecentBatch[]>([]);
 
+const isViewingDetails = ref(false);
+const selectedBatchDetails = ref<any[]>([]);
+const isLoadingDetails = ref(false);
+
+async function viewBatchDetails(batchId: string) {
+  isViewingDetails.value = true;
+  isLoadingDetails.value = true;
+  try {
+    const res = await $apiFetch(
+      "/api/room/admin/recentResidencyBatchDetails",
+      {
+        method: "GET",
+        query: { batchId },
+      },
+    );
+    selectedBatchDetails.value = res.data;
+  }
+  catch (err: any) {
+    toast.add({
+      title: "Details Error",
+      description: err?.data?.message || err?.message || "Failed to load batch details.",
+      color: "error",
+    });
+  }
+  finally {
+    isLoadingDetails.value = false;
+  }
+}
+
 async function loadPreview() {
   if (!hostelId) return;
 
   isLoadingPreview.value = true;
   try {
-    const res = await $apiFetch("/api/room/admin/previewResidencyReset", {
-      method: "POST",
-      body: {
-        hostelId,
-        academicYear: academicYear.value || undefined,
-        academicPeriod: academicPeriod.value || undefined,
+    const res = await $apiFetch(
+      "/api/room/admin/previewResidencyReset",
+      {
+        method: "POST",
+        body: {
+          hostelId,
+          academicYear: academicYear.value || undefined,
+          academicPeriod: academicPeriod.value || undefined,
+        },
       },
-    });
+    );
 
     previewData.value = res.data;
   }
@@ -92,9 +124,15 @@ async function loadRecentBatches() {
   if (!hostelId) return;
 
   try {
-    const res = await $apiFetch(`/api/room/admin/recentResidencyBatches?hostelId=${hostelId}`, {
-      method: "GET",
-    }).catch(() => null);
+    const res = await $apiFetch(
+      "/api/room/admin/recentResidencyBatches",
+      {
+        method: "GET",
+        query: {
+          hostelId,
+        },
+      },
+    ).catch(() => null);
 
     if (res?.data) {
       recentBatches.value = res.data;
@@ -103,7 +141,7 @@ async function loadRecentBatches() {
   catch {}
 }
 
-watch(open, (isOpen) => {
+watch(open, async (isOpen) => {
   if (isOpen) {
     if (companySettings.value?.defaultAcademicYear) {
       academicYear.value = companySettings.value.defaultAcademicYear;
@@ -112,8 +150,11 @@ watch(open, (isOpen) => {
       academicPeriod.value = companySettings.value.defaultAcademicPeriod;
     }
     idempotencyKey.value = randomUUID();
-    void loadPreview();
-    void loadRecentBatches();
+
+    await Promise.all([
+      loadPreview(),
+      loadRecentBatches(),
+    ]);
   }
 });
 
@@ -126,15 +167,18 @@ async function confirmReset() {
 
   isSubmitting.value = true;
   try {
-    const res = await $apiFetch("/api/room/admin/resetResidency", {
-      method: "POST",
-      body: {
-        hostelId,
-        academicYear: academicYear.value || undefined,
-        academicPeriod: academicPeriod.value || undefined,
-        idempotencyKey: idempotencyKey.value,
+    const res = await $apiFetch(
+      "/api/room/admin/resetResidency",
+      {
+        method: "POST",
+        body: {
+          hostelId,
+          academicYear: academicYear.value || undefined,
+          academicPeriod: academicPeriod.value || undefined,
+          idempotencyKey: idempotencyKey.value,
+        },
       },
-    });
+    );
 
     toast.add({
       title: "Residency Reset Complete",
@@ -160,10 +204,13 @@ async function confirmReset() {
 async function rollbackBatch(batchId: string) {
   isRollingBack.value = batchId;
   try {
-    const res = await $apiFetch<{ success: boolean; message: string }>("/api/room/admin/rollbackResidencyReset", {
-      method: "POST",
-      body: { batchId },
-    });
+    const res = await $apiFetch(
+      "/api/room/admin/rollbackResidencyReset",
+      {
+        method: "POST",
+        body: { batchId },
+      },
+    );
 
     toast.add({
       title: "Rollback Complete",
@@ -171,8 +218,11 @@ async function rollbackBatch(batchId: string) {
       color: "success",
     });
 
-    await loadRecentBatches();
-    await loadPreview();
+    await Promise.all([
+      loadPreview(),
+      loadRecentBatches(),
+    ]);
+
     emit("success");
   }
   catch (err: any) {
@@ -186,13 +236,38 @@ async function rollbackBatch(batchId: string) {
     isRollingBack.value = null;
   }
 }
+
+const previewDataItems = computed(() => {
+  return [
+    {
+      label: "Students Affected",
+      value: previewData.value?.totalAffectedStudents,
+      color: "highlighted",
+    },
+    {
+      label: "Rooms Affected",
+      value: previewData.value?.totalAffectedRooms,
+      color: "highlighted",
+    },
+    {
+      label: "Rooms Freed",
+      value: previewData.value?.roomsFreedCount,
+      color: "success",
+    },
+    {
+      label: "Partially Vacated",
+      value: previewData.value?.roomsPartiallyVacatedCount,
+      color: "warning",
+    },
+  ];
+});
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     :ui="{
-      content: 'max-w-2xl rounded-lg shadow-lg',
+      content: 'max-w-4xl rounded-lg shadow-lg',
       title: 'font-newsreader text-xl font-semibold',
       footer: 'justify-end',
       close: 'cursor-pointer',
@@ -219,16 +294,23 @@ async function rollbackBatch(batchId: string) {
     </template>
 
     <template #body>
-      <div class="space-y-5">
+      <div
+        v-auto-animate
+        class="space-y-5"
+      >
         <p class="text-muted text-base">
           Reset student residencies for the selected academic period. This will set active allocations to completed/expired, free up room capacity, and clear student active allocation flags.
         </p>
 
         <div class="gap-4 grid grid-cols-1 sm:grid-cols-2">
-          <UFormField label="Academic Year">
+          <UFormField
+            label="Academic Year"
+            class="w-full"
+          >
             <UInput
               v-model="academicYear"
               placeholder="e.g. 2025/2026"
+              class="w-full"
             />
           </UFormField>
 
@@ -253,7 +335,7 @@ async function rollbackBatch(batchId: string) {
           class="flex justify-center py-6"
         >
           <UIcon
-            name="i-lucide-loader-2"
+            name="i-lucide-loader"
             class="size-8 text-primary animate-spin"
           />
         </div>
@@ -263,43 +345,17 @@ async function rollbackBatch(batchId: string) {
           class="space-y-4"
         >
           <div class="gap-3 grid grid-cols-2 sm:grid-cols-4">
-            <div class="bg-subtle p-3 border rounded-lg text-center">
+            <div
+              v-for="item in previewDataItems"
+              :key="item.label"
+              class="bg-elevated p-3 border border-muted rounded-lg text-center"
+            >
               <p class="text-muted text-xs">
-                Students Affected
+                {{ item.label }}
               </p>
 
-              <p class="font-bold text-highlighted text-xl">
-                {{ previewData.totalAffectedStudents }}
-              </p>
-            </div>
-
-            <div class="bg-subtle p-3 border rounded-lg text-center">
-              <p class="text-muted text-xs">
-                Rooms Affected
-              </p>
-
-              <p class="font-bold text-highlighted text-xl">
-                {{ previewData.totalAffectedRooms }}
-              </p>
-            </div>
-
-            <div class="bg-subtle p-3 border rounded-lg text-center">
-              <p class="text-muted text-xs">
-                Rooms Freed
-              </p>
-
-              <p class="font-bold text-success text-xl">
-                {{ previewData.roomsFreedCount }}
-              </p>
-            </div>
-
-            <div class="bg-subtle p-3 border rounded-lg text-center">
-              <p class="text-muted text-xs">
-                Partially Vacated
-              </p>
-
-              <p class="font-bold text-warning text-xl">
-                {{ previewData.roomsPartiallyVacatedCount }}
+              <p :class="`font-bold text-${item.color} text-xl`">
+                {{ item.value }}
               </p>
             </div>
           </div>
@@ -312,7 +368,7 @@ async function rollbackBatch(batchId: string) {
               Sample Affected Allocations:
             </p>
 
-            <div class="border rounded-md divide-y max-h-36 overflow-y-auto text-xs">
+            <div class="border border-muted rounded-md divide-y divide-muted max-h-36 overflow-y-auto text-xs">
               <div
                 v-for="item in previewData.sampleAllocations"
                 :key="item.allocationId"
@@ -322,7 +378,7 @@ async function rollbackBatch(batchId: string) {
 
                 <UBadge
                   variant="subtle"
-                  size="xs"
+                  size="sm"
                 >
                   Room {{ item.roomNumber }}
                 </UBadge>
@@ -333,7 +389,7 @@ async function rollbackBatch(batchId: string) {
 
         <div
           v-if="recentBatches.length"
-          class="space-y-2 pt-4 border-t"
+          class="space-y-2 pt-4 border-muted border-t"
         >
           <p class="font-semibold text-muted text-xs">
             Recent Resets (Available for 48h Undo):
@@ -343,7 +399,7 @@ async function rollbackBatch(batchId: string) {
             <div
               v-for="batch in recentBatches"
               :key="batch.id"
-              class="flex justify-between items-center bg-subtle p-2.5 border rounded-md text-xs"
+              class="flex justify-between items-center bg-subtle p-2.5 border border-muted rounded-md text-xs"
             >
               <div>
                 <p class="font-medium">
@@ -355,25 +411,36 @@ async function rollbackBatch(batchId: string) {
                 </p>
               </div>
 
-              <UButton
-                v-if="batch.status === 'committed'"
-                label="Undo Reset"
-                icon="i-lucide-rotate-ccw"
-                size="xs"
-                color="warning"
-                variant="subtle"
-                :loading="isRollingBack === batch.id"
-                @click="rollbackBatch(batch.id)"
-              />
+              <div class="flex items-center gap-2">
+                <UButton
+                  label="Details"
+                  icon="i-lucide-list"
+                  size="xs"
+                  color="neutral"
+                  variant="subtle"
+                  @click="viewBatchDetails(batch.id)"
+                />
 
-              <UBadge
-                v-else
-                color="neutral"
-                variant="subtle"
-                size="xs"
-              >
-                Rolled Back
-              </UBadge>
+                <UButton
+                  v-if="batch.status === 'committed'"
+                  label="Undo Reset"
+                  icon="i-lucide-rotate-ccw"
+                  size="xs"
+                  color="warning"
+                  variant="subtle"
+                  :loading="isRollingBack === batch.id"
+                  @click="rollbackBatch(batch.id)"
+                />
+
+                <UBadge
+                  v-else
+                  color="neutral"
+                  variant="subtle"
+                  size="xs"
+                >
+                  Rolled Back
+                </UBadge>
+              </div>
             </div>
           </div>
         </div>
@@ -398,6 +465,67 @@ async function rollbackBatch(batchId: string) {
           :disabled="!previewData || previewData.totalAffectedStudents === 0"
           @click="confirmReset"
         />
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="isViewingDetails"
+    :ui="{ content: 'max-w-2xl rounded-lg shadow-lg', title: 'font-newsreader text-lg font-semibold' }"
+  >
+    <template #title>
+      Residency Reset Batch Details
+    </template>
+
+    <template #body>
+      <div
+        v-if="isLoadingDetails"
+        class="flex justify-center py-6"
+      >
+        <UIcon
+          name="i-lucide-loader-2"
+          class="size-8 text-primary animate-spin"
+        />
+      </div>
+
+      <div
+        v-else
+        class="space-y-4 max-h-[60vh] overflow-y-auto"
+      >
+        <div
+          v-if="!selectedBatchDetails.length"
+          class="text-muted text-center"
+        >
+          No details found.
+        </div>
+
+        <div
+          v-else
+          class="border border-muted rounded-md divide-y divide-muted text-xs"
+        >
+          <div
+            v-for="log in selectedBatchDetails"
+            :key="log.logId"
+            class="flex justify-between items-center p-3"
+          >
+            <div>
+              <p class="font-medium text-sm">
+                {{ log.userName }} ({{ log.userEmail }})
+              </p>
+
+              <p class="mt-0.5 text-muted">
+                Previous Status: <span class="font-medium text-foreground">{{ log.previousAllocationStatus }}</span>
+              </p>
+            </div>
+
+            <UBadge
+              variant="subtle"
+              size="sm"
+            >
+              Room {{ log.roomNumber }}
+            </UBadge>
+          </div>
+        </div>
       </div>
     </template>
   </UModal>

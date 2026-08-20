@@ -14,10 +14,14 @@ export default defineTask({
     });
 
     try {
-      await runTask("clearExpiredCache", { context });
-      await runTask("checkOverdueBillings", { context });
-      await runTask("cancelUnpaidAllocations", { context });
-      await runTask("processBillingReminders", { context });
+      await Promise.all([
+        runTask("consolidateLogs", { context }),
+        runTask("residencyResetExpired", { context }),
+        runTask("clearExpiredCache", { context }),
+        runTask("checkOverdueBillings", { context }),
+        runTask("cancelUnpaidAllocations", { context }),
+        runTask("processBillingReminders", { context }),
+      ]);
 
       // Weekly task
       const now = new Date();

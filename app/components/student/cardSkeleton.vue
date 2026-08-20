@@ -25,7 +25,7 @@ const cards = [
       v-for="card in cards"
       :key="card.id"
       :class="card.class"
-      class="border-2 border-muted"
+      class="border-2 border-muted/40"
       :ui="{
         header: 'border-b-0 p-4 px-4',
       }"

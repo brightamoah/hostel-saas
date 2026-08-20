@@ -264,7 +264,6 @@ useSeoMeta({
 
         <UTable
           ref="tableRef"
-          :key="rooms.length"
           v-model:global-filter="globalFilter"
           v-model:column-visibility="columnVisibility"
           v-model:row-selection="rowSelection"

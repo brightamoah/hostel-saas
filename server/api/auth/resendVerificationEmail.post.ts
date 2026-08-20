@@ -5,6 +5,7 @@ import { randomUUID } from "uncrypto";
 import { userQueries } from "~~/server/db/queries/user";
 import { user } from "~~/server/db/schema";
 import { useDB } from "~~/server/utils/db";
+import { enqueueApplicationEmail } from "~~/server/utils/emailSender";
 import { handleError } from "~~/server/utils/errorHandler";
 
 const TOKEN_TTL_MS = 10 * 60 * 1000;
@@ -80,29 +81,14 @@ export default defineEventHandler(async (event) => {
     const BRAND = "KayaNest";
     const { htmlTemplate, textTemplate } = getEmailTemplate(verificationUrl, existingUser, BRAND);
 
-    if (import.meta.dev) {
-      const { sendMail } = useNodeMailer();
-
-      await sendMail({
-        to: normalizedEmail,
-        subject: `Verify your email address - ${BRAND}`,
-        html: htmlTemplate,
-        text: textTemplate,
-      });
-    }
-    else {
-      const mailer = await useWorkerMailer();
-
-      await mailer.send({
-        from: { name: runtimeConfig.emailFromName, email: runtimeConfig.emailFromEmail },
-        to: { name: existingUser.name, email: existingUser.email },
-        subject: `Verify your email address - ${BRAND}`,
-        html: htmlTemplate,
-        text: textTemplate,
-      });
-
-      await mailer.close();
-    }
+    await enqueueApplicationEmail(event, {
+      to: { name: existingUser.name, email: existingUser.email },
+      subject: `Verify your email address - ${BRAND}`,
+      html: htmlTemplate,
+      text: textTemplate,
+      recipientUserId: existingUser.id,
+      isTransactional: true,
+    });
 
     return {
       success: true,

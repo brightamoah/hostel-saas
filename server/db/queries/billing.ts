@@ -19,6 +19,7 @@ const billingWithRelations = {
       with: {
         user: {
           columns: {
+            id: true,
             name: true,
             email: true,
             image: true,
