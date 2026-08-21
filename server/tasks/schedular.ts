@@ -14,23 +14,19 @@ export default defineTask({
     });
 
     try {
-      await Promise.all([
-        runTask("consolidateLogs", { context }),
-        runTask("residencyResetExpired", { context }),
-        runTask("clearExpiredCache", { context }),
-        runTask("checkOverdueBillings", { context }),
-        runTask("cancelUnpaidAllocations", { context }),
-        runTask("processBillingReminders", { context }),
-      ]);
+      await runTask("consolidateLogs", { context });
+      await runTask("residencyResetExpired", { context });
+      await runTask("clearExpiredCache", { context });
+      await runTask("checkOverdueBillings", { context });
+      await runTask("cancelUnpaidAllocations", { context });
+      await runTask("processBillingReminders", { context });
 
       // Weekly task
       const now = new Date();
       const isSunday = now.getUTCDay() === 0;
-      const is1am = now.getUTCHours() === 1;
+      // const is1am = now.getUTCHours() === 1;
 
-      if (isSunday && is1am) {
-        await runTask("applyOverdueLateFee", { context });
-      }
+      if (isSunday) await runTask("applyOverdueLateFee", { context });
 
       log.set({ taskStatus: "completed" });
       log.emit();
