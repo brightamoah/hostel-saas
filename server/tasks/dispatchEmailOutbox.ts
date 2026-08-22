@@ -42,7 +42,21 @@ export default defineTask({
       const getAttachments = async (attachments: unknown): Promise<EmailAttachment[] | undefined> => {
         if (!Array.isArray(attachments) || attachments.length === 0) return undefined;
 
-        const cfBucket = context?.cloudflare?.env?.BUCKET;
+        let cfBucket: any;
+        try {
+          const event = useEvent();
+          cfBucket = event?.context?.cloudflare?.env?.BUCKET;
+        }
+        catch {
+          // outside event context
+        }
+
+        if (!cfBucket) {
+          cfBucket = (context as any)?.cloudflare?.env?.BUCKET
+            ?? (globalThis as any).__env__?.BUCKET
+            ?? (globalThis as any).env?.BUCKET;
+        }
+
         const storage = useStorage("images");
         const loaded: EmailAttachment[] = [];
 
@@ -54,11 +68,35 @@ export default defineTask({
           if (typeof attachment.key !== "string") continue;
 
           try {
-            const fileData = cfBucket
-              ? await cfBucket.get(attachment.key).then(object => object?.arrayBuffer())
-              : await storage.getItemRaw(attachment.key);
+            let fileData: any = null;
 
-            if (!fileData) continue;
+            if (cfBucket) {
+              const r2Obj = await cfBucket.get(attachment.key);
+              if (r2Obj) {
+                fileData = await r2Obj.arrayBuffer();
+              }
+              else if (attachment.key.includes("/")) {
+                const colonKey = attachment.key.replace(/\//g, ":");
+                const r2ObjColon = await cfBucket.get(colonKey);
+                if (r2ObjColon) {
+                  fileData = await r2ObjColon.arrayBuffer();
+                }
+              }
+            }
+
+            if (!fileData) {
+              fileData = await storage.getItemRaw(attachment.key);
+            }
+
+            if (!fileData && attachment.key.includes("/")) {
+              const colonKey = attachment.key.replace(/\//g, ":");
+              fileData = await storage.getItemRaw(colonKey);
+            }
+
+            if (!fileData) {
+              console.warn(`[getAttachments] Could not retrieve file data for attachment key: ${attachment.key}`);
+              continue;
+            }
 
             const buffer = Buffer.isBuffer(fileData)
               ? fileData
