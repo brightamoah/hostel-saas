@@ -103,15 +103,25 @@ export default defineEventHandler(async (event) => {
     const emailSubject = `Invoice #${invoiceNumber} from ${hostelName}`;
 
     try {
-      const storage = useStorage("images");
+      const cfBucket = event.context.cloudflare?.env?.BUCKET;
       const attachmentKey = `attachments/user-${studentUserId}/${Date.now()}-invoice-${invoiceNumber}.pdf`;
       const filename = `invoice-${invoiceNumber}.pdf`;
 
-      await storage.setItemRaw(attachmentKey, filePart.data, {
-        httpMetadata: {
-          contentType: "application/pdf",
-        },
-      });
+      if (cfBucket) {
+        await cfBucket.put(attachmentKey, filePart.data, {
+          httpMetadata: {
+            contentType: "application/pdf",
+          },
+        });
+      }
+      else {
+        const storage = useStorage("images");
+        await storage.setItemRaw(attachmentKey, filePart.data, {
+          httpMetadata: {
+            contentType: "application/pdf",
+          },
+        });
+      }
 
       await enqueueApplicationEmail(event, {
         to: { name: studentName, email: studentEmail },

@@ -7,6 +7,7 @@ import type { useEditor } from "@tiptap/vue-3";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type { H3EventContext } from "evlog";
 import type { H3Event, useSession } from "h3";
+import type { Buffer } from "node:buffer";
 import type { Bank } from "paystack-sdk/dist/misc/interface";
 import type { Transaction } from "paystack-sdk/dist/transaction/interface";
 import type { randomUUID } from "uncrypto";
@@ -23,9 +24,10 @@ import type { StudentDashboard, UserProfileType, UserStats } from "~~/server/db/
 import type { Visitor, VisitorStats } from "~~/server/db/queries/visitor";
 import type { admin, allocation, announcement, auditLog, billing, companySettings, complaint, complaintActionTakenEnum, complaintStatusEnum, hostel, hostelSettings, loginAttempts, maintenanceRequest, maintenanceStatusEnum, payment, reportTemplate, room, student, user, visitor, visitorLogs } from "~~/server/db/schema";
 import type { useDB } from "~~/server/utils/db";
-import type { requirePortalUserSession } from "~~/server/utils/portalSession";
 
+import type { requirePortalUserSession } from "~~/server/utils/portalSession";
 import type { User } from "#auth-utils";
+
 import type { PrebuiltTemplate } from "../utils/reportConfig";
 
 import type { ComplaintStatusResponseSchema, CreateMaintenanceSchema, MaintenanceStatusResponseSchema, RegisterVisitorSchema } from "../utils/schema";
@@ -917,3 +919,9 @@ export type EmailType
     | "others";
 
 export type AcademicPeriod = z.output<typeof academicPeriodSchema>;
+
+export interface EmailAttachment {
+  filename: string;
+  content: string | Buffer;
+  mimeType: string;
+}

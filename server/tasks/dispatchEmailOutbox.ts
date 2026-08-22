@@ -1,3 +1,4 @@
+import type { EmailAttachment } from "~~/shared/types";
 import { Buffer } from "node:buffer";
 import { createError, createLogger } from "evlog";
 import { outboxQueries } from "~~/server/db/queries/outbox";
@@ -8,7 +9,7 @@ export default defineTask({
     name: "dispatchEmailOutbox",
     description: "Process queued transactional emails from email_outbox table",
   },
-  async run() {
+  async run({ context }) {
     const log = createLogger({
       task: "dispatchEmailOutbox",
       service: "scheduler",
@@ -22,45 +23,60 @@ export default defineTask({
         markEmailSent,
         markEmailFailed,
       } = await outboxQueries();
-      const pendingEmails = await fetchPendingEmails(200);
+
+      const pendingEmails = await fetchPendingEmails(500);
 
       if (!pendingEmails.length) {
-        log.set({ count: 0, taskStatus: "completed" });
+        log.set({
+          count: 0,
+          taskStatus: "completed",
+        });
+
         log.emit();
-        return { result: "No pending emails to dispatch." };
+
+        return {
+          result: "No pending emails to dispatch.",
+        };
       }
 
-      let sentCount = 0;
-      let failCount = 0;
+      const getAttachments = async (attachments: unknown): Promise<EmailAttachment[] | undefined> => {
+        if (!Array.isArray(attachments) || attachments.length === 0) return undefined;
 
-      const getEmailAttachments = async <T extends boolean>(
-        attachments: unknown,
-        isProd: T,
-      ): Promise<{ filename: string; content: T extends true ? string : Buffer; mimeType: string }[] | undefined> => {
-        if (!attachments || !Array.isArray(attachments) || attachments.length === 0) return undefined;
-
+        const cfBucket = context?.cloudflare?.env?.BUCKET;
         const storage = useStorage("images");
-        const loaded: {
-          filename: string;
-          content: T extends true ? string : Buffer;
-          mimeType: string;
-        }[] = [];
+        const loaded: EmailAttachment[] = [];
 
         for (const item of attachments) {
           if (!item || typeof item !== "object") continue;
+
           const attachment = item as Record<string, unknown>;
+
           if (typeof attachment.key !== "string") continue;
 
           try {
-            const fileData = await storage.getItemRaw(attachment.key);
-            if (fileData) {
-              const buffer = Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData as string | Uint8Array);
-              loaded.push({
-                filename: typeof attachment.filename === "string" ? attachment.filename : "attachment",
-                content: (isProd ? buffer.toString("base64") : buffer) as T extends true ? string : Buffer,
-                mimeType: typeof attachment.mimeType === "string" ? attachment.mimeType : "application/octet-stream",
-              });
-            }
+            const fileData = cfBucket
+              ? await cfBucket.get(attachment.key).then(object => object?.arrayBuffer())
+              : await storage.getItemRaw(attachment.key);
+
+            if (!fileData) continue;
+
+            const buffer = Buffer.isBuffer(fileData)
+              ? fileData
+              : Buffer.from(fileData);
+
+            loaded.push({
+              filename: typeof attachment.filename === "string"
+                ? attachment.filename
+                : "attachment",
+
+              content: import.meta.dev
+                ? buffer
+                : buffer.toString("base64"),
+
+              mimeType: typeof attachment.mimeType === "string"
+                ? attachment.mimeType
+                : "application/octet-stream",
+            });
           }
           catch (e) {
             console.error(`Failed to fetch attachment ${attachment.key}:`, e);
@@ -69,14 +85,15 @@ export default defineTask({
         return loaded.length ? loaded : undefined;
       };
 
+      let sentCount = 0;
+      let failCount = 0;
+
       if (import.meta.dev) {
         const { sendMail } = useNodeMailer();
+
         for (const email of pendingEmails) {
           try {
-            const mailAttachments = await getEmailAttachments(
-              email.attachments,
-              false,
-            );
+            const mailAttachments = await getAttachments(email.attachments);
 
             await sendMail({
               from: `"${email.fromName}" <${email.fromEmail}>`,
@@ -92,7 +109,11 @@ export default defineTask({
           }
           catch (error: unknown) {
             console.error(`Failed to dispatch email ID ${email.id} to ${email.recipientEmail}:`, error);
-            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            const errorMessage = error instanceof Error
+              ? error.message
+              : String(error);
+
             await markEmailFailed(email.id, errorMessage);
             failCount++;
           }
@@ -115,10 +136,7 @@ export default defineTask({
 
         for (const email of pendingEmails) {
           try {
-            const mailAttachments = await getEmailAttachments(
-              email.attachments,
-              true,
-            );
+            const mailAttachments = await getAttachments(email.attachments);
 
             await mailer.send({
               from: {
@@ -129,11 +147,19 @@ export default defineTask({
                 name: email.recipientName ?? email.recipientEmail,
                 email: email.recipientEmail,
               },
-              ...(email.replyTo ? { replyTo: email.replyTo } : {}),
+              ...(email.replyTo
+                ? { replyTo: email.replyTo }
+                : {}
+              ),
+
               subject: email.subject,
               html: email.html,
               text: email.text ?? undefined,
-              attachments: mailAttachments,
+              attachments: mailAttachments as {
+                filename: string;
+                content: string;
+                mimeType?: string;
+              }[] | undefined,
             });
 
             await markEmailSent(email.id);
@@ -141,21 +167,25 @@ export default defineTask({
           }
           catch (error: unknown) {
             console.error(`Failed to dispatch email ID ${email.id} to ${email.recipientEmail}:`, error);
+
             const errorMessage = error instanceof Error ? error.message : String(error);
+
             await markEmailFailed(email.id, errorMessage);
             failCount++;
           }
-        }
-
-        if (mailer && typeof mailer.close === "function") {
-          try {
-            await mailer.close();
+          finally {
+            await mailer.close?.();
           }
-          catch {}
         }
       }
 
-      log.set({ count: pendingEmails.length, taskStatus: "completed" });
+      log.set({
+        count: pendingEmails.length,
+        sentCount,
+        failCount,
+        taskStatus: "completed",
+      });
+
       log.emit();
 
       return {
