@@ -20,6 +20,12 @@ declare global {
       };
     };
   }
+
+  interface GlobalEnvContainer {
+    __env__?: { BUCKET?: R2Bucket };
+    env?: { BUCKET?: R2Bucket };
+    process?: { env?: { BUCKET?: R2Bucket } };
+  }
 }
 
 declare module "h3" {

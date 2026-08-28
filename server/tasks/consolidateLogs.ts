@@ -14,15 +14,19 @@ export default defineTask({
     });
 
     try {
-      await consolidateDailyLogs();
+      const { processedChunksCount, consolidatedDatesCount } = await consolidateDailyLogs();
 
       log.set({
         taskStatus: "completed",
+        processedChunksCount,
+        consolidatedDatesCount,
       });
 
       log.emit();
 
-      return { result: "Daily logs consolidated and expired logs cleaned up." };
+      return {
+        result: `Daily logs consolidated. Processed ${processedChunksCount} raw chunk(s) across ${consolidatedDatesCount} date(s). Expired logs cleaned up.`,
+      };
     }
     catch (error) {
       log.set({
