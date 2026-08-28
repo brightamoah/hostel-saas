@@ -71,7 +71,7 @@ export const billing = snakeCase.table("billing", t => ({
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 }), () => [
-  check("chk_paid_amount", sql`paid_amount >= 0 AND paid_amount <= amount`),
+  check("chk_paid_amount", sql`paid_amount >= 0 AND paid_amount <= (amount + COALESCE(late_fee, 0))`),
 ]);
 
 export const payment = snakeCase.table("payment", t => ({

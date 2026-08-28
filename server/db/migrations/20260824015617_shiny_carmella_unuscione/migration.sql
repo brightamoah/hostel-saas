@@ -1,0 +1,1 @@
+ALTER TABLE "billing" DROP CONSTRAINT "chk_paid_amount", ADD CONSTRAINT "chk_paid_amount" CHECK (paid_amount >= 0 AND paid_amount <= (amount + COALESCE(late_fee, 0)));

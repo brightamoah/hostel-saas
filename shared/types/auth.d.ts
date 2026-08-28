@@ -39,6 +39,7 @@ declare module "#auth-utils" {
     selectedHostelSlug?: string | null;
     portal: "admin" | "public";
     sessionDurationMs?: number;
+    lastAllocationCheckAt?: string;
   }
 }
 

@@ -340,3 +340,157 @@ Raised in error? Contact us at ${supportEmail}
 
   return { html, text };
 }
+
+export function getResidencyStatusUpdateTemplate(params: {
+  userName: string;
+  roomNumber: string;
+  hostelName?: string;
+  status: string;
+  academicYear?: string | null;
+  academicPeriod?: string | null;
+  dashboardUrl?: string;
+  supportEmail?: string;
+}) {
+  const {
+    userName,
+    roomNumber,
+    hostelName = "Hostel",
+    status,
+    academicYear,
+    academicPeriod,
+    dashboardUrl = "https://mails.kayanest.app",
+    supportEmail = "support@mails.kayanest.app",
+  } = params;
+
+  const safeUserName = escapeHtml(userName);
+  const safeRoomNumber = escapeHtml(roomNumber);
+  const safeHostelName = escapeHtml(hostelName);
+  const formattedStatus = escapeHtml(status.toUpperCase());
+
+  const rows = [
+    infoRow("Hostel", safeHostelName),
+    infoRow("Room Number", safeRoomNumber),
+    infoRow("Residency Status", formattedStatus, true),
+    ...(academicYear ? [infoRow("Academic Year", escapeHtml(academicYear))] : []),
+    ...(academicPeriod ? [infoRow("Academic Period", escapeHtml(academicPeriod))] : []),
+  ].join("\n");
+
+  const bodyContent = `
+    ${heading("Residency Tenure Update")}
+    ${subtext(`Hi <b>${safeUserName}</b>, this is an official notification regarding your room allocation at <b>${safeHostelName}</b>.`)}
+    
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+      Your residency tenure for <strong>Room ${safeRoomNumber}</strong> has ended, and your allocation status has been updated to 
+      <span style="display:inline-block;padding:2px 8px;background-color:#fee2e2;color:#991b1b;font-weight:600;font-size:12px;border-radius:4px;letter-spacing:0.04em;">${formattedStatus}</span>.
+    </p>
+
+    ${infoTable(rows)}
+
+    <div style="background-color:#f9fafb;border-left:4px solid #3d8582;padding:12px 16px;margin:0 0 20px;border-radius:0 6px 6px 0;">
+      <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#265757;">Important Next Steps:</p>
+      <ul style="margin:0;padding-left:18px;font-size:13px;color:#4b5563;line-height:1.6;">
+        <li><strong>Vacating Room:</strong> Please ensure all personal belongings are cleared and key returned to management.</li>
+        <li><strong>Re-application:</strong> If you plan to reside in the hostel for the next term, please log in to submit a new allocation request.</li>
+      </ul>
+    </div>
+
+    ${primaryButton("Access Student Portal", dashboardUrl)}
+    ${divider()}
+    ${smallNote(`If you believe this update was made in error or have questions about your tenure, please contact hostel administration at <a href="mailto:${supportEmail}" style="color:#3d8582;text-decoration:none;">${supportEmail}</a>.`)}
+  `;
+
+  const previewText = `Residency status for Room ${roomNumber} updated to ${status}`;
+  const htmlTemplate = shell(bodyContent, previewText, hostelName);
+
+  const textTemplate = `
+${hostelName} — Residency Tenure Update
+
+Hi ${userName},
+
+This is an official notification regarding your room allocation at ${hostelName}.
+
+Your residency tenure for Room ${roomNumber} has ended, and your allocation status has been updated to ${status.toUpperCase()}.
+
+Allocation Details:
+- Hostel: ${hostelName}
+- Room Number: ${roomNumber}
+- Status: ${status.toUpperCase()}
+${academicYear ? `- Academic Year: ${academicYear}\n` : ""}${academicPeriod ? `- Academic Period: ${academicPeriod}\n` : ""}
+Next Steps:
+1. Vacating Room: Please ensure all personal belongings are cleared and keys are returned to management.
+2. Re-application: Log in to your student portal if you wish to apply for an allocation in the upcoming term.
+
+Student Portal: ${dashboardUrl}
+
+If you believe this update was made in error, contact hostel administration at ${supportEmail}.
+
+— The ${hostelName} Team
+  `.trim();
+
+  return { htmlTemplate, textTemplate, html: htmlTemplate, text: textTemplate };
+}
+
+export function getResidencyStatusRestoredTemplate(params: {
+  userName: string;
+  roomNumber?: string;
+  hostelName?: string;
+  dashboardUrl?: string;
+  supportEmail?: string;
+}) {
+  const {
+    userName,
+    roomNumber,
+    hostelName = "Hostel",
+    dashboardUrl = "https://mails.kayanest.app",
+    supportEmail = "support@mails.kayanest.app",
+  } = params;
+
+  const safeUserName = escapeHtml(userName);
+  const safeHostelName = escapeHtml(hostelName);
+
+  const rows = [
+    infoRow("Hostel", safeHostelName),
+    ...(roomNumber ? [infoRow("Room Number", escapeHtml(roomNumber))] : []),
+    infoRow("Allocation Status", "ACTIVE", true),
+  ].join("\n");
+
+  const bodyContent = `
+    ${heading("Residency Allocation Restored")}
+    ${subtext(`Hi <b>${safeUserName}</b>, your room allocation status at <b>${safeHostelName}</b> has been restored.`)}
+    
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+      We are pleased to inform you that your previous room residency status has been reactivated.
+    </p>
+
+    ${infoTable(rows)}
+
+    ${primaryButton("Access Student Portal", dashboardUrl)}
+    ${divider()}
+    ${smallNote(`If you have any questions regarding your active status, please contact hostel administration at <a href="mailto:${supportEmail}" style="color:#3d8582;text-decoration:none;">${supportEmail}</a>.`)}
+  `;
+
+  const previewText = `Your room allocation at ${hostelName} has been restored to active`;
+  const htmlTemplate = shell(bodyContent, previewText, hostelName);
+
+  const textTemplate = `
+${hostelName} — Residency Allocation Restored
+
+Hi ${userName},
+
+Your room residency allocation status at ${hostelName} has been restored to ACTIVE.
+
+Allocation Details:
+- Hostel: ${hostelName}
+${roomNumber ? `- Room Number: ${roomNumber}\n` : ""}- Status: ACTIVE
+
+Student Portal: ${dashboardUrl}
+
+If you have questions, contact hostel administration at ${supportEmail}.
+
+— The ${hostelName} Team
+  `.trim();
+
+  return { htmlTemplate, textTemplate, html: htmlTemplate, text: textTemplate };
+}
+
+

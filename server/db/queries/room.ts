@@ -7,6 +7,7 @@ import { useDB } from "~~/server/utils/db";
 import { enqueueApplicationEmail } from "~~/server/utils/emailSender";
 
 import { getScopeMode } from "~~/server/utils/permissionScope";
+import { getResidencyStatusRestoredTemplate, getResidencyStatusUpdateTemplate } from "~~/shared/utils/emailTemplate";
 import { allocation, hostel, hostelSettings, residencyResetBatch, residencyResetLog, room, student, user } from "../schema";
 import { auditLogQueries } from "./auditLog";
 
@@ -204,6 +205,7 @@ export async function roomQueries(event?: H3Event) {
         columns: {
           id: true,
           roomId: true,
+          hostelId: true,
           status: true,
         },
       });
@@ -1233,6 +1235,9 @@ export async function roomQueries(event?: H3Event) {
             userEmail: user.email,
             roomId: room.id,
             roomNumber: room.roomNumber,
+            hostelName: hostel.name,
+            academicYear: allocation.academicYear,
+            academicPeriod: allocation.academicPeriod,
             currentOccupancy: room.currentOccupancy,
             roomStatus: room.status,
             allowedGender: room.allowedGender,
@@ -1242,6 +1247,7 @@ export async function roomQueries(event?: H3Event) {
           .innerJoin(student, eq(allocation.studentId, student.id))
           .innerJoin(user, eq(student.userId, user.id))
           .innerJoin(room, eq(allocation.roomId, room.id))
+          .innerJoin(hostel, eq(allocation.hostelId, hostel.id))
           .where(and(...conditions));
 
         if (!activeAllocations.length) {
@@ -1296,14 +1302,24 @@ export async function roomQueries(event?: H3Event) {
           }
           roomMap.get(item.roomId)!.decrementCount += 1;
 
+          const { htmlTemplate, textTemplate } = getResidencyStatusUpdateTemplate({
+            userName: item.userName,
+            roomNumber: item.roomNumber,
+            hostelName: item.hostelName ?? undefined,
+            status: nextAllocationStatus,
+            academicYear: item.academicYear,
+            academicPeriod: item.academicPeriod,
+          });
+
           await enqueueApplicationEmail(
             event,
             {
               to: { name: item.userName, email: item.userEmail },
-              subject: "Hostel Residency Tenure Update",
-              html: `<p>Hello ${item.userName},</p><p>Your residency status for room ${item.roomNumber} has been updated to <strong>${nextAllocationStatus}</strong>.</p>`,
-              text: `Hello ${item.userName}, your residency status for room ${item.roomNumber} has been updated to ${nextAllocationStatus}.`,
+              subject: `Residency Tenure Update — ${item.hostelName ?? "Hostel"}`,
+              html: htmlTemplate,
+              text: textTemplate,
               recipientUserId: item.userId,
+              hostelName: item.hostelName ?? undefined,
               isTransactional: true,
             },
             txn,
@@ -1405,6 +1421,8 @@ export async function roomQueries(event?: H3Event) {
             logId: residencyResetLog.id,
             allocationId: residencyResetLog.allocationId,
             roomId: residencyResetLog.roomId,
+            roomNumber: room.roomNumber,
+            hostelName: hostel.name,
             studentId: residencyResetLog.studentId,
             previousAllocationStatus: residencyResetLog.previousAllocationStatus,
             previousRoomOccupancy: residencyResetLog.previousRoomOccupancy,
@@ -1419,6 +1437,7 @@ export async function roomQueries(event?: H3Event) {
           })
           .from(residencyResetLog)
           .innerJoin(room, eq(residencyResetLog.roomId, room.id))
+          .innerJoin(hostel, eq(room.hostelId, hostel.id))
           .innerJoin(student, eq(residencyResetLog.studentId, student.id))
           .innerJoin(user, eq(student.userId, user.id))
           .where(eq(residencyResetLog.batchId, batch.id));
@@ -1521,14 +1540,21 @@ export async function roomQueries(event?: H3Event) {
             })
             .where(eq(room.id, logItem.roomId));
 
+          const { htmlTemplate, textTemplate } = getResidencyStatusRestoredTemplate({
+            userName: logItem.userName,
+            roomNumber: logItem.roomNumber,
+            hostelName: logItem.hostelName ?? undefined,
+          });
+
           await enqueueApplicationEmail(
             event,
             {
               to: { name: logItem.userName, email: logItem.userEmail },
-              subject: "Residency Status Restored",
-              html: `<p>Hello ${logItem.userName},</p><p>Your room residency allocation has been restored to active status.</p>`,
-              text: `Hello ${logItem.userName}, your room residency allocation has been restored to active status.`,
+              subject: `Residency Status Restored — ${logItem.hostelName ?? "Hostel"}`,
+              html: htmlTemplate,
+              text: textTemplate,
               recipientUserId: logItem.userId,
+              hostelName: logItem.hostelName ?? undefined,
               isTransactional: true,
             },
             txn,
@@ -1577,28 +1603,36 @@ export async function roomQueries(event?: H3Event) {
 
   const getRecentResidencyResetBatches = async (hostelId: number) => {
     return await db
-      .query
-      .residencyResetBatch
-      .findMany({
-        with: {
-          user: {
-            columns: {
-              name: true,
-            },
-          },
-        },
-        where: {
-          hostelId,
-          rollbackDeadline: { gt: new Date() },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        limit: 20,
-      });
+      .select({
+        id: residencyResetBatch.id,
+        hostelId: residencyResetBatch.hostelId,
+        triggerSource: residencyResetBatch.triggerSource,
+        triggeredBy: residencyResetBatch.triggeredBy,
+        academicYear: residencyResetBatch.academicYear,
+        academicPeriod: residencyResetBatch.academicPeriod,
+        status: residencyResetBatch.status,
+        rollbackDeadline: residencyResetBatch.rollbackDeadline,
+        createdAt: residencyResetBatch.createdAt,
+        triggeredByName: user.name,
+      })
+      .from(residencyResetBatch)
+      .leftJoin(user, eq(residencyResetBatch.triggeredBy, user.id))
+      .where(
+        and(
+          eq(residencyResetBatch.hostelId, hostelId),
+          gt(residencyResetBatch.rollbackDeadline, new Date()),
+        ),
+      )
+      .orderBy(desc(residencyResetBatch.createdAt))
+      .limit(20);
   };
 
-  const getResidencyResetBatchDetails = async (batchId: string) => {
+  const getResidencyResetBatchDetails = async (batchId: string, hostelId?: number) => {
+    const conditions = [eq(residencyResetLog.batchId, batchId)];
+    if (hostelId) {
+      conditions.push(eq(room.hostelId, hostelId));
+    }
+
     return await db
       .select({
         logId: residencyResetLog.id,
@@ -1610,12 +1644,148 @@ export async function roomQueries(event?: H3Event) {
         userEmail: user.email,
         previousAllocationStatus: residencyResetLog.previousAllocationStatus,
         previousRoomOccupancy: residencyResetLog.previousRoomOccupancy,
+        currentAllocationStatus: allocation.status,
       })
       .from(residencyResetLog)
+      .innerJoin(allocation, eq(residencyResetLog.allocationId, allocation.id))
       .innerJoin(room, eq(residencyResetLog.roomId, room.id))
       .innerJoin(student, eq(residencyResetLog.studentId, student.id))
       .innerJoin(user, eq(student.userId, user.id))
-      .where(eq(residencyResetLog.batchId, batchId));
+      .where(and(...conditions));
+  };
+
+  const rollbackSingleResidencyLog = async (params: {
+    logId: string;
+    adminUserId: number;
+    auditContext?: AuditContext;
+  }) => {
+    const [logItem] = await db
+      .select({
+        logId: residencyResetLog.id,
+        batchId: residencyResetLog.batchId,
+        allocationId: residencyResetLog.allocationId,
+        roomId: residencyResetLog.roomId,
+        roomNumber: room.roomNumber,
+        hostelName: hostel.name,
+        hostelId: room.hostelId,
+        studentId: residencyResetLog.studentId,
+        previousAllocationStatus: residencyResetLog.previousAllocationStatus,
+        previousRoomOccupancy: residencyResetLog.previousRoomOccupancy,
+        previousRoomStatus: residencyResetLog.previousRoomStatus,
+        previousAllowedGender: residencyResetLog.previousAllowedGender,
+        currentAllocationStatus: allocation.status,
+        currentRoomOccupancy: room.currentOccupancy,
+        capacity: room.capacity,
+        userId: user.id,
+        userName: user.name,
+        userEmail: user.email,
+        userGender: student.gender,
+      })
+      .from(residencyResetLog)
+      .innerJoin(allocation, eq(residencyResetLog.allocationId, allocation.id))
+      .innerJoin(room, eq(residencyResetLog.roomId, room.id))
+      .innerJoin(hostel, eq(room.hostelId, hostel.id))
+      .innerJoin(student, eq(residencyResetLog.studentId, student.id))
+      .innerJoin(user, eq(student.userId, user.id))
+      .where(eq(residencyResetLog.id, params.logId))
+      .limit(1);
+
+    if (!logItem) {
+      throw createError({
+        statusCode: 404,
+        message: "Residency reset log entry not found.",
+      });
+    }
+
+    if (logItem.currentAllocationStatus === "active") {
+      throw createError({
+        statusCode: 400,
+        message: `${logItem.userName}'s residency allocation is already active.`,
+      });
+    }
+
+    const existingActiveAllocation = await db.query.allocation.findFirst({
+      where: {
+        studentId: logItem.studentId,
+        status: { in: ["active", "pending"] },
+        id: { ne: logItem.allocationId },
+      },
+      columns: { id: true },
+    });
+
+    if (existingActiveAllocation) {
+      throw createError({
+        statusCode: 409,
+        message: `Cannot restore residency: Student ${logItem.userName} already has another active/pending allocation.`,
+      });
+    }
+
+    return await db.transaction(async (txn) => {
+      await txn
+        .update(allocation)
+        .set({ status: logItem.previousAllocationStatus })
+        .where(eq(allocation.id, logItem.allocationId));
+
+      const newOccupancy = logItem.currentRoomOccupancy + 1;
+      const newStatus = newOccupancy >= logItem.capacity ? "occupied" : "partially occupied";
+      const newAllowedGender = logItem.previousAllowedGender !== "unassigned"
+        ? logItem.previousAllowedGender
+        : (logItem.userGender === "female"
+            ? "female"
+            : logItem.userGender === "male"
+              ? "male"
+              : "mixed");
+
+      await txn
+        .update(room)
+        .set({
+          currentOccupancy: newOccupancy,
+          allowedGender: newAllowedGender,
+          status: newStatus as Room["status"],
+          version: sql`${room.version} + 1`,
+        })
+        .where(eq(room.id, logItem.roomId));
+
+      const { htmlTemplate, textTemplate } = getResidencyStatusRestoredTemplate({
+        userName: logItem.userName,
+        roomNumber: logItem.roomNumber,
+        hostelName: logItem.hostelName ?? undefined,
+      });
+
+      await enqueueApplicationEmail(
+        event,
+        {
+          to: { name: logItem.userName, email: logItem.userEmail },
+          subject: `Residency Status Restored — ${logItem.hostelName ?? "Hostel"}`,
+          html: htmlTemplate,
+          text: textTemplate,
+          recipientUserId: logItem.userId,
+          hostelName: logItem.hostelName ?? undefined,
+          isTransactional: true,
+        },
+        txn,
+      );
+
+      if (params.auditContext) {
+        await logAudit(
+          txn,
+          params.auditContext,
+          {
+            actionType: "STATUS_CHANGE",
+            action: "residency_reset_single_undo",
+            entityType: "hostel",
+            entityId: logItem.hostelId,
+            description: `Single resident reset undone for ${logItem.userName} (Room ${logItem.roomNumber}).`,
+          },
+        );
+      }
+
+      return {
+        success: true,
+        userName: logItem.userName,
+        roomNumber: logItem.roomNumber,
+      };
+    });
   };
 
   return {
@@ -1627,6 +1797,7 @@ export async function roomQueries(event?: H3Event) {
     previewResidencyReset,
     resetHostelResidency,
     rollbackResidencyReset,
+    rollbackSingleResidencyLog,
     getRecentResidencyResetBatches,
     getResidencyResetBatchDetails,
     getAvailableRoomsForStudent,

@@ -5,7 +5,12 @@ export default defineEventHandler(async (event) => {
     await adminSessionCheck(event);
 
     const query = getQuery(event);
+
     const batchId = query.batchId as string;
+
+    const hostelId = query.hostelId
+      ? Number(query.hostelId)
+      : undefined;
 
     if (!batchId) {
       throw createError({
@@ -15,7 +20,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const { getResidencyResetBatchDetails } = await roomQueries(event);
-    const details = await getResidencyResetBatchDetails(batchId);
+    const details = await getResidencyResetBatchDetails(batchId, hostelId);
 
     return {
       success: true,
