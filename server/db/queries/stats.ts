@@ -127,11 +127,17 @@ export async function statsQueries(event?: H3Event) {
         : "hostel";
 
     if (scopeMode === "company" && !admin.companyId) {
-      throw createError({ statusCode: 400, message: "Missing companyId for company-scoped overview stats." });
+      throw createError({
+        statusCode: 400,
+        message: "Missing companyId for company-scoped overview stats.",
+      });
     }
 
     if (scopeMode === "hostel" && !admin.hostelId) {
-      throw createError({ statusCode: 400, message: "Missing hostelId for hostel-scoped overview stats." });
+      throw createError({
+        statusCode: 400,
+        message: "Missing hostelId for hostel-scoped overview stats.",
+      });
     }
 
     const roomCondition = scopeMode === "none"
@@ -243,8 +249,8 @@ export async function statsQueries(event?: H3Event) {
       .from(visitor)
       .where(visitorCondition);
 
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
     const revenueTrendQuery = db.select({
       month: sql<string>`TO_CHAR(DATE_TRUNC('month', ${payment.paymentDate}), 'YYYY-MM')`,
@@ -254,7 +260,7 @@ export async function statsQueries(event?: H3Event) {
       .leftJoin(billing, eq(payment.billingId, billing.id))
       .where(and(
         eq(payment.status, "completed"),
-        gte(payment.paymentDate, sixMonthsAgo),
+        gte(payment.paymentDate, twelveMonthsAgo),
         billingCondition,
       ))
       .groupBy(sql`DATE_TRUNC('month', ${payment.paymentDate})`)
@@ -280,9 +286,9 @@ export async function statsQueries(event?: H3Event) {
       revenueTrendQuery,
     ]);
 
-    const filledRevenueTrend = Array.from({ length: 6 }).map((_, index) => {
+    const filledRevenueTrend = Array.from({ length: 12 }).map((_, index) => {
       const date = new Date();
-      date.setMonth(date.getMonth() - (5 - index));
+      date.setMonth(date.getMonth() - (11 - index));
 
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
