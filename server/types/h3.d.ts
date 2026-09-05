@@ -32,11 +32,13 @@ declare module "h3" {
   interface H3EventContext {
     cloudflare: {
       env: CloudflareEnv;
+      context?: ExecutionContext;
       cf: {
         requestId: string;
         cfRay: string;
       };
     };
+    waitUntil?: (promise: Promise<unknown>) => void;
   }
 }
 

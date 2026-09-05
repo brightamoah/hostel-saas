@@ -1,5 +1,4 @@
 import type { WideEvent } from "evlog";
-import type { H3Event } from "h3";
 import { defineDrain } from "evlog/toolkit";
 import { randomUUID } from "uncrypto";
 
@@ -25,13 +24,6 @@ function normalizeKey(key: string): string {
   return key.replace(/^logs[:/]/, "logs/").replace(/:/g, "/");
 }
 
-/** Generates key variations to handle cross-compatibility between unstorage and native R2 prefixes. */
-function getKeyVariations(key: string): string[] {
-  const slashKey = normalizeKey(key);
-  const colonKey = slashKey.replace(/^logs\//, "logs:").replace(/\//g, ":");
-  return Array.from(new Set([key, slashKey, colonKey]));
-}
-
 function groupEventsByDate(events: WideEvent[]): Record<string, WideEvent[]> {
   const grouped: Record<string, WideEvent[]> = {};
 
@@ -45,15 +37,23 @@ function groupEventsByDate(events: WideEvent[]): Record<string, WideEvent[]> {
   return grouped;
 }
 
-function getR2Context(event?: H3Event) {
+function getR2Context(eventOrCtx?: unknown) {
   const storage = useStorage("images");
   let cfBucket: R2Bucket | null = null;
 
-  if (event) {
-    try {
-      cfBucket = event.context?.cloudflare?.env?.BUCKET ?? null;
-    }
-    catch {}
+  if (eventOrCtx) {
+    const obj = eventOrCtx as {
+      context?: { cloudflare?: { env?: { BUCKET?: R2Bucket } } };
+      cloudflare?: { env?: { BUCKET?: R2Bucket } };
+      env?: { BUCKET?: R2Bucket };
+      BUCKET?: R2Bucket;
+    };
+    cfBucket
+      = obj?.context?.cloudflare?.env?.BUCKET
+        ?? obj?.cloudflare?.env?.BUCKET
+        ?? obj?.env?.BUCKET
+        ?? obj?.BUCKET
+        ?? null;
   }
 
   if (!cfBucket) {
@@ -68,14 +68,15 @@ function getR2Context(event?: H3Event) {
     cfBucket
       = globalContainer.__env__?.BUCKET
         ?? globalContainer.env?.BUCKET
+        ?? (globalThis as unknown as { BUCKET?: R2Bucket }).BUCKET
         ?? globalContainer.process?.env?.BUCKET
         ?? null;
   }
   return { storage, cfBucket };
 }
 
-async function listAllLogKeys(event?: H3Event): Promise<string[]> {
-  const { storage, cfBucket } = getR2Context(event);
+async function listAllLogKeys(eventOrCtx?: unknown): Promise<string[]> {
+  const { storage, cfBucket } = getR2Context(eventOrCtx);
   const keysSet = new Set<string>();
 
   if (cfBucket) {
@@ -110,47 +111,42 @@ async function listAllLogKeys(event?: H3Event): Promise<string[]> {
       if (key && key.includes("logs")) keysSet.add(key);
     }
   }
-  catch {}
+  catch (err) {
+    console.error("[evlog/r2] Error listing keys from storage:", err);
+  }
 
   return Array.from(keysSet);
 }
 
-async function readLogItem(key: string, event?: H3Event): Promise<string | null> {
-  const { storage, cfBucket } = getR2Context(event);
-  const keysToTry = getKeyVariations(key);
+async function readLogItem(key: string, eventOrCtx?: unknown): Promise<string | null> {
+  const { storage, cfBucket } = getR2Context(eventOrCtx);
+  const slashKey = normalizeKey(key);
 
   if (cfBucket) {
-    for (const k of keysToTry) {
-      try {
-        const objectBody = await cfBucket.get(k);
-
-        if (objectBody) {
-          const arrayBuffer = await objectBody.arrayBuffer();
-          return new TextDecoder().decode(arrayBuffer).trim();
-        }
-      }
-      catch {}
+    try {
+      const objectBody = await cfBucket.get(slashKey);
+      if (objectBody) return (await objectBody.text()).trim();
+    }
+    catch (err) {
+      console.error(`[evlog/r2] Error reading ${slashKey} from cfBucket:`, err);
     }
     return null;
   }
 
-  for (const k of keysToTry) {
-    try {
-      const content = await storage.getItemRaw(k);
-
-      if (content) {
-        return typeof content === "string"
-          ? content.trim()
-          : new TextDecoder().decode(content as Uint8Array).trim();
-      }
+  try {
+    const content = await storage.getItemRaw(key) ?? await storage.getItemRaw(slashKey);
+    if (content) {
+      return typeof content === "string"
+        ? content.trim()
+        : new TextDecoder().decode(content as Uint8Array).trim();
     }
-    catch {}
   }
+  catch {}
   return null;
 }
 
-async function writeLogItem(key: string, body: string, event?: H3Event): Promise<void> {
-  const { storage, cfBucket } = getR2Context(event);
+async function writeLogItem(key: string, body: string, eventOrCtx?: unknown): Promise<void> {
+  const { storage, cfBucket } = getR2Context(eventOrCtx);
   const slashKey = normalizeKey(key);
 
   if (cfBucket) {
@@ -173,16 +169,24 @@ async function writeLogItem(key: string, body: string, event?: H3Event): Promise
   );
 }
 
-async function deleteLogItem(key: string, event?: H3Event): Promise<void> {
-  const { storage, cfBucket } = getR2Context(event);
-  const keysToDelete = getKeyVariations(key);
+export async function deleteLogItems(keys: string[], eventOrCtx?: unknown): Promise<void> {
+  if (!keys.length) return;
+  const { storage, cfBucket } = getR2Context(eventOrCtx);
 
   if (cfBucket) {
-    await Promise.allSettled(keysToDelete.map(k => cfBucket.delete(k)));
+    const batchSize = 500;
+    for (let i = 0; i < keys.length; i += batchSize) {
+      const batch = keys.slice(i, i + batchSize);
+      await cfBucket.delete(batch);
+    }
     return;
   }
 
-  await Promise.allSettled(keysToDelete.map(k => storage.removeItem(k)));
+  await Promise.allSettled(keys.map(k => storage.removeItem(k)));
+}
+
+export async function deleteLogItem(key: string, eventOrCtx?: unknown): Promise<void> {
+  await deleteLogItems([key], eventOrCtx);
 }
 
 export function createR2Drain() {
@@ -208,8 +212,15 @@ export function createR2Drain() {
   });
 }
 
-export async function consolidateDailyLogs(event?: H3Event) {
-  const allKeys = await listAllLogKeys(event);
+export interface ConsolidateLogsOptions {
+  includeToday?: boolean;
+}
+
+export async function consolidateDailyLogs(
+  eventOrCtx?: unknown,
+  options?: ConsolidateLogsOptions,
+) {
+  const allKeys = await listAllLogKeys(eventOrCtx);
   const rawChunksByDate: Record<string, string[]> = {};
 
   for (const key of allKeys) {
@@ -222,69 +233,69 @@ export async function consolidateDailyLogs(event?: H3Event) {
     }
   }
 
+  const todayKey = formatDateKey(new Date());
+  const allowToday = options?.includeToday ?? import.meta.dev;
+
   let totalProcessedChunks = 0;
   let totalConsolidatedDates = 0;
 
   for (const [dateKey, rawKeys] of Object.entries(rawChunksByDate)) {
     if (rawKeys.length === 0) continue;
 
-    const chunkContents: string[] = (
-      await Promise.all(
-        rawKeys.map(async (rawKey) => {
+    // Do not consolidate the current in-progress day during cron runs
+    if (!allowToday && dateKey >= todayKey) {
+      continue;
+    }
+
+    const chunkContents: string[] = [];
+    const batchSize = 20;
+
+    for (let i = 0; i < rawKeys.length; i += batchSize) {
+      const batch = rawKeys.slice(i, i + batchSize);
+      const batchContents = await Promise.all(
+        batch.map(async (rawKey) => {
           try {
-            return await readLogItem(rawKey, event);
+            return await readLogItem(rawKey, eventOrCtx);
           }
           catch (error) {
             console.error(`[evlog/r2] Failed to read chunk key ${rawKey}:`, error);
             return null;
           }
         }),
-      )
-    ).filter((content): content is string => Boolean(content));
+      );
 
-    if (chunkContents.length === 0) continue;
+      for (const content of batchContents) {
+        if (content && content.trim().length > 0) {
+          chunkContents.push(content.trim());
+        }
+      }
+    }
+
+    if (chunkContents.length === 0) {
+      await deleteLogItems(rawKeys, eventOrCtx);
+      continue;
+    }
 
     const consolidatedKey = `logs/${dateKey}.jsonl`;
-    const existingContent = await readLogItem(consolidatedKey, event).catch(() => null);
+    const existingContent = await readLogItem(consolidatedKey, eventOrCtx).catch(() => null);
 
-    const mergedContent = [existingContent, ...chunkContents]
-      .filter(Boolean)
-      .join("\n");
+    const mergedEntries = [existingContent, ...chunkContents]
+      .filter((c): c is string => typeof c === "string" && c.trim().length > 0)
+      .map(c => c.trim());
 
-    await writeLogItem(consolidatedKey, mergedContent, event);
+    const mergedContent = `${mergedEntries.join("\n")}\n`;
 
-    // Clean up processed raw chunk keys
-    await Promise.allSettled(rawKeys.map(k => deleteLogItem(k, event)));
+    await writeLogItem(consolidatedKey, mergedContent, eventOrCtx);
 
-    // Clean up legacy colon-formatted consolidated file if present
-    const colonConsolidatedKey = `logs:${dateKey.replace(/\//g, ":")}.jsonl`;
-    await deleteLogItem(colonConsolidatedKey, event);
+    // Clean up processed raw chunk keys only
+    await deleteLogItems(rawKeys, eventOrCtx);
 
     totalProcessedChunks += rawKeys.length;
     totalConsolidatedDates++;
   }
 
-  // Clean up any remaining legacy colon-separated consolidated files across all dates
-  for (const key of allKeys) {
-    if (key.includes(":") && key.endsWith(".jsonl") && !key.includes("raw")) {
-      const slashKey = normalizeKey(key);
-      const existingSlashContent = await readLogItem(slashKey, event);
-
-      if (existingSlashContent) {
-        await deleteLogItem(key, event);
-      }
-      else {
-        const colonContent = await readLogItem(key, event);
-        if (colonContent) {
-          await writeLogItem(slashKey, colonContent, event);
-          await deleteLogItem(key, event);
-        }
-      }
-    }
-  }
-
-  // Enforce retention policy
-  await cleanupExpiredLogs(RETENTION_DAYS, event);
+  // Enforce retention policy (e.g. 30 days)
+  await cleanupExpiredLogs(RETENTION_DAYS, eventOrCtx);
 
   return {
     processedChunksCount: totalProcessedChunks,
@@ -292,12 +303,12 @@ export async function consolidateDailyLogs(event?: H3Event) {
   };
 }
 
-export async function cleanupExpiredLogs(retentionDays = RETENTION_DAYS, event?: H3Event) {
+export async function cleanupExpiredLogs(retentionDays = RETENTION_DAYS, eventOrCtx?: unknown) {
   try {
     const cutoffDate = new Date();
     cutoffDate.setUTCDate(cutoffDate.getUTCDate() - retentionDays);
 
-    const allKeys = await listAllLogKeys(event);
+    const allKeys = await listAllLogKeys(eventOrCtx);
 
     const keysToDelete: string[] = allKeys.filter((rawKey) => {
       const logDate = parseDateKey(rawKey);
@@ -305,7 +316,7 @@ export async function cleanupExpiredLogs(retentionDays = RETENTION_DAYS, event?:
     });
 
     if (keysToDelete.length > 0) {
-      await Promise.allSettled(keysToDelete.map(k => deleteLogItem(k, event)));
+      await deleteLogItems(keysToDelete, eventOrCtx);
     }
   }
   catch (error) {

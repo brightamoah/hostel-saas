@@ -1,4 +1,3 @@
-import type { H3Event } from "h3";
 import { createLogger } from "evlog";
 import { consolidateDailyLogs } from "../utils/evlogR2";
 
@@ -7,7 +6,7 @@ export default defineTask({
     name: "consolidateLogs",
     description: "Consolidates raw daily evlog files into logs/YYYY/MM/DD.jsonl and removes logs older than 30 days.",
   },
-  async run({ context }) {
+  async run({ context, payload }) {
     const log = createLogger();
     log.set({
       task: "consolidateLogs",
@@ -15,11 +14,12 @@ export default defineTask({
     });
 
     try {
-      const event = (context as { event?: H3Event })?.event;
       const {
         processedChunksCount,
         consolidatedDatesCount,
-      } = await consolidateDailyLogs(event);
+      } = await consolidateDailyLogs(context, {
+        includeToday: (payload as { includeToday?: boolean } | undefined)?.includeToday,
+      });
 
       log.set({
         taskStatus: "completed",

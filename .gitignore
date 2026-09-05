@@ -27,3 +27,4 @@ logs
 .dev.vars*
 !.env.example
 seed.sh
+test.jsonl
